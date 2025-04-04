@@ -18,38 +18,33 @@
   - `js/app_bootstrap.js` handles fetching, compiling, instantiating WASM, and
     calling Dart `main`.
   - `index.html` correctly loads the bootstrap script.
-- **Component Model (VNode + Key + Listeners + DomEvent):**
-  - Abstract classes for `Component`, `StatelessWidget`, `StatefulWidget`, and
-    `State` defined in `packages/component`.
-  - **`VNode` structure defined** with `key`, `listeners` (now using
-    `DomEvent`), and `jsFunctionRefs` properties added.
-  - Added `dust_renderer` dependency to `component` package.
-  - `State.build()` method returns `VNode`.
-  - Basic lifecycle methods defined in `State`.
-- **Renderer (Keyed Diffing + Refined Event Handling + Initial DOM
-  Abstraction):**
-  - `packages/renderer` provides `render` function.
-  - **Integrated `dust_dom`:** Started replacing direct JS interop calls with
-    `dust_dom` abstractions (e.g., `createElement`, `setAttribute`,
-    `appendChild`, event listeners).
-  - **Created `DomEvent` wrapper** (`dom_event.dart`) for type-safe event
-    handling.
-  - `_patch` function handles node/attribute/listener updates and delegates
-    child patching (partially refactored for `dust_dom`).
-  - **`_patchChildren` function implements keyed reconciliation algorithm**
-    (partially refactored for `dust_dom`).
-  - `_createDomElement` helper creates DOM nodes from `VNode` (using
-    `dust_dom`), attaches initial listeners (now wrapping callbacks to pass
-    `DomEvent`, converting with `.toJS`, storing refs), and stores DOM reference
-    in `VNode.domNode`.
-  - **Improved listener update logic in `_patch`:** Always removes/adds
-    listeners when present in new VNode, wraps callbacks to pass `DomEvent`.
-  - **Implemented recursive listener removal:** `removeVNode` now recursively
-    traverses the VNode tree and uses stored `jsFunctionRefs` to call
-    `removeEventListener` before detaching the DOM node, ensuring proper
-    cleanup.
-  - (Previous) JS Interop updated for `addEventListener` and
-    `removeEventListener` (being replaced).
+- **Component Model (VNode + Key + Component Lifecycle Support):**
+  - Abstract classes for `Component` (now with `key`), `StatelessWidget`,
+    `StatefulWidget`, and `State` defined. `key.dart` created.
+  - **`VNode` structure updated:** Added `VNode.component` constructor,
+    `component`, `state`, and `renderedVNode` properties.
+  - HTML Helpers (`html.dart`) updated to accept `Component` as children.
+  - `State.build()` and `StatelessWidget.build()` return `VNode`.
+  - Lifecycle methods (`initState`, `didUpdateWidget`, `dispose`) defined in
+    `State`.
+- **Renderer (Component Lifecycle + Keyed Diffing + Event Handling):**
+  - `packages/renderer` provides `runApp` function.
+  - **Implemented Basic Component Lifecycle:**
+    - `_patch` function refactored to differentiate component VNodes from
+      element/text VNodes.
+    - Implemented `_mountComponent` (creates State, calls initState/build,
+      patches rendered tree).
+    - Implemented `_updateComponent` (reuses State, calls didUpdateWidget/build,
+      patches rendered tree).
+    - Implemented `_unmountComponent` (calls dispose, recursively unmounts
+      rendered tree using `removeVNode`).
+  - **Refined Event Handling:** Includes `DomEvent` wrapper and recursive
+    listener removal during unmount/node removal via `removeVNode` (now a
+    top-level helper). Listener updates in `_patch` use always remove/add
+    strategy.
+  - **Keyed Diffing:** `_patchChildren` implements keyed reconciliation.
+  - **DOM Interaction:** Uses `dust_dom` abstractions and `_createDomElement`
+    helper.
 - **State Update (Keyed Diffing):**
   - `State.setState` triggers a callback mechanism.
   - Renderer receives the callback, re-runs `State.build()`, and uses `_patch`
@@ -69,10 +64,10 @@
 - **Core Framework Implementation:**
   - **Rendering Engine (Diffing):** (Keyed diffing implemented) Further optimize
     patching logic, handle edge cases.
-  - **Component Model Refinement:** (`VNode` with `key` defined) Handle props,
-    context.
-  - **DOM Abstraction:** (`dust_dom` created) Complete the abstraction layer and
-    fully replace direct JS interop in the renderer.
+  - **Component Model Refinement:** (`VNode` structure updated, `key` added)
+    Handle props, refine context usage.
+  - **DOM Abstraction:** (`dust_dom` created) Integration mostly complete in
+    core rendering path.
   - **Event Handling:** (Refined) Listener update logic improved, `DomEvent`
     wrapper implemented. Further testing on removal reliability and wrapper
     performance needed.
@@ -109,18 +104,21 @@
 - **(Previous) Basic Patching Foundation Laid.**
 - **Improved WASM Loading:** Loading mechanism remains clean
   (`app_bootstrap.js`).
-- **Core Component Structure Updated:** `Component`/`State`/`VNode` structure is
-  in place.
-- **Renderer Structure Improved:** Introduced `_patch` function and
-  `VNode.domNode` linking, providing a better structure for rendering logic (now
-  partially using `dust_dom`).
-- **Keyed Diffing Algorithm Implemented:** Replaced basic indexed approach.
+- **Core Component Structure Updated:** `Component` (with `key`), `State`,
+  `VNode` (with `component`, `state`, `renderedVNode`) structure updated. HTML
+  helpers support components.
+- **Renderer Structure Improved:** Refactored `_patch` to handle component
+  lifecycle via `_mountComponent`, `_updateComponent`, `_unmountComponent`.
+  Listener/node removal helpers moved to top level.
+- **Keyed Diffing Algorithm Implemented.**
 
 ## Known Issues / Challenges
 
-- **Event Handling Refinement:** Recursive listener removal implemented in
-  `removeVNode`. Further testing on edge cases and reliability might be needed.
-  Performance impact of `DomEvent` wrapper needs consideration.
+- **Component Lifecycle:** Basic mount/update/dispose implemented, but
+  `setState` update path needs full implementation. Fragment/multi-root
+  rendering not handled.
+- **Event Handling Refinement:** Recursive listener removal implemented. Further
+  testing needed. Performance impact of `DomEvent` wrapper needs consideration.
 - **Renderer Optimization:** Keyed diffing is implemented but can likely be
   further optimized.
 - **JS Interop Performance:** Still a consideration, but `@staticInterop` in

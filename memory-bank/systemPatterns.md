@@ -6,13 +6,19 @@
   `dart compile wasm`.
 - **Component Model:**
   - UI built by composing `Component` instances (`StatelessWidget`,
-    `StatefulWidget`).
+    `StatefulWidget`), potentially with `Key`s.
   - `StatefulWidget` uses a `State` object for mutable state and UI building.
-  - `State` has lifecycle methods (`initState`, `build`, `dispose`, etc.), a
-    `setState` method for triggering updates, and a `context` property (a basic
-    `BuildContext`) providing access to framework information.
-  - `State.build()` returns a `VNode` tree (with keys, attributes, children, and
-    listeners using `DomEvent`) representing the desired UI structure.
+  - `State` has lifecycle methods (`initState`, `didUpdateWidget`, `build`,
+    `dispose`, etc.), a `setState` method for triggering updates (partially
+    implemented in renderer), and a `context` property (a basic `BuildContext`).
+  - `Component`s are represented in the VNode tree by `VNode` instances created
+    with `VNode.component()`. These VNodes store the `Component` instance, its
+    `key`, the associated `State` object (for StatefulWidgets, managed by the
+    renderer), and the `VNode` tree rendered by the component (`renderedVNode`).
+  - `State.build()` and `StatelessWidget.build()` return a `VNode` tree
+    representing the component's internal structure.
+  - HTML helper functions (`html.dart`) now accept `Component` instances as
+    children and create `VNode.component` nodes.
 - **Declarative Rendering Engine (Keyed Diffing):**
   - Developers declare UI in `build()` methods, ideally using HTML helper
     functions (e.g., `div()`, `h1()`) which return a `VNode` tree.
@@ -21,15 +27,23 @@
   - **Update Mechanism (Keyed Diffing):** `setState` calls a callback provided
     by the renderer (`_performRender`). `_performRender` re-runs `build` to get
     the new `VNode` tree and calls `_patch`.
-  - **Patching (`_patch`):** Compares the new and old `VNode` trees at the root
-    level. Handles node addition/removal/replacement, text updates, attribute
-    updates, and **event listener updates** (now wrapping callbacks to pass
-    `DomEvent`). Delegates child patching to `_patchChildren`. `VNode.domNode`
-    links VNodes to their corresponding DOM nodes. `VNode.jsFunctionRefs` stores
-    JS references for listeners.
+  - **Patching (`_patch`):**
+    - **Differentiates Node Types:** First checks if the new/old VNodes
+      represent Components (`VNode.component != null`).
+    - **Component Lifecycle:** If dealing with components, calls helper
+      functions (`_mountComponent`, `_updateComponent`, `_unmountComponent`) to
+      manage their lifecycle.
+    - **Element/Text Patching:** If dealing with element or text nodes, compares
+      types/tags. If same, updates attributes, listeners (using `jsFunctionRefs`
+      for removal), and text content. Delegates child patching to
+      `_patchChildren`. If different, unmounts the old node (calling
+      `removeVNode` which handles recursive listener cleanup) and mounts the new
+      node (`_createDomElement`).
+    - `VNode.domNode` links VNodes to their corresponding DOM nodes.
   - **Child Patching (`_patchChildren`):** Implements a keyed reconciliation
-    algorithm to efficiently update child lists (handling additions, removals,
-    reordering, and updates based on `VNode.key`).
+    algorithm. Recursively calls `_patch` for matching children. Calls
+    `removeVNode` (now a top-level helper) for removed children and
+    `_createDomElement` or `_mountComponent` (via `_patch`) for added children.
 - **State Management:**
   - Basic component state managed via `State` and `setState`.
   - **Riverpod Integration (Basic):**
@@ -114,12 +128,17 @@
 - **Application Runner Pattern:** Framework provides a simple `runApp` function
   as the public entry point for users.
 - **Virtual DOM Node Pattern:** Using `VNode` objects to represent the desired
-  DOM structure in memory, linked to actual DOM nodes via `domNode` property,
-  using `DomEvent` for listeners, and storing JS listener references in
-  `jsFunctionRefs`.
-- **Diffing/Patching Pattern:** Comparing VNode trees (`_patch`) and applying
-  targeted updates to the DOM (including attributes and listeners). Uses keyed
-  reconciliation (`_patchChildren`) for efficient list updates.
+  structure.
+  - `VNode.element`: Represents HTML elements (tag, attributes, children,
+    listeners, key, domNode, jsFunctionRefs).
+  - `VNode.text`: Represents text content (text, domNode).
+  - `VNode.component`: Represents a `Component` instance (component, key, state,
+    renderedVNode, domNode - linking to the root DOM node of the rendered
+    output).
+- **Diffing/Patching Pattern:** Comparing VNode trees (`_patch`). Differentiates
+  between component nodes and element/text nodes. Uses helper functions
+  (`_mountComponent`, `_updateComponent`, `_unmountComponent`) for component
+  lifecycle. Uses keyed reconciliation (`_patchChildren`) for child lists.
 - **Event Listener Management Pattern:**
   - **Creation/Update:** Wrapping Dart callbacks `(DomEvent event) => ...` in a
     JS function `(JSAny jsEvent) { dartCallback(DomEvent(jsEvent)); }`,

@@ -1,6 +1,7 @@
 // packages/component/lib/html.dart
 // Provides helper functions for creating VNodes with an HTML-like syntax.
 
+import 'component.dart'; // Import Component
 import 'vnode.dart';
 import 'package:dust_renderer/dom_event.dart'; // For listener type
 
@@ -13,7 +14,7 @@ VNode _element(
   String tag, {
   Object? key,
   Attributes? attributes,
-  List<VNode>? children,
+  List<Object>? children, // Accept List<Object>?
   String? text, // Allow direct text content for simple elements
   Listeners? listeners,
 }) {
@@ -21,14 +22,32 @@ VNode _element(
   assert(children == null || text == null,
       'Cannot provide both children and text for VNode with tag "$tag".');
 
-  // If text is provided, create children list with a single text node
-  final effectiveChildren = text != null ? [VNode.text(text)] : children;
+  // Process children: Convert Components, Strings to VNodes
+  List<VNode>? processedChildren;
+  if (children != null) {
+    processedChildren = children.map((child) {
+      if (child is VNode) {
+        return child;
+      } else if (child is Component) {
+        return VNode.component(child); // Wrap Component
+      } else if (child is String) {
+        return VNode.text(child); // Wrap String
+      } else {
+        // Handle other potential types or throw an error
+        throw ArgumentError(
+            'Invalid child type: ${child.runtimeType}. Children must be VNode, Component, or String.');
+      }
+    }).toList();
+  } else if (text != null) {
+    // If text is provided, create children list with a single text node
+    processedChildren = [VNode.text(text)];
+  }
 
   return VNode.element(
-    tag, // tag is the first positional argument for VNode.element
+    tag,
     key: key,
     attributes: attributes,
-    children: effectiveChildren, // Use effectiveChildren
+    children: processedChildren, // Use processed children
     listeners: listeners,
   );
 }
@@ -39,7 +58,7 @@ VNode _element(
 VNode div({
   Object? key,
   Attributes? attributes,
-  List<VNode>? children,
+  List<Object>? children, // Changed type
   Listeners? listeners,
 }) =>
     _element('div',
@@ -51,7 +70,7 @@ VNode div({
 VNode span({
   Object? key,
   Attributes? attributes,
-  List<VNode>? children,
+  List<Object>? children, // Changed type
   String? text,
   Listeners? listeners,
 }) =>
@@ -65,7 +84,7 @@ VNode span({
 VNode p({
   Object? key,
   Attributes? attributes,
-  List<VNode>? children,
+  List<Object>? children, // Changed type
   String? text,
   Listeners? listeners,
 }) =>
@@ -80,7 +99,7 @@ VNode p({
 VNode h1({
   Object? key,
   Attributes? attributes,
-  List<VNode>? children,
+  List<Object>? children, // Changed type
   String? text,
   Listeners? listeners,
 }) =>
@@ -94,7 +113,7 @@ VNode h1({
 VNode h2({
   Object? key,
   Attributes? attributes,
-  List<VNode>? children,
+  List<Object>? children, // Changed type
   String? text,
   Listeners? listeners,
 }) =>
@@ -108,7 +127,7 @@ VNode h2({
 VNode h3({
   Object? key,
   Attributes? attributes,
-  List<VNode>? children,
+  List<Object>? children, // Changed type
   String? text,
   Listeners? listeners,
 }) =>
@@ -123,7 +142,7 @@ VNode h3({
 VNode ul({
   Object? key,
   Attributes? attributes,
-  required List<VNode> children, // Typically requires children
+  required List<Object> children, // Changed type, still required
   Listeners? listeners,
 }) =>
     _element('ul',
@@ -135,7 +154,7 @@ VNode ul({
 VNode li({
   Object? key,
   Attributes? attributes,
-  List<VNode>? children,
+  List<Object>? children, // Changed type
   String? text,
   Listeners? listeners,
 }) =>
@@ -150,7 +169,7 @@ VNode li({
 VNode button({
   Object? key,
   Attributes? attributes,
-  List<VNode>? children,
+  List<Object>? children, // Changed type
   String? text,
   required Listeners? listeners, // Buttons usually need listeners
 }) =>

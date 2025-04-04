@@ -4,9 +4,20 @@
 ///
 /// Components are the building blocks of a Dust application's UI.
 /// Each component encapsulates its own logic and rendering.
+import 'key.dart'; // Import the Key class (will be created)
+
 abstract class Component {
+  /// Controls how one component replaces another component in the tree.
+  ///
+  /// If the [runtimeType] and [key] properties of the two components are
+  /// [operator==], respectively, then the new component replaces the old component by
+  /// updating the underlying element; otherwise, the old element is removed from
+  /// the tree, the new component is inflated into an element, and the new element
+  /// is inserted into the tree.
+  final Key? key;
+
   /// Constructs a [Component].
-  const Component();
+  const Component({this.key});
 
   /// Describes the part of the user interface represented by this component.
   ///
@@ -34,5 +45,7 @@ abstract class Component {
   /// itself; for example, calling `setState` is not allowed during build.
   // TODO: Define the return type more concretely (e.g., Widget, Element, Node)
   //       once the rendering mechanism is clearer. For now, use dynamic.
-  dynamic build(); // Placeholder for the method that defines the component's UI
+  // The build method is typically defined in subclasses like StatelessWidget or State.
+  // It's removed from the base class as it's not universally applicable in the same way.
+  // dynamic build(); // Placeholder removed
 }

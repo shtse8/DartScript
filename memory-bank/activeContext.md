@@ -2,8 +2,9 @@
 
 ## Current Focus
 
-- **Integrating DOM Abstraction:** Continue replacing direct JS interop calls in
-  `renderer.dart` with the new `dust_dom` abstractions.
+- **Refining Renderer & Component Lifecycle:** Further optimize patching logic,
+  handle edge cases, fully implement `setState` update path, address TODOs in
+  component mount/update/unmount.
 - **Refining Event Handling:** (Partially addressed)
   - Implemented `DomEvent` wrapper (`packages/renderer/lib/dom_event.dart`) for
     type-safe event object access in Dart callbacks.
@@ -15,6 +16,30 @@
 - **(Previous) Keyed Child Diffing Implemented & Tested.**
 
 ## Recent Changes
+
+- **Implemented Basic Component Lifecycle Management in Renderer
+  (`renderer.dart`):**
+  - **Updated `VNode`:** Added `state` and `renderedVNode` properties to store
+    associated state object and rendered subtree for component VNodes.
+  - **Updated `Component`:** Added optional `key` property. Created `key.dart`.
+  - **Updated HTML Helpers (`html.dart`):** Modified `children` parameter to
+    accept `List<Object>` and handle `Component`, `VNode`, `String` types
+    internally, creating `VNode.component` where appropriate.
+  - **Refactored `_patch`:** Added logic to differentiate between component
+    VNodes and element/text VNodes. Introduced calls to `_mountComponent`,
+    `_updateComponent`, `_unmountComponent`. Moved listener/node removal helpers
+    (`_removeListenersFromNode`, `_removeListenersRecursively`, `removeVNode`)
+    outside `_patchChildren` and adjusted parameters/calls.
+  - **Implemented `_mountComponent`:** Handles creation of `State` for
+    `StatefulWidget`, calls `build`, recursively patches the rendered tree, and
+    associates state/renderedVNode/domNode with the component VNode.
+  - **Implemented `_updateComponent`:** Handles component type/key checks
+    (simple unmount/mount for now), reuses `State` for `StatefulWidget`, calls
+    `frameworkUpdateWidget` and `build`, recursively patches the new rendered
+    tree against the old one.
+  - **Implemented `_unmountComponent`:** Calls `dispose` on `State` for
+    `StatefulWidget`, recursively unmounts the rendered tree (using
+    `removeVNode` for cleanup), and clears references.
 
 - **Introduced Basic BuildContext:**
   - Created `packages/component/lib/context.dart` defining a simple
@@ -165,8 +190,11 @@
 - **Refine Component API:** (Partially done by introducing VNode and HTML
   helpers) Continue refining props, context handling.
 - **Improve Renderer:**
-  - Manage component lifecycle more robustly (e.g., `dispose`).
-  - (Partially done) Continue refining handling of edge cases in patching.
+  - **(Partially Done)** Manage component lifecycle (`mount`, `update`,
+    `dispose`) via `_patch`, `_mountComponent`, `_updateComponent`,
+    `_unmountComponent`. Needs further refinement (e.g., `setState` update path,
+    fragment handling).
+  - Continue refining handling of edge cases in patching.
 - **(Future Goal) Refactor Consumer/State Management:** Implement a context
   mechanism (like `BuildContext` + `InheritedWidget`) to replace global
   `ProviderContainer` access and potentially enable a `ConsumerWidget` pattern
@@ -222,10 +250,13 @@
 - **Renderer Refactoring:** Completed replacement of direct JS calls with
   `dust_dom` methods in `renderer.dart`.
 - **Event Object Wrapping:** Using `DomEvent` wrapper.
-- **Listener Update Strategy:** Always remove/add in `_patch`. Listeners are now
-  **recursively and explicitly removed** in `removeVNode` (within
-  `_patchChildren`, using `_removeListenersRecursively`) before DOM node
-  removal.
+- **Listener Update Strategy:** Always remove/add in `_patch`. Listeners are
+  recursively and explicitly removed in `removeVNode` (now a top-level helper)
+  before DOM node removal.
+- **Component Lifecycle:** Basic mount, update, unmount logic implemented in
+  `_patch` using helper functions. `State.dispose` is called during unmount.
+  `State.initState` and `State.didUpdateWidget` are triggered via
+  `frameworkUpdateWidget`.
 - **JS Interop for Events:** Using `.toJS` on wrapper.
 - **Listener Reference Storage:** Using `jsFunctionRefs` on `VNode` (used for
   removal).

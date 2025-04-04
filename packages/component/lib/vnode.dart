@@ -1,5 +1,7 @@
-import 'dart:js_interop'; // Needed for JSFunction
+import 'dart:js_interop'; // Needed for JSFunction and potentially JSAny
 import 'package:dust_renderer/dom_event.dart'; // Import using package dependency
+import 'component.dart'; // Import Component base class
+import 'state.dart'; // Import State base class
 
 /// Represents a node in the Virtual DOM tree.
 class VNode {
@@ -33,12 +35,27 @@ class VNode {
   Map<String, JSFunction>?
       jsFunctionRefs; // Public map to store JSFunction references for listeners
 
+  /// For VNodes representing a Component, this holds the component instance.
+  /// Null for element and text nodes.
+  final Component? component;
+
+  /// For VNodes representing a StatefulWidget, this holds the associated State instance.
+  /// Null otherwise. Managed by the renderer.
+  State? state;
+
+  /// For VNodes representing a Component, this holds the VNode tree rendered by that component.
+  /// Null otherwise. Managed by the renderer.
+  VNode? renderedVNode;
+
   /// Creates an element VNode.
   VNode.element(this.tag,
       {this.key, this.attributes, this.listeners, this.children})
       : text = null,
+        component = null, // Not a component node
         domNode = null,
-        jsFunctionRefs = null; // Initialize map
+        jsFunctionRefs = null,
+        state = null, // Not a stateful component node
+        renderedVNode = null; // Not a component node
 
   /// Creates a text VNode. Text nodes typically don't need keys.
   VNode.text(this.text)
@@ -47,10 +64,30 @@ class VNode {
         attributes = null,
         listeners = null, // Text nodes don't have listeners
         children = null,
+        component = null, // Not a component node
         domNode = null,
-        jsFunctionRefs = null; // Initialize map
+        jsFunctionRefs = null,
+        state = null, // Not a stateful component node
+        renderedVNode = null; // Not a component node
+
+  /// Creates a VNode representing a Component.
+  /// The key is typically taken from the component itself.
+  VNode.component(this.component)
+      : tag = null, // Not a direct element or text node
+        key = component?.key, // Use component's key
+        attributes = null,
+        listeners = null,
+        children = null,
+        text = null,
+        domNode = null, // Will be managed by the component's rendered output
+        jsFunctionRefs = null,
+        state =
+            null, // Will be set by the renderer during mount if StatefulWidget
+        renderedVNode = null; // Will be set by the renderer during mount/update
 
   // Potential future additions:
   // - Reference to the actual DOM element (domNode exists)
-  // - Component instance association
+  // - Component instance association (component exists)
+  // - Associated State instance (state exists)
+  // - Rendered VNode tree from component (renderedVNode exists)
 }

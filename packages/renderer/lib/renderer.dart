@@ -125,11 +125,339 @@ void _performRender(
 }
 
 /// Patches the DOM to reflect the difference between the new and old VNode trees.
+// Forward declaration for helper functions (implementation will be added later)
+// Helper function to handle mounting a new component VNode
+void _mountComponent(
+    dom.DomElement parentElement, VNode componentVNode, BuildContext context) {
+  final component = componentVNode.component;
+  if (component == null) {
+    print('Error: _mountComponent called with a non-component VNode.');
+    return;
+  }
+
+  print(
+      'Mounting component: ${component.runtimeType} with key ${component.key}');
+
+  VNode? renderedVNode; // The VNode tree rendered by the component
+
+  if (component is StatefulWidget) {
+    print('  -> StatefulWidget detected');
+    // 1. Create State
+    final state = component.createState();
+    componentVNode.state = state; // Associate state with VNode
+
+    // 2. Set update requester
+    state.setUpdateRequester(() {
+      print('Update requested by state for ${component.runtimeType}!');
+      // TODO: Implement update logic - needs access to old renderedVNode
+      // This will likely involve finding the componentVNode in the tree
+      // and triggering a re-patch starting from its parent.
+      // For now, just print.
+      print('!!! Component update via setState NOT FULLY IMPLEMENTED YET !!!');
+      // Potential future logic:
+      // if (componentVNode.renderedVNode != null && componentVNode.domNode?.parentNode != null) {
+      //   final parent = componentVNode.domNode!.parentNode as dom.DomElement;
+      //   final newRenderedVNode = state.build();
+      //   _patch(parent, newRenderedVNode, componentVNode.renderedVNode, context);
+      //   componentVNode.renderedVNode = newRenderedVNode;
+      // }
+    });
+
+    // 3. Set context & Initialize state (calls initState)
+    state.context = context;
+    state.frameworkUpdateWidget(component); // Calls initState
+
+    // 4. Build initial VNode tree
+    renderedVNode = state.build();
+    print(
+        '  -> Initial build returned VNode: ${renderedVNode.tag ?? renderedVNode.component?.runtimeType ?? 'text'}');
+  } else if (component is StatelessWidget) {
+    print('  -> StatelessWidget detected');
+    // Build VNode tree
+    // TODO: How should context be passed/used by StatelessWidget.build?
+    // For now, build doesn't take context.
+    renderedVNode = component.build();
+    print(
+        '  -> Build returned VNode: ${renderedVNode?.tag ?? renderedVNode?.component?.runtimeType ?? 'text'}');
+  } else {
+    print('Error: Unknown component type: ${component.runtimeType}');
+    return;
+  }
+
+  // 5. Store rendered VNode on the component VNode
+  componentVNode.renderedVNode = renderedVNode;
+
+  // 6. Patch the DOM with the rendered VNode tree
+  // Note: The parentElement for the *rendered* tree is the same parentElement
+  // passed to _mountComponent. The component itself doesn't have a direct DOM node yet.
+  // We pass null as oldVNode because this is the initial mount.
+  if (renderedVNode != null) {
+    print('  -> Patching rendered VNode into parent DOM...');
+    _patch(parentElement, renderedVNode, null, context);
+    // After patching, the renderedVNode will have its domNode set.
+    // We need to associate this DOM node (or nodes if it renders a fragment)
+    // with the componentVNode for future updates/unmounting.
+    // For simplicity now, let's assume component renders a single root node.
+    componentVNode.domNode = renderedVNode.domNode; // Simplification!
+    print(
+        '  -> Associated DOM node ${componentVNode.domNode?.hashCode} with component VNode');
+  } else {
+    print('  -> Component returned null VNode, nothing to patch.');
+  }
+
+  print('Finished mounting component: ${component.runtimeType}');
+}
+
+// Helper function to handle updating an existing component VNode
+void _updateComponent(dom.DomElement parentElement, VNode newComponentVNode,
+    VNode oldComponentVNode, BuildContext context) {
+  final newComponent = newComponentVNode.component;
+  final oldComponent = oldComponentVNode.component;
+
+  if (newComponent == null || oldComponent == null) {
+    print('Error: _updateComponent called with non-component VNodes.');
+    return;
+  }
+
+  // Basic check: If component types or keys don't match, unmount old and mount new.
+  // TODO: This is a simplification. More sophisticated logic might be needed,
+  // especially around state preservation if only the parent changed props.
+  if (newComponent.runtimeType != oldComponent.runtimeType ||
+      newComponent.key != oldComponent.key) {
+    print(
+        'Component type or key mismatch during update. Unmounting old and mounting new.');
+    _unmountComponent(oldComponentVNode);
+    _mountComponent(parentElement, newComponentVNode, context);
+    return;
+  }
+
+  print(
+      'Updating component: ${newComponent.runtimeType} with key ${newComponent.key}');
+
+  VNode? newRenderedVNode;
+  final oldRenderedVNode =
+      oldComponentVNode.renderedVNode; // Get old rendered tree
+
+  if (newComponent is StatefulWidget) {
+    print('  -> StatefulWidget update');
+    // 1. Get existing State object
+    final state = oldComponentVNode.state;
+    if (state == null) {
+      print('Error: State object not found for StatefulWidget during update.');
+      // Fallback: Treat as a new mount? This indicates a logic error.
+      _unmountComponent(oldComponentVNode); // Clean up old if possible
+      _mountComponent(parentElement, newComponentVNode, context);
+      return;
+    }
+
+    // 2. Associate state with new VNode
+    newComponentVNode.state = state;
+
+    // 3. Update state's internal widget reference (triggers didUpdateWidget)
+    state.frameworkUpdateWidget(newComponent);
+
+    // 4. Build the new VNode tree
+    newRenderedVNode = state.build();
+    print(
+        '  -> Updated build returned VNode: ${newRenderedVNode?.tag ?? newRenderedVNode?.component?.runtimeType ?? 'text'}');
+  } else if (newComponent is StatelessWidget) {
+    print('  -> StatelessWidget update');
+    // Build the new VNode tree
+    // TODO: Pass context if needed by build?
+    newRenderedVNode = newComponent.build();
+    print(
+        '  -> Build returned VNode: ${newRenderedVNode?.tag ?? newRenderedVNode?.component?.runtimeType ?? 'text'}');
+  } else {
+    print(
+        'Error: Unknown component type during update: ${newComponent.runtimeType}');
+    return; // Or handle differently
+  }
+
+  // 5. Store the new rendered VNode
+  newComponentVNode.renderedVNode = newRenderedVNode;
+
+  // 6. Patch the DOM by diffing the new rendered tree against the old one
+  if (newRenderedVNode != null || oldRenderedVNode != null) {
+    print('  -> Patching updated rendered VNode against old rendered VNode...');
+    // The parentElement for the rendered tree is the same parentElement
+    // passed to _updateComponent.
+    _patch(parentElement, newRenderedVNode, oldRenderedVNode, context);
+    // Carry over the DOM node reference from the potentially updated renderedVNode
+    // This assumes the root DOM node of the rendered tree doesn't change type.
+    newComponentVNode.domNode =
+        newRenderedVNode?.domNode ?? oldRenderedVNode?.domNode;
+    print(
+        '  -> Updated component VNode DOM node association: ${newComponentVNode.domNode?.hashCode}');
+  } else {
+    print('  -> Both old and new rendered VNodes are null, nothing to patch.');
+  }
+
+  print('Finished updating component: ${newComponent.runtimeType}');
+}
+
+// Helper function to handle unmounting a component VNode
+void _unmountComponent(VNode componentVNode) {
+  final component = componentVNode.component;
+  if (component == null) {
+    print('Error: _unmountComponent called with a non-component VNode.');
+    return;
+  }
+
+  print(
+      'Unmounting component: ${component.runtimeType} with key ${component.key}');
+
+  // 1. Call dispose on the State object if it's a StatefulWidget
+  final state = componentVNode.state;
+  if (state != null) {
+    print('  -> Calling dispose() on state object');
+    try {
+      state.dispose();
+    } catch (e, s) {
+      print('Error during state dispose: $e\n$s');
+      // Decide if we should continue or rethrow
+    }
+    componentVNode.state = null; // Clear the state reference
+  }
+
+  // 2. Recursively unmount the rendered VNode tree (if it exists)
+  // This ensures listeners are removed and child components are disposed.
+  final renderedVNode = componentVNode.renderedVNode;
+  if (renderedVNode != null) {
+    print('  -> Recursively unmounting rendered VNode tree...');
+    // We need the parent DOM element to remove the actual DOM node.
+    // The componentVNode.domNode should point to the root DOM node rendered by the component.
+    final domNode = componentVNode.domNode;
+    if (domNode is dom.DomNode && domNode.parentNode is dom.DomElement) {
+      final parentDomElement = domNode.parentNode as dom.DomElement;
+      // Use removeVNode which handles recursive listener cleanup and DOM removal
+      removeVNode(parentDomElement, renderedVNode);
+    } else {
+      print(
+          'Warning: Could not find valid parent DOM element to remove rendered tree during unmount.');
+      // If we can't find the parent, at least try to clean up listeners recursively
+      // directly from the renderedVNode, although the DOM node might leak.
+      _removeListenersRecursively(renderedVNode);
+    }
+    componentVNode.renderedVNode = null; // Clear the rendered VNode reference
+  } else if (componentVNode.domNode != null) {
+    // If renderedVNode is null but domNode exists (shouldn't happen often),
+    // try to remove the domNode directly.
+    print(
+        'Warning: renderedVNode is null but domNode exists during unmount. Attempting direct DOM removal.');
+    final domNode = componentVNode.domNode;
+    if (domNode is dom.DomNode && domNode.parentNode is dom.DomElement) {
+      final parentDomElement = domNode.parentNode as dom.DomElement;
+      parentDomElement.removeChild(domNode);
+    }
+  }
+
+  // 3. Clear the domNode reference on the componentVNode
+  componentVNode.domNode = null;
+
+  print('Finished unmounting component: ${component.runtimeType}');
+}
+// --- Helper Functions ---
+
+// Helper to remove listeners from a single node
+void _removeListenersFromNode(VNode vnode) {
+  if (vnode.domNode is dom.DomElement && vnode.jsFunctionRefs != null) {
+    final domElement = vnode.domNode as dom.DomElement;
+    if (vnode.jsFunctionRefs!.isNotEmpty) {
+      print(
+          '  -> Removing ${vnode.jsFunctionRefs!.length} listeners for node key ${vnode.key}');
+      vnode.jsFunctionRefs!.forEach((eventName, jsFunction) {
+        print('     - Removing listener for "$eventName"');
+        domElement.removeEventListener(eventName, jsFunction);
+      });
+      // Clear the refs after removing
+      vnode.jsFunctionRefs!.clear();
+    }
+  }
+}
+
+// Helper to recursively remove listeners from a node and its children
+void _removeListenersRecursively(VNode vnode) {
+  // Remove listeners from the current node first
+  _removeListenersFromNode(vnode);
+
+  // Then, recursively remove from children
+  if (vnode.children != null) {
+    for (final childVNode in vnode.children!) {
+      _removeListenersRecursively(childVNode);
+    }
+  }
+}
+
+// Modified removeVNode to accept parentDomNode
+void removeVNode(dom.DomElement parentDomNode, VNode vnode) {
+  if (vnode.domNode == null) {
+    print(
+        'Warning: removeVNode called but vnode.domNode is null for key ${vnode.key}');
+    return;
+  }
+
+  print('Removing DOM node (key: ${vnode.key}): ${vnode.domNode.hashCode}');
+
+  // --- Recursively Remove Listeners BEFORE removing the node ---
+  _removeListenersRecursively(vnode);
+  // --- End Recursive Listener Removal ---
+
+  // Now remove the DOM node itself
+  if (vnode.domNode is dom.DomNode) {
+    // Check if it's a valid DomNode
+    // Use the removeChild from DomNodeExtension
+    parentDomNode
+        .removeChild(vnode.domNode as dom.DomNode); // Use passed parentDomNode
+  } else {
+    // This case should ideally not happen if domNode was set correctly
+    print('Error: Cannot remove, vnode.domNode is not a valid DomNode type.');
+  }
+  // TODO: Call component lifecycle hooks (dispose) if applicable
+}
+
+// --- End Helper Functions ---
+
 void _patch(dom.DomElement parentElement, VNode? newVNode, VNode? oldVNode,
     BuildContext context) {
-  // Use DomElement
+  // Helper functions moved outside _patch
   print(
-      'Patching: parent=${parentElement.hashCode}, new=[${newVNode?.tag ?? newVNode?.text?.substring(0, min(5, newVNode.text?.length ?? 0)) ?? 'null'}], old=[${oldVNode?.tag ?? oldVNode?.text?.substring(0, min(5, oldVNode.text?.length ?? 0)) ?? 'null'}]');
+      'Patching: parent=${parentElement.hashCode}, new=[${newVNode?.tag ?? newVNode?.component?.runtimeType ?? newVNode?.text?.substring(0, min(5, newVNode.text?.length ?? 0)) ?? 'null'}], old=[${oldVNode?.tag ?? oldVNode?.component?.runtimeType ?? oldVNode?.text?.substring(0, min(5, oldVNode.text?.length ?? 0)) ?? 'null'}]');
+
+  // --- Component Handling Logic ---
+  final bool isNewComponent = newVNode?.component != null;
+  final bool isOldComponent = oldVNode?.component != null;
+
+  if (isNewComponent) {
+    if (isOldComponent) {
+      // Update existing component
+      print('Updating component...');
+      _updateComponent(parentElement, newVNode!, oldVNode!, context);
+    } else {
+      // Mount new component (replacing old element/text if necessary)
+      print('Mounting new component...');
+      if (oldVNode != null) {
+        // Unmount old element/text node first
+        removeVNode(parentElement, oldVNode); // Pass parentElement
+      }
+      _mountComponent(parentElement, newVNode!, context);
+    }
+    return; // Component logic handled, exit patch
+  } else if (isOldComponent) {
+    // Unmount old component (newVNode is element/text or null)
+    print('Unmounting old component...');
+    _unmountComponent(oldVNode!);
+    if (newVNode != null) {
+      // Mount new element/text node
+      print('Mounting new element/text node after unmounting component...');
+      final dom.DomNode newDomNode = _createDomElement(newVNode);
+      parentElement.appendChild(newDomNode);
+    }
+    return; // Component logic handled, exit patch
+  }
+
+  // --- Non-Component Handling Logic (Elements and Text Nodes) ---
+  // Only reach here if both newVNode and oldVNode are NOT components
+  print('Handling non-component patch...');
 
   // Case 1: Old VNode exists, New VNode is null -> Remove the old DOM node
   if (newVNode == null) {
@@ -159,25 +487,25 @@ void _patch(dom.DomElement parentElement, VNode? newVNode, VNode? oldVNode,
 
   // Case 3: Both VNodes exist, but represent different types -> Replace
   // Different tags OR one is text and the other is element
+  // Check for different types (element vs text) - Component vs non-component handled above
   bool differentTypes =
       oldVNode.tag != newVNode.tag; // Includes null comparison for text nodes
   if (differentTypes) {
-    print('Replacing node due to different types/tags...');
+    print('Replacing node due to different element/text types...');
     final dom.DomNode newDomNode =
-        _createDomElement(newVNode); // Returns DomNode
+        _createDomElement(newVNode); // Create new DOM node
     final Object? oldDomNodeObject = oldVNode.domNode;
 
-    // Try to replace if the old DOM node reference is valid JSAny
-    if (oldDomNodeObject is JSAny) {
+    if (oldDomNodeObject is dom.DomNode) {
       // Use the replaceChild from DomNodeExtension
-      parentElement.replaceChild(newDomNode, oldDomNodeObject as dom.DomNode);
+      parentElement.replaceChild(newDomNode, oldDomNodeObject);
+      // Clean up listeners from the old node that was replaced
+      _removeListenersRecursively(oldVNode);
     } else {
-      // Fallback: If the reference is lost or invalid, just append the new node.
-      // This relies on the parentElement potentially being cleared beforehand
-      // or handles cases where the old node wasn't properly tracked.
+      // Fallback: If the old reference is invalid, just append the new node.
       print(
-          'Warning/Error: Cannot replace node, old DOM node reference invalid or not JSAny. Appending new node.');
-      parentElement.appendChild(newDomNode); // Use DomElement extension
+          'Warning/Error: Cannot replace node, old DOM node reference invalid. Appending new node.');
+      parentElement.appendChild(newDomNode);
     }
     return;
   }
@@ -336,60 +664,7 @@ void _patchChildren(dom.DomElement parentDomNode, List<VNode>? oldChOriginal,
     return vnode1?.key == vnode2?.key && vnode1?.tag == vnode2?.tag;
   }
 
-  // Helper to remove listeners from a single node
-  void _removeListenersFromNode(VNode vnode) {
-    if (vnode.domNode is dom.DomElement && vnode.jsFunctionRefs != null) {
-      final domElement = vnode.domNode as dom.DomElement;
-      if (vnode.jsFunctionRefs!.isNotEmpty) {
-        print(
-            '  -> Removing ${vnode.jsFunctionRefs!.length} listeners for node key ${vnode.key}');
-        vnode.jsFunctionRefs!.forEach((eventName, jsFunction) {
-          print('     - Removing listener for "$eventName"');
-          domElement.removeEventListener(eventName, jsFunction);
-        });
-        // Clear the refs after removing
-        vnode.jsFunctionRefs!.clear();
-      }
-    }
-  }
-
-  // Helper to recursively remove listeners from a node and its children
-  void _removeListenersRecursively(VNode vnode) {
-    // Remove listeners from the current node first
-    _removeListenersFromNode(vnode);
-
-    // Then, recursively remove from children
-    if (vnode.children != null) {
-      for (final childVNode in vnode.children!) {
-        _removeListenersRecursively(childVNode);
-      }
-    }
-  }
-
-  void removeVNode(VNode vnode) {
-    if (vnode.domNode == null) {
-      print(
-          'Warning: removeVNode called but vnode.domNode is null for key ${vnode.key}');
-      return;
-    }
-
-    print('Removing DOM node (key: ${vnode.key}): ${vnode.domNode.hashCode}');
-
-    // --- Recursively Remove Listeners BEFORE removing the node ---
-    _removeListenersRecursively(vnode);
-    // --- End Recursive Listener Removal ---
-
-    // Now remove the DOM node itself
-    if (vnode.domNode is dom.DomNode) {
-      // Check if it's a valid DomNode
-      // Use the removeChild from DomNodeExtension
-      parentDomNode.removeChild(vnode.domNode as dom.DomNode);
-    } else {
-      // This case should ideally not happen if domNode was set correctly
-      print('Error: Cannot remove, vnode.domNode is not a valid DomNode type.');
-    }
-    // TODO: Call component lifecycle hooks (dispose) if applicable
-  }
+  // Helper functions (_removeListenersFromNode, _removeListenersRecursively, removeVNode) moved outside _patchChildren
 
   dom.DomNode? getDomNodeBefore(int index) {
     // Return DomNode?
@@ -515,7 +790,7 @@ void _patchChildren(dom.DomElement parentDomNode, List<VNode>? oldChOriginal,
     for (int i = oldStartIdx; i <= oldEndIdx; i++) {
       // Only remove nodes that weren't marked as null (moved)
       if (oldCh[i] != null) {
-        removeVNode(oldCh[i]!); // Not null checked above
+        removeVNode(parentDomNode, oldCh[i]!); // Pass parentDomNode
       }
     }
   }
