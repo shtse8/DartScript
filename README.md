@@ -77,6 +77,64 @@ Try the current Todo List demo:
 You should see the interactive Todo List application demonstrating basic state
 management, event handling, and keyed list diffing.
 
+## Basic Example
+
+Here's a simple "Hello, World!" example:
+
+**1. Create your component (`lib/hello_world.dart`):**
+
+```dart
+import 'package:dust_component/component.dart';
+import 'package:dust_component/stateless_component.dart';
+import 'package:dust_component/vnode.dart';
+
+class HelloWorld extends StatelessWidget {
+  @override
+VNode build() {
+    return VNode(
+      tag: 'h1',
+      text: 'Hello, Dust!',
+      attributes: {'style': 'color: blue;'},
+    );
+  }
+}
+```
+
+**2. Create the entry point (`web/main.dart`):**
+
+```dart
+import 'package:dust_app/hello_world.dart'; // Assuming hello_world.dart is in lib/
+import 'package:dust_renderer/renderer.dart';
+
+void main() {
+  runApp(HelloWorld(), 'app'); // Mount HelloWorld component into the 'app' div
+}
+```
+
+**3. Ensure your `web/index.html` has a target element:**
+
+```html
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Dust App</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <!-- Target element -->
+    <script type="module" src="main.dart.js"></script>
+  </body>
+</html>
+```
+
+**4. Run the development server:**
+
+```bash
+dart run build_runner serve web
+```
+
+Then open the provided URL in your browser.
+
 ## Roadmap & Status
 
 <details>
