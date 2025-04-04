@@ -1,65 +1,65 @@
 # DartScript Progress
 
-## What Works
+## What Works (Foundational Elements)
 
-- Initial Memory Bank documentation structure created and populated
-  (`activeContext.md` updated).
-- **Proof of Concept (PoC) Completed:**
-  - Basic Dart-to-WASM compilation setup (`dart compile wasm`).
-  - Minimal HTML loader (`index.html`, `js/loader.js`, `wasm/main.mjs`).
-  - Basic JS/WASM communication established (JS loads WASM, invokes `main`).
-  - Simple DOM interaction achieved from Dart using `Timer.run` for async
-    execution during PoC.
-- **(Previous) `<dart-script>` Code Retrieval:** Mechanism removed.
-- **`<dart-script src="...">` Loader Implemented:**
-  - `js/loader.js` updated to find all `<dart-script src="...">` tags.
-  - Loader dynamically imports the specified JS module (`src` attribute).
-  - Loader fetches the corresponding WASM file (based on convention).
-  - Loader uses the imported JS module's `compileStreaming` to load, compile,
-    instantiate, and invoke `main()` for each specified WASM module.
-  - Basic error handling for loading/instantiation added.
-- **Initial DartScript DOM API Implemented:**
-  - JS functions (`dartScriptSetText`, `dartScriptGetText`, `dartScriptSetHtml`)
-    added to `js/loader.js`.
-  - Dart wrapper functions (`setText`, `getText`, `setHtml`) created in
-    `dart/main.dart` within a static class `DartScriptApi` to resolve
-    compilation issues.
-  - Dart code successfully calls these APIs to interact with the DOM.
+- **Memory Bank Established:** Core documentation structure created and updated
+  to reflect the new framework direction.
+- **Core WASM Capabilities Proven (PoC):**
+  - Basic Dart-to-WASM compilation (`dart compile wasm`).
+  - WASM module loading via JavaScript (`main.mjs` helper).
+  - Basic JS/WASM communication (JS loads WASM, invokes `main`).
+- **Basic DOM Interaction Layer:**
+  - JS functions (`window.dartScriptSetText`, etc.) created in `js/loader.js`.
+  - Dart wrappers (`DartScriptApi`) created in `dart/main.dart`.
+  - _This serves as a rudimentary basis for the future framework's DOM
+    abstraction._
+- **WASM Loading Mechanism:**
+  - `js/loader.js` can load pre-compiled WASM modules.
+  - _This mechanism will be adapted for loading the framework runtime and
+    application bundle._
 
-## What's Left to Build (High Level)
+## What's Left to Build (High Level - Framework Focus)
 
-- **Core Framework (`<dart-script src="...">` implementation):**
-  - **Refine/Expand DartScript APIs:** Improve existing APIs (e.g., error
-    handling) and add more functionality (event handling, element
-    creation/removal).
-  - **Configuration Passing:** Design and implement mechanism to pass
-    configuration from tag attributes to the loaded WASM module.
-  - **Refine Error Handling:** Improve error reporting from within the loaded
-    Dart WASM modules back to the main page/console.
-- **Further Goals:**
-  - Basic package management exploration.
-  - Performance analysis and optimization (WASM size, interop overhead).
+- **Core Framework Implementation:**
+  - **Component Model:** Design and implement the API for defining components
+    (state, props, lifecycle).
+  - **Rendering Engine:** Build the engine to translate component definitions
+    into DOM operations (e.g., using Virtual DOM).
+  - **State Management:** Develop or integrate basic state management solutions.
+  - **Routing System:** Create a client-side router for SPA navigation.
+  - **DOM Abstraction:** Refine `DartScriptApi` into a robust, type-safe DOM
+    layer for the framework.
+  - **Event Handling:** Implement a system for handling DOM events within Dart
+    components.
+- **Developer Experience Tooling:**
+  - **Build System:** Develop a build process for development and production.
+  - **Development Server:** Create a dev server, ideally with Hot Reload
+    capabilities.
+- **Documentation & Examples:** Create comprehensive documentation and usage
+  examples for the framework.
 
 ## Current Status
 
-- Proof of Concept (PoC) successfully completed and verified.
-- Core technical challenges (WASM compilation, loading, basic async interop)
-  overcome.
-- **Decision made to abandon inline code execution.** Project scope adjusted to
-  focus solely on loading pre-compiled WASM via `<dart-script src="...">`.
-- **JavaScript loader (`js/loader.js`) successfully refactored** to handle
-  multiple `<dart-script src="...">` tags.
-- **Initial DartScript DOM API (`setText`, `getText`, `setHtml`) successfully
-  implemented** and tested.
-- Ready to refine error handling, explore configuration passing, and potentially
-  expand the API set.
+- **Major Pivot Completed:** Project direction officially shifted from a simple
+  script loader to building a full, modern Dart web framework inspired by
+  React/Vue.
+- **Memory Bank Updated:** All core documentation files (`projectbrief.md`,
+  `productContext.md`, `activeContext.md`, `systemPatterns.md`,
+  `techContext.md`) have been updated to reflect the new vision.
+- **Foundational WASM Work Validated:** The initial PoC confirmed the viability
+  of compiling Dart to WASM and basic JS interop.
+- **Ready for Framework Design & Prototyping:** The next phase involves
+  designing the core APIs (Component, Renderer) and building initial prototypes.
 
-## Known Issues
+## Known Issues / Challenges
 
-- Direct JS interop within Dart `main` function was unreliable for WASM target
-  during PoC; async execution was required then.
-- Exporting Dart classes/functions via `@JSExport` for direct JS access with
-  WASM compilation target proved problematic/unsupported; the current working
-  pattern relies on Dart initiating interaction via predefined JS functions.
-- **Executing arbitrary Dart code strings within the AOT-compiled WASM
-  environment is confirmed to be non-trivial.**
+- **JS Interop Performance:** Calls across the JS/WASM boundary need careful
+  optimization, especially for rendering.
+- **`@JSExport` Limitations:** Direct JavaScript calls into Dart WASM remain
+  problematic; the framework must rely on Dart initiating interactions via the
+  JS bridge.
+- **WASM Debugging:** Requires careful use of browser developer tools.
+- **Bundle Size:** Managing the size of the compiled framework and application
+  WASM will be crucial for performance.
+- **Hot Reload Implementation:** Achieving efficient hot reload with WASM
+  presents technical challenges.

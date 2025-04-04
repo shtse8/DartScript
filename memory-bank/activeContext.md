@@ -2,63 +2,76 @@
 
 ## Current Focus
 
-- **Refining Core Framework:** Focusing on improving error handling, potentially
-  adding more DOM APIs, and exploring configuration passing for
-  `<dart-script src="...">`.
-- **Documentation:** Ensuring Memory Bank files accurately reflect the current
-  state and decisions.
+- **Designing Core Framework Architecture:** Shifting focus from the basic
+  loader to designing the foundational elements of the new React/Vue-inspired
+  framework. This includes:
+  - Defining the **Component Model** (state, props, lifecycle).
+  - Sketching out the initial **Declarative Rendering Pipeline** (how components
+    translate to DOM).
+  - Exploring basic **State Management** strategies.
+- **Updating Documentation:** Ensuring all Memory Bank files (`projectbrief.md`,
+  `productContext.md`, `systemPatterns.md`, `techContext.md`, `progress.md`) are
+  aligned with the new framework vision.
 
 ## Recent Changes
 
-- Created initial project structure (HTML, JS loader, Dart source).
-- Iteratively debugged Dart-JS interop issues for WASM compilation.
-- Successfully compiled Dart to WASM (`dart compile wasm`).
-- Successfully loaded the WASM module using the generated JS helper
+- **Major Scope Shift:** Project direction pivoted from a simple PyScript-like
+  WASM loader to building a full-fledged, modern Dart web framework.
+- **Updated Core Documentation:** `projectbrief.md` and `productContext.md`
+  updated to reflect the new framework goals.
+- (Historical Context) Created initial project structure (HTML, JS loader, Dart
+  source).
+- (Historical Context) Debugged Dart-JS interop for WASM compilation.
+- (Historical Context) Successfully compiled Dart to WASM (`dart compile wasm`).
+- (Historical Context) Successfully loaded WASM module via JS helper
   (`main.mjs`).
-- Achieved DOM manipulation from Dart by scheduling the interop call
-  asynchronously (`Timer.run`) during PoC.
-- **(Previous) Implemented code retrieval from `<dart-script>` tag:** (Removed
-  due to scope change).
-- **Implemented `<dart-script src="...">` loading:**
-  - `js/loader.js` updated to find all `<dart-script src="...">` tags.
-  - Loader dynamically imports the specified JS module (`src` attribute).
-  - Loader fetches the corresponding WASM file (based on convention).
-  - Loader uses the imported JS module's `compileStreaming` to load, compile,
-    instantiate, and invoke `main()` for each specified WASM module.
-  - Basic error handling for loading/instantiation added.
-- **Defined and Implemented Initial DartScript DOM API:**
-  - Added JS functions (`window.dartScriptSetText`, `window.dartScriptGetText`,
-    `window.dartScriptSetHtml`) to `js/loader.js`.
-  - Updated JS interop definitions in `dart/main.dart`.
-  - Created Dart wrapper functions (`setText`, `getText`, `setHtml`) within a
-    static class `DartScriptApi` in `dart/main.dart` to resolve compilation
-    visibility issues.
-  - Updated `dart/main.dart`'s `main` function to demonstrate usage of the new
-    `DartScriptApi` methods.
-  - Successfully recompiled `dart/main.dart` to `wasm/main.wasm`.
+- **(Foundational) Implemented Basic DOM API:**
+  - Added JS functions (`window.dartScriptSetText`, etc.) to `js/loader.js`.
+  - Created Dart wrappers (`DartScriptApi`) in `dart/main.dart`.
+  - _This work serves as a foundation for the framework's future DOM abstraction
+    layer._
+- **(Foundational) Implemented WASM Loading:**
+  - `js/loader.js` handles loading pre-compiled WASM via
+    `<dart-script src="...">` (or similar mechanism TBD for the final
+    framework).
+  - _This loading mechanism will likely be adapted for the framework runtime._
 
 ## Next Steps
 
-- **Refine error handling:** Implement better error reporting from within the
-  loaded Dart WASM modules back to the main page/console.
-- **Configuration Passing:** Design and implement a mechanism to pass
-  configuration data (e.g., from tag attributes like
-  `<dart-script src="..." data-config="value">`) to the loaded WASM module's
-  `main` function.
-- **Expand DOM API:** Consider adding more essential DOM manipulation functions
-  (e.g., adding/removing elements, handling events).
-- **Package Management Exploration:** Begin research and planning for how
-  external Dart packages could be integrated or used.
-- **Update `progress.md`:** Reflect the successful implementation of the initial
-  DOM API.
+- **Design Component API:** Define the structure for Dart classes/functions
+  representing UI components (e.g., how state and props are handled, basic
+  lifecycle methods).
+- **Implement Basic Renderer:** Create a proof-of-concept renderer that takes a
+  simple component definition and generates corresponding DOM nodes using the
+  existing `DartScriptApi` or an evolution of it.
+- **Prototype State Management:** Research and potentially prototype simple
+  state management patterns (e.g., inherited widgets concept, simple
+  streams/listeners).
+- **Structure Framework Core:** Define the initial directory structure and
+  modules for the framework itself (e.g., `core`, `renderer`, `state`).
+- **Update `systemPatterns.md`:** Document the high-level architectural
+  decisions for the new framework (Component model, rendering approach).
+- **Update `techContext.md`:** Add any new dependencies or constraints
+  identified during initial design.
+- **Update `progress.md`:** Reflect the scope change and the new focus on
+  framework design.
 
 ## Active Decisions & Considerations
 
-- **JS Interop Pattern:** Confirmed Dart initiating calls to predefined JS
-  functions is the reliable pattern. Exporting Dart functions/classes via
-  `@JSExport` for direct JS calls _into_ Dart WASM remains problematic.
-- **Code Execution Strategy Decision:** Focus remains exclusively on loading
-  pre-compiled WASM modules via `<dart-script src="...">`.
-- **API Structure:** Using a static class (`DartScriptApi`) for Dart wrapper
-  functions resolved compilation issues and provides a clear namespace.
-- Using `dhttpd` as the local development server.
+- **Framework Scope:** Confirmed shift to a full, modern web framework inspired
+  by React/Vue.
+- **JS Interop Pattern:** Continue with the pattern of Dart initiating calls to
+  predefined JS functions for DOM manipulation and browser API access, as direct
+  JS calls into Dart WASM remain challenging.
+- **Loading Mechanism:** While `<dart-script src="...">` was the previous focus,
+  the final framework will likely use a standard JS entry point to load the
+  compiled Dart application and framework runtime. The exact mechanism needs
+  refinement.
+- **DOM Abstraction:** The initial `DartScriptApi` needs to evolve into a more
+  comprehensive, type-safe, and potentially framework-aware DOM abstraction
+  layer.
+- **Build Tooling:** Recognize the need for more sophisticated build tooling in
+  the future (dev server, hot reload, optimization). `dhttpd` is sufficient for
+  now.
+- **WASM Foundation:** Continue leveraging `dart compile wasm` as the core
+  compilation strategy.
