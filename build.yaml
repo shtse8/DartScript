@@ -1,6 +1,33 @@
+# Defines the builders used in the project and their configurations.
+
+# Global options can be defined here if needed.
+
+builders:
+  # Define a key for our atomic style builder
+  atomicBuilder:
+    import: "package:dust_atomic_styles/src/builder.dart" # Path to the builder class
+    builder_factories: [
+      "atomicStyleBuilder",
+    ] # Function that creates the builder instance (see below)
+    build_extensions: {
+      ".dart": [".atomic_styles.css.temp"],
+    } # Input .dart, output temporary file
+    auto_apply: dependents # Apply to packages that depend on dust_atomic_styles
+    build_to: cache # Output temporary files to cache
+
 targets:
   $default:
     builders:
+      # Run our atomic builder first
+      dust_atomic_styles|atomicBuilder:
+        enabled: true
+        generate_for:
+          - lib/**.dart
+          - web/**.dart
+          # Add other directories containing components if necessary
+        # No specific options needed for this builder currently
+
+      # Then run the web compiler
       build_web_compilers|entrypoint:
         generate_for:
           - web/main.dart # Specify the entry point
@@ -8,3 +35,12 @@ targets:
           compiler: dart2wasm
           # Optional: Add other dart2wasm options if needed
           # dart2wasm_args: ["--some-flag"]
+        # Ensure web compiler runs after our builder might have generated outputs
+        # (Though direct dependency isn't strictly needed here as we output to cache)
+        runs_before:
+          - build_web_compilers|dart2wasm_linker
+
+# This part defines the builder factory function mentioned above.
+# It needs to be in a file accessible during the build, typically in the builder package itself.
+# We'll create this file next.
+# For now, this build.yaml assumes its existence.

@@ -3,13 +3,19 @@
   "packages": [
     {
       "name": "_fe_analyzer_shared",
-      "rootUri": "file:///C:/Users/shtse/AppData/Local/Pub/Cache/hosted/pub.dev/_fe_analyzer_shared-80.0.0",
+      "rootUri": "file:///C:/Users/shtse/AppData/Local/Pub/Cache/hosted/pub.dev/_fe_analyzer_shared-76.0.0",
       "packageUri": "lib/",
       "languageVersion": "3.3"
     },
     {
+      "name": "_macros",
+      "rootUri": "file:///C:/Users/shtse/flutter/bin/cache/dart-sdk/pkg/_macros",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
       "name": "analyzer",
-      "rootUri": "file:///C:/Users/shtse/AppData/Local/Pub/Cache/hosted/pub.dev/analyzer-7.3.0",
+      "rootUri": "file:///C:/Users/shtse/AppData/Local/Pub/Cache/hosted/pub.dev/analyzer-6.11.0",
       "packageUri": "lib/",
       "languageVersion": "3.3"
     },
@@ -140,6 +146,12 @@
       "languageVersion": "3.4"
     },
     {
+      "name": "dust_atomic_styles",
+      "rootUri": "../packages/atomic_styles",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
       "name": "dust_component",
       "rootUri": "../packages/component",
       "packageUri": "lib/",
@@ -238,6 +250,12 @@
     {
       "name": "logging",
       "rootUri": "file:///C:/Users/shtse/AppData/Local/Pub/Cache/hosted/pub.dev/logging-1.3.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "macros",
+      "rootUri": "file:///C:/Users/shtse/AppData/Local/Pub/Cache/hosted/pub.dev/macros-0.1.3-main.0",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
@@ -428,7 +446,7 @@
       "languageVersion": "3.0"
     }
   ],
-  "generated": "2025-04-04T17:18:06.175740Z",
+  "generated": "2025-04-04T18:43:15.444779Z",
   "generator": "pub",
   "generatorVersion": "3.7.2",
   "flutterRoot": "file:///C:/Users/shtse/flutter",

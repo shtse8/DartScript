@@ -163,3 +163,19 @@
     corresponding VNode and its children, using the stored `jsFunctionRefs` to
     explicitly call `removeEventListener` for all associated listeners before
     the DOM node is detached. This ensures proper cleanup.
+- **Atomic CSS Generation Pattern (Build-Time):**
+  - A `build_runner` Builder (`AtomicStyleBuilder` in `dust_atomic_styles`
+    package) scans Dart source files (`lib/**`, `web/**`).
+  - It uses `analyzer` to parse the AST and find HTML helper function calls
+    (e.g., `div`, `button`).
+  - It extracts string literals from the `class` key within the `attributes` map
+    argument.
+  - Extracted class names are split and collected into a set (`_allClassNames`).
+  - Predefined rules (`atomicRules` map with Regex and generator functions) are
+    used to convert recognized atomic class names into CSS rules
+    (`generateAtomicCss`).
+  - The generated CSS rules are written to a temporary file
+    (`.atomic_styles.css.temp`) during the build process (current implementation
+    writes cumulative CSS per input, needs refinement for aggregation).
+  - The final aggregated CSS file (e.g., `web/atomic_styles.css`) is linked in
+    `web/index.html`.

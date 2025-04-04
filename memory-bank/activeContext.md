@@ -2,6 +2,9 @@
 
 ## Current Focus
 
+- **Implement Atomic CSS Generation:** Continue implementing the
+  `AtomicStyleBuilder`, define more rules, refine the build process for final
+  CSS output.
 - **Refining Renderer & Component Lifecycle:** Further optimize patching logic,
   handle edge cases, address TODOs in component mount/update/unmount.
 - **Refining Event Handling:** (Partially addressed)
@@ -43,6 +46,19 @@
   - **Implemented `setState` Update Path:** The `updateRequester` callback set
     in `_mountComponent` now correctly calls `state.build()` and `_patch` to
     update the component's rendered subtree when `setState` is called.
+- **Setup Basic Atomic CSS Builder Infrastructure:**
+  - Created `packages/atomic_styles` package with basic `pubspec.yaml`.
+  - Added path dependency to root `pubspec.yaml`.
+  - Created `lib/src/rules.dart` defining initial atomic rules (margin, padding,
+    text color, font weight) and `generateAtomicCss` function.
+  - Created `lib/src/builder.dart` implementing a basic `AtomicStyleBuilder`
+    using `analyzer` to find class attributes in HTML helpers and generate
+    temporary CSS files.
+  - Created `lib/builder.dart` with the required builder factory function
+    `atomicStyleBuilder`.
+  - Updated root `build.yaml` to configure and enable the `atomicBuilder`.
+  - Updated `web/index.html` to link the expected final CSS file
+    (`atomic_styles.css`).
 
 - **Introduced Basic BuildContext:**
   - Created `packages/component/lib/context.dart` defining a simple
@@ -221,7 +237,9 @@
   `ProviderContainer` access and potentially enable a `ConsumerWidget` pattern
   closer to Flutter's `build(context, ref)`.
   - (Partially done) Continue refining handling of edge cases in patching.
-  - Manage component lifecycle more robustly (e.g., `dispose`).
+- **Setup Atomic CSS Builder:** Basic infrastructure created (package, builder,
+  rules, build config). Needs refinement for robust aggregation and final output
+  generation.
 - **Integrate Riverpod Properly:** (Context passing implemented)
   - Replaced global `ProviderContainer` access with `BuildContext` passing.
   - `Consumer` now uses `context.container`.
@@ -264,6 +282,8 @@
   `frameworkUpdateWidget`. `setState` now triggers updates via the
   `updateRequester` callback which calls `build` and `_patch`.
 - **JS Interop for Events:** Using `.toJS` on wrapper.
+- **Atomic CSS Strategy:** Using a build-time generator (`AtomicStyleBuilder`)
+  to scan Dart code and produce a CSS file based on used utility classes.
 - **Listener Reference Storage:** Using `jsFunctionRefs` on `VNode` (used for
   removal).
 - **(Previous) VNode as Build Output:** Confirmed.

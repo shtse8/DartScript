@@ -62,7 +62,16 @@
     **event listeners** defined in `build()` (now using `DomEvent`).
   - **Automatic test timer (`_scheduleTestUpdates`) disabled.**
   - `main.dart` updated to render `TodoListComponent` into `#app` div.
-  - `index.html` updated to use `#app` div.
+  - `index.html` updated to use `#app` div and link `atomic_styles.css`.
+- **Atomic CSS Builder (Infrastructure Setup):**
+  - Created `dust_atomic_styles` package with dependencies (`build`,
+    `analyzer`).
+  - Defined initial atomic rules (margin, padding, text color, font weight) in
+    `lib/src/rules.dart`.
+  - Implemented basic `AtomicStyleBuilder` in `lib/src/builder.dart` using
+    `analyzer` to find classes in HTML helpers.
+  - Created builder factory in `lib/builder.dart`.
+  - Configured builder in root `build.yaml`.
 
 ## What's Left to Build (High Level - Framework Focus)
 
@@ -83,6 +92,8 @@
   - **Build System:** Integrate with `build_runner` or create custom tools for
     optimized builds.
   - **Development Server:** Implement hot reload/hot restart.
+  - **Atomic CSS:** Refine builder aggregation/output, add more rules, test
+    usage.
 - **Documentation & Examples:** Expand significantly.
 
 ## Current Status
@@ -116,6 +127,8 @@
   lifecycle via `_mountComponent`, `_updateComponent`, `_unmountComponent`.
   Listener/node removal helpers moved to top level.
 - **Keyed Diffing Algorithm Implemented.**
+- **Atomic CSS Builder Infrastructure Setup:** Package, basic rules, builder
+  logic, and build configuration are in place.
 
 ## Known Issues / Challenges
 
@@ -131,5 +144,8 @@
 - **WASM Debugging:** Remains a factor.
 - **Bundle Size:** Needs monitoring as framework grows.
 - **Hot Reload Implementation:** Still a significant challenge.
+- **Atomic CSS Builder:** Current implementation uses inefficient aggregation
+  (writing cumulative CSS per input file). Needs refinement for proper
+  aggregation and final output generation. Rule set is very basic.
 - **Riverpod Integration:** Current demo uses a suboptimal pattern
   (component-level container).

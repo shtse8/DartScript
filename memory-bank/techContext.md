@@ -8,8 +8,8 @@
   application code, executed via `dart compile wasm`.
 - **HTML:** The host environment; the framework renders into a root element
   within the HTML page.
-- **CSS:** Used for styling; the framework needs mechanisms to manage
-  component-specific styles.
+- **CSS:** Used for styling. Includes standard CSS (`style.css`) and generated
+  Atomic CSS (`atomic_styles.css`).
 - **JavaScript:**
   - **Bootstrap Loader:** Previously `js/app_bootstrap.js`. Now, `build_runner`
     generates the necessary JS loader (`web/main.dart.js`) which handles WASM
@@ -24,8 +24,8 @@
     within the renderer (`_createDomElement`, `_patch`). Dart callbacks
     (accepting `DomEvent`) are wrapped in a JS function and passed to JS using
     the `.toJS` extension method. Introduced `DomEvent` wrapper
-    (`packages/renderer/lib/dom_event.dart`). A Dart DOM abstraction layer is
-    planned.
+    (`packages/renderer/lib/dom_event.dart`). DOM access now primarily uses the
+    `dust_dom` abstraction layer.
 
 ## Development Environment
 
@@ -33,8 +33,10 @@
 - **Development Server:** `dart run build_runner serve web` is now used. It
   compiles Dart to WASM, serves the `web` directory, and provides Hot Restart
   functionality. Replaces the need for `dhttpd` during development.
-- **Build Tool:** `build_runner` and `build_web_compilers` are used for the
-  development build process.
+- **Build Tool:** `build_runner` orchestrates the build.
+  - `build_web_compilers`: Used for compiling Dart to WASM (`dart2wasm`).
+  - `dust_atomic_styles`: Custom builder package for generating Atomic CSS from
+    Dart code analysis.
 - **Browser Developer Tools:** Essential for debugging (Console, Network,
   Performance tabs).
 
@@ -67,11 +69,12 @@
     `DomEvent`, `jsFunctionRefs`). Depends on `dust_renderer`.
   - `dust_renderer`: Depends on `dust_component` (including `VNode`) to render
     component output using keyed diffing (`_patch`, `_patchChildren`) and event
-    listener management (including `DomEvent` wrapper). Uses `JSAnyExtension`
-    for DOM manipulation.
+    listener management (including `DomEvent` wrapper). Uses `dust_dom` for DOM
+    manipulation.
   - Others like `core`, `dom`, `router` planned.
 - **(Development):** `build_runner` and `build_web_compilers` are now the
   primary development dependencies for serving and building the web app.
+  - `dust_atomic_styles`: (Dev dependency) Provides the `AtomicStyleBuilder`.
+    Depends on `build` and `analyzer`.
 - **(Bootstrap):** `build_runner` generates the necessary bootstrap JS
-  (`web/main.dart.js`). The hand-written `js/app_bootstrap.js` is currently
-  unused.
+  (`web/main.dart.js`).
