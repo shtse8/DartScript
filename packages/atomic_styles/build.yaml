@@ -1,0 +1,28 @@
+# Defines the builders provided by the dust_atomic_styles package.
+builders:
+  # Builder that scans .dart files and outputs .classes files (to cache)
+  atomicScanner:
+    import: "package:dust_atomic_styles/builder.dart"
+    builder_factories: ["atomicStyleBuilder"]
+    build_extensions: { ".dart": [".classes"] } # Output .classes files
+    auto_apply: dependents # Apply to packages that depend on this one
+    build_to: cache
+
+  # Builder that writes the final aggregated CSS file
+  cssWriter:
+    import: "package:dust_atomic_styles/builder.dart"
+    builder_factories: ["cssWriterBuilder"]
+    # Triggered by the trigger file, outputs final CSS (paths relative to root of the package applying it)
+    build_extensions: {
+      "^web/atomic_styles.trigger": ["^web/atomic_styles.css"],
+    }
+    auto_apply: root_package # Should only be applied by the root package
+    build_to: source
+    # This builder needs to run after all atomicScanner instances have completed.
+    required_inputs: [".classes"] # Depends on the output of atomicScanner
+# Optional: Configure output path via options
+# defaults:
+#   options:
+#     output: "web/generated/atomic.css"
+
+# Builder factories are defined in lib/builder.dart

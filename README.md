@@ -49,6 +49,9 @@ Dust aims to provide a comprehensive feature set for modern web development:
   integrating popular solutions.
 - 🔗 **JS Interop:** Seamlessly interact with JavaScript libraries and browser
   APIs when needed.
+- 🎨 **Atomic CSS (Build-Time):** Automatically generate CSS based on utility
+  classes used in your components (similar to UnoCSS/Tailwind), keeping your CSS
+  bundle minimal. (Basic implementation)
 - _Upcoming:_ Routing, Advanced State Management, Build Tools, Hot Reload, and
   more!
 
@@ -207,6 +210,10 @@ implementation status.
 **Routing:**
 
 - [ ] SPA Router Implementation
+
+**Styling:**
+
+- [x] Basic Atomic CSS Generation (Build-Time via `dust_atomic_styles` package)
 
 **Tooling:**
 

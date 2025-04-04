@@ -2,9 +2,9 @@
 
 ## Current Focus
 
-- **Implement Atomic CSS Generation:** Continue implementing the
-  `AtomicStyleBuilder`, define more rules, refine the build process for final
-  CSS output.
+- **Refining Atomic CSS Builder:** Improve rule set, potentially enhance builder
+  performance/robustness (e.g., better aggregation strategy than current
+  `.classes` file approach if needed).
 - **Refining Renderer & Component Lifecycle:** Further optimize patching logic,
   handle edge cases, address TODOs in component mount/update/unmount.
 - **Refining Event Handling:** (Partially addressed)
@@ -46,19 +46,24 @@
   - **Implemented `setState` Update Path:** The `updateRequester` callback set
     in `_mountComponent` now correctly calls `state.build()` and `_patch` to
     update the component's rendered subtree when `setState` is called.
-- **Setup Basic Atomic CSS Builder Infrastructure:**
-  - Created `packages/atomic_styles` package with basic `pubspec.yaml`.
-  - Added path dependency to root `pubspec.yaml`.
-  - Created `lib/src/rules.dart` defining initial atomic rules (margin, padding,
-    text color, font weight) and `generateAtomicCss` function.
-  - Created `lib/src/builder.dart` implementing a basic `AtomicStyleBuilder`
-    using `analyzer` to find class attributes in HTML helpers and generate
-    temporary CSS files.
-  - Created `lib/builder.dart` with the required builder factory function
-    `atomicStyleBuilder`.
-  - Updated root `build.yaml` to configure and enable the `atomicBuilder`.
-  - Updated `web/index.html` to link the expected final CSS file
-    (`atomic_styles.css`).
+- **Implemented Atomic CSS Generation (Build-Time):**
+  - Created `packages/atomic_styles` package.
+  - Defined initial atomic rules (margin, padding, text color, font weight) in
+    `lib/src/rules.dart`.
+  - Implemented `AtomicStyleBuilder` (`lib/src/builder.dart`) to scan Dart files
+    using `analyzer`, extract class names from HTML helpers, and output per-file
+    `.classes` files to cache.
+  - Implemented `CssWriterBuilder` (`lib/src/css_writer.dart`) triggered by
+    `web/atomic_styles.trigger` to find all `.classes` assets, aggregate unique
+    class names, generate final CSS using `generateAtomicCss`, and write to
+    `web/atomic_styles.css`.
+  - Created builder factories in `lib/builder.dart`.
+  - Configured both builders (`atomicScanner`, `cssWriter`) in
+    `packages/atomic_styles/build.yaml` and applied them in the root
+    `build.yaml`.
+  - Updated `web/index.html` to link `atomic_styles.css`.
+  - Tested with basic classes in `TodoListComponent`, confirmed CSS generation
+    and application.
 
 - **Introduced Basic BuildContext:**
   - Created `packages/component/lib/context.dart` defining a simple

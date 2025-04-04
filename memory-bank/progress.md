@@ -63,15 +63,18 @@
   - **Automatic test timer (`_scheduleTestUpdates`) disabled.**
   - `main.dart` updated to render `TodoListComponent` into `#app` div.
   - `index.html` updated to use `#app` div and link `atomic_styles.css`.
-- **Atomic CSS Builder (Infrastructure Setup):**
-  - Created `dust_atomic_styles` package with dependencies (`build`,
-    `analyzer`).
-  - Defined initial atomic rules (margin, padding, text color, font weight) in
-    `lib/src/rules.dart`.
-  - Implemented basic `AtomicStyleBuilder` in `lib/src/builder.dart` using
-    `analyzer` to find classes in HTML helpers.
-  - Created builder factory in `lib/builder.dart`.
-  - Configured builder in root `build.yaml`.
+- **Atomic CSS Generation (Build-Time):**
+  - Created `dust_atomic_styles` package.
+  - Defined initial atomic rules (margin, padding, text color, font weight) and
+    generator function.
+  - Implemented `AtomicStyleBuilder` (`atomicScanner`) to scan Dart files and
+    output `.classes` files to cache.
+  - Implemented `CssWriterBuilder` (`cssWriter`) triggered by
+    `web/atomic_styles.trigger` to aggregate `.classes` files and write final
+    `web/atomic_styles.css`.
+  - Configured builders in `packages/atomic_styles/build.yaml` and applied them
+    in root `build.yaml`.
+  - Tested successfully with classes added to `TodoListComponent`.
 
 ## What's Left to Build (High Level - Framework Focus)
 
@@ -92,8 +95,8 @@
   - **Build System:** Integrate with `build_runner` or create custom tools for
     optimized builds.
   - **Development Server:** Implement hot reload/hot restart.
-  - **Atomic CSS:** Refine builder aggregation/output, add more rules, test
-    usage.
+  - **Atomic CSS:** (Basic implementation working) Refine rule set, improve
+    builder efficiency/robustness if needed, add documentation.
 - **Documentation & Examples:** Expand significantly.
 
 ## Current Status
@@ -127,8 +130,9 @@
   lifecycle via `_mountComponent`, `_updateComponent`, `_unmountComponent`.
   Listener/node removal helpers moved to top level.
 - **Keyed Diffing Algorithm Implemented.**
-- **Atomic CSS Builder Infrastructure Setup:** Package, basic rules, builder
-  logic, and build configuration are in place.
+- **Atomic CSS Generation Implemented:** Two-phase builder (`atomicScanner` +
+  `cssWriter`) successfully generates `web/atomic_styles.css` based on used
+  classes.
 
 ## Known Issues / Challenges
 
@@ -144,8 +148,8 @@
 - **WASM Debugging:** Remains a factor.
 - **Bundle Size:** Needs monitoring as framework grows.
 - **Hot Reload Implementation:** Still a significant challenge.
-- **Atomic CSS Builder:** Current implementation uses inefficient aggregation
-  (writing cumulative CSS per input file). Needs refinement for proper
-  aggregation and final output generation. Rule set is very basic.
+- **Atomic CSS Builder:** Current two-phase approach (Scanner -> Writer via
+  `.classes` files) works but might not be the most efficient for large projects
+  or complex watch mode scenarios. Rule set is currently basic.
 - **Riverpod Integration:** Current demo uses a suboptimal pattern
   (component-level container).

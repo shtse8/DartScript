@@ -163,19 +163,21 @@
     corresponding VNode and its children, using the stored `jsFunctionRefs` to
     explicitly call `removeEventListener` for all associated listeners before
     the DOM node is detached. This ensures proper cleanup.
-- **Atomic CSS Generation Pattern (Build-Time):**
-  - A `build_runner` Builder (`AtomicStyleBuilder` in `dust_atomic_styles`
-    package) scans Dart source files (`lib/**`, `web/**`).
-  - It uses `analyzer` to parse the AST and find HTML helper function calls
-    (e.g., `div`, `button`).
-  - It extracts string literals from the `class` key within the `attributes` map
-    argument.
-  - Extracted class names are split and collected into a set (`_allClassNames`).
-  - Predefined rules (`atomicRules` map with Regex and generator functions) are
-    used to convert recognized atomic class names into CSS rules
-    (`generateAtomicCss`).
-  - The generated CSS rules are written to a temporary file
-    (`.atomic_styles.css.temp`) during the build process (current implementation
-    writes cumulative CSS per input, needs refinement for aggregation).
-  - The final aggregated CSS file (e.g., `web/atomic_styles.css`) is linked in
-    `web/index.html`.
+- **Atomic CSS Generation Pattern (Two-Phase Build-Time):**
+  - **Phase 1: Scanning (`AtomicStyleBuilder` / `atomicScanner`)**
+    - Runs on specified Dart files (`lib/**`, `web/**`).
+    - Uses `analyzer` to parse AST and find HTML helper function calls.
+    - Extracts class names from the `class` attribute string literal.
+    - Writes the found class names (one per line) to a corresponding `.classes`
+      file in the build cache (`build_to: cache`).
+  - **Phase 2: Aggregation & Writing (`CssWriterBuilder` / `cssWriter`)**
+    - Triggered by a specific file (`web/atomic_styles.trigger`).
+    - Uses `buildStep.findAssets` to find all `.classes` files generated in
+      Phase 1.
+    - Reads all `.classes` files, aggregates unique class names into a single
+      set.
+    - Uses predefined rules (`atomicRules` and `generateAtomicCss`) to generate
+      CSS rules for the aggregated set.
+    - Writes the final, sorted CSS rules to the source tree
+      (`build_to: source`), typically `web/atomic_styles.css`.
+  - The final CSS file is linked in `web/index.html`.

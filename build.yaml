@@ -1,31 +1,24 @@
-# Defines the builders used in the project and their configurations.
-
-# Global options can be defined here if needed.
-
-builders:
-  # Define a key for our atomic style builder
-  atomicBuilder:
-    import: "package:dust_atomic_styles/src/builder.dart" # Path to the builder class
-    builder_factories: [
-      "atomicStyleBuilder",
-    ] # Function that creates the builder instance (see below)
-    build_extensions: {
-      ".dart": [".atomic_styles.css.temp"],
-    } # Input .dart, output temporary file
-    auto_apply: dependents # Apply to packages that depend on dust_atomic_styles
-    build_to: cache # Output temporary files to cache
+# Configures how builders are applied to this package ($default target).
+# Builder definitions are in the packages that provide them (e.g., packages/atomic_styles/build.yaml).
 
 targets:
   $default:
     builders:
-      # Run our atomic builder first
-      dust_atomic_styles|atomicBuilder:
+      # Run the scanner on relevant dart files
+      # Apply atomicScanner to the main package (dust_app)
+      dust_atomic_styles|atomicScanner:
         enabled: true
         generate_for:
           - lib/**.dart
           - web/**.dart
-          # Add other directories containing components if necessary
-        # No specific options needed for this builder currently
+
+      # Run the CSS writer, triggered by the .trigger file
+      dust_atomic_styles|cssWriter: # Use the key defined in the builder's package build.yaml
+        enabled: true
+        generate_for:
+          - web/atomic_styles.trigger # The trigger file
+      # options: # Example if options were needed
+      #   output: "web/atomic_styles.css" # This would override the default in the builder's options
 
       # Then run the web compiler
       build_web_compilers|entrypoint:
@@ -35,12 +28,3 @@ targets:
           compiler: dart2wasm
           # Optional: Add other dart2wasm options if needed
           # dart2wasm_args: ["--some-flag"]
-        # Ensure web compiler runs after our builder might have generated outputs
-        # (Though direct dependency isn't strictly needed here as we output to cache)
-        runs_before:
-          - build_web_compilers|dart2wasm_linker
-
-# This part defines the builder factory function mentioned above.
-# It needs to be in a file accessible during the build, typically in the builder package itself.
-# We'll create this file next.
-# For now, this build.yaml assumes its existence.

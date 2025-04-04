@@ -119,8 +119,14 @@ class _TodoListState extends State<TodoListComponent> {
   VNode build() {
     print("Building TodoList VNode tree using HTML helpers...");
     return div(children: [
-      h1(text: 'Dust Todo List (Keyed Diffing Test)'),
+      h1(
+        text: 'Dust Todo List (Keyed Diffing Test)',
+        attributes: {
+          'class': 'text-blue-500 mb-4 font-bold'
+        }, // Added atomic classes
+      ),
       ul(
+        attributes: {'class': 'p-0'}, // Added atomic class
         children: _items.map((item) {
           print("Creating VNode for item ID: ${item.id}, text: ${item.text}");
           return li(
