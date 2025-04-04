@@ -1,6 +1,7 @@
 // packages/component/lib/state.dart
 import 'stateful_component.dart';
 import 'vnode.dart'; // Import the VNode definition
+import 'context.dart'; // Import BuildContext
 
 /// Callback signature for requesting a component update.
 typedef UpdateRequester = void Function();
@@ -37,6 +38,12 @@ abstract class State<T extends StatefulWidget> {
   /// component and then call [build].
   T get widget => _widget!;
   T? _widget; // Set by the framework via frameworkUpdateWidget
+
+  /// The location in the tree where this state object resides.
+  ///
+  /// This property is set by the framework before calling [initState].
+  /// It provides access to inherited data (like the ProviderContainer).
+  late BuildContext context;
 
   /// Callback provided by the framework (renderer) to request an update.
   UpdateRequester? _updateRequester;

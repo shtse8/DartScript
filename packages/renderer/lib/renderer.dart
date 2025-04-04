@@ -9,6 +9,7 @@ import 'package:dust_component/vnode.dart'; // Import VNode
 import 'dom_event.dart'; // Import DomEvent wrapper
 import 'package:dust_dom/dom.dart' as dom; // Import the new DOM abstraction
 import 'package:riverpod/riverpod.dart'; // Import Riverpod
+import 'package:dust_component/context.dart'; // Import BuildContext
 // --- Old JS Interop (To be removed) ---
 // @JS('document.createElement') ... etc.
 // extension JSAnyExtension on JSAny { ... }
@@ -96,7 +97,8 @@ dom.DomNode _createDomElement(VNode vnode) {
 }
 
 /// Performs the rendering or re-rendering by building the VNode and patching the DOM.
-void _performRender(State componentState, dom.DomElement targetElement) {
+void _performRender(
+    State componentState, dom.DomElement targetElement, BuildContext context) {
   // Use DomElement
   print('Performing render/update...');
   try {
@@ -105,7 +107,8 @@ void _performRender(State componentState, dom.DomElement targetElement) {
     print('State build returned VNode: [${newRootVNode.tag ?? 'text'}]');
 
     // 2. Patch the DOM based on the new and old VNode trees
-    _patch(targetElement, newRootVNode, _lastRenderedVNode); // Pass DomElement
+    _patch(targetElement, newRootVNode, _lastRenderedVNode,
+        context); // Pass context
 
     // 3. Store the newly rendered VNode tree for the next comparison
     _lastRenderedVNode = newRootVNode;
@@ -122,7 +125,8 @@ void _performRender(State componentState, dom.DomElement targetElement) {
 }
 
 /// Patches the DOM to reflect the difference between the new and old VNode trees.
-void _patch(dom.DomElement parentElement, VNode? newVNode, VNode? oldVNode) {
+void _patch(dom.DomElement parentElement, VNode? newVNode, VNode? oldVNode,
+    BuildContext context) {
   // Use DomElement
   print(
       'Patching: parent=${parentElement.hashCode}, new=[${newVNode?.tag ?? newVNode?.text?.substring(0, min(5, newVNode.text?.length ?? 0)) ?? 'null'}], old=[${oldVNode?.tag ?? oldVNode?.text?.substring(0, min(5, oldVNode.text?.length ?? 0)) ?? 'null'}]');
@@ -291,8 +295,8 @@ void _patch(dom.DomElement parentElement, VNode? newVNode, VNode? oldVNode) {
 
   // 4d: Patch Children (Keyed Reconciliation)
   // Assume domNode is DomElement here since we are patching children
-  _patchChildren(
-      domNode as dom.DomElement, oldVNode.children, newVNode.children);
+  _patchChildren(domNode as dom.DomElement, oldVNode.children,
+      newVNode.children, context); // Pass context
 
   print('Finished patching children for <${newVNode.tag}>.');
 }
@@ -303,7 +307,8 @@ int min(int a, int b) => a < b ? a : b;
 /// Patches the children of a DOM element using a keyed reconciliation algorithm.
 /// Based on common algorithms found in frameworks like Vue and Inferno.
 void _patchChildren(dom.DomElement parentDomNode, List<VNode>? oldChOriginal,
-    List<VNode>? newChOriginal) {
+    List<VNode>? newChOriginal, BuildContext context) {
+  // Add context parameter
   // Use DomElement
   // Work with copies that allow nulls for marking moved nodes
   List<VNode?> oldCh = oldChOriginal?.map((e) => e as VNode?).toList() ?? [];
@@ -385,21 +390,23 @@ void _patchChildren(dom.DomElement parentDomNode, List<VNode>? oldChOriginal,
       // Same start nodes
       print(
           '>>> _patchChildren [Case 1: Same Start]: Patching key ${newStartVNode?.key}');
-      _patch(parentDomNode, newStartVNode, oldStartVNode);
+      _patch(
+          parentDomNode, newStartVNode, oldStartVNode, context); // Pass context
       oldStartVNode = ++oldStartIdx <= oldEndIdx ? oldCh[oldStartIdx] : null;
       newStartVNode = ++newStartIdx <= newEndIdx ? newCh[newStartIdx] : null;
     } else if (isSameVNode(oldEndVNode, newEndVNode)) {
       // Same end nodes
       print(
           '>>> _patchChildren [Case 2: Same End]: Patching key ${newEndVNode?.key}');
-      _patch(parentDomNode, newEndVNode, oldEndVNode);
+      _patch(parentDomNode, newEndVNode, oldEndVNode, context); // Pass context
       oldEndVNode = --oldEndIdx >= oldStartIdx ? oldCh[oldEndIdx] : null;
       newEndVNode = --newEndIdx >= newStartIdx ? newCh[newEndIdx] : null;
     } else if (isSameVNode(oldStartVNode, newEndVNode)) {
       // Node moved right
       print(
           '>>> _patchChildren [Case 3: Moved Right]: Patching key ${newEndVNode?.key}, moving DOM node');
-      _patch(parentDomNode, newEndVNode, oldStartVNode);
+      _patch(
+          parentDomNode, newEndVNode, oldStartVNode, context); // Pass context
       _domInsertBefore(
           // Use renamed helper
           oldStartVNode.domNode as dom.DomNode, // Pass DomNode
@@ -410,7 +417,8 @@ void _patchChildren(dom.DomElement parentDomNode, List<VNode>? oldChOriginal,
       // Node moved left
       print(
           '>>> _patchChildren [Case 4: Moved Left]: Patching key ${newStartVNode?.key}, moving DOM node');
-      _patch(parentDomNode, newStartVNode, oldEndVNode);
+      _patch(
+          parentDomNode, newStartVNode, oldEndVNode, context); // Pass context
       _domInsertBefore(
           // Use renamed helper
           oldEndVNode.domNode as dom.DomNode, // Pass DomNode
@@ -444,7 +452,8 @@ void _patchChildren(dom.DomElement parentDomNode, List<VNode>? oldChOriginal,
           print(
               'Error: Found null VNode in oldChildren at index $idxInOld for key ${newStartVNode?.key}. This might indicate a duplicate key or logic error.');
         } else {
-          _patch(parentDomNode, newStartVNode!, vnodeToMove);
+          _patch(parentDomNode, newStartVNode!, vnodeToMove,
+              context); // Pass context
           _domInsertBefore(
               vnodeToMove.domNode as dom.DomNode, // Pass DomNode
               getDomNodeBefore(newStartIdx)); // Returns DomNode?
@@ -490,7 +499,9 @@ void _patchChildren(dom.DomElement parentDomNode, List<VNode>? oldChOriginal,
 }
 
 /// Renders a component into a target DOM element for the first time.
-void render(Component component, String targetElementId) {
+// Internal render function, now requires context
+void _renderInternal(
+    Component component, String targetElementId, BuildContext context) {
   print(
     'Starting initial render process for component $component into #$targetElementId',
   );
@@ -513,15 +524,18 @@ void render(Component component, String targetElementId) {
       print('Update requested by state!');
       // When state requests update, re-run the render logic
       if (_mountedState != null && _targetElement != null) {
-        _performRender(_mountedState!, _targetElement!);
+        // Pass context to _performRender
+        _performRender(_mountedState!, _targetElement!, context);
       }
     });
 
     // Initialize the state (calls initState)
+    // Assign context BEFORE calling initState (which happens inside frameworkUpdateWidget)
+    _mountedState!.context = context;
     _mountedState!.frameworkUpdateWidget(component);
 
     // Perform the initial render using the state
-    _performRender(_mountedState!, _targetElement!);
+    _performRender(_mountedState!, _targetElement!, context); // Pass context
   } else if (component is StatelessWidget) {
     print('Component is StatelessWidget, performing initial build...');
     // For stateless, we just build once and render (no updates handled yet)
@@ -531,7 +545,10 @@ void render(Component component, String targetElementId) {
       print('Stateless build returned VNode: [${newRootVNode.tag ?? 'text'}]');
 
       // Patch the DOM (initial render, so oldVNode is null)
-      _patch(_targetElement!, newRootVNode, null); // Pass null for oldVNode
+      // TODO: How should context be handled for StatelessWidget?
+      // For now, pass the parent context. A dedicated context might be needed if
+      // stateless widgets need to access context directly (e.g., for theme).
+      _patch(_targetElement!, newRootVNode, null, context); // Pass context
 
       // Store the initially rendered VNode tree
       _lastRenderedVNode = newRootVNode;
@@ -559,31 +576,26 @@ void runApp(Component rootComponent, String targetElementId) {
   // 1. Create the root ProviderContainer
   // Dispose previous container if exists (e.g., during hot restart in dev)
   _appProviderContainer?.dispose();
-  _appProviderContainer = ProviderContainer();
+  final ProviderContainer container = ProviderContainer();
+  _appProviderContainer =
+      container; // Still store globally for now (needed by Consumer)
   print('Dust ProviderContainer created.');
 
-  // TODO: How to make the container available to the component tree?
-  // Option 1 (Simplest for now): Global access via `appProviderContainer` getter.
-  // Option 2 (Better): Pass the container down through a context mechanism
-  //                    (requires adding context to Component/State).
-  // Option 3 (Riverpod way): Wrap the root component in a ProviderScope-like
-  //                          mechanism. This is complex as ProviderScope is a Widget.
-  //                          We might need a custom approach.
+  // 2. Create the root BuildContext
+  final BuildContext rootContext = BuildContext(container);
+  print('Dust root BuildContext created.');
 
-  // For now, rely on the global container access.
-
-  // 2. Call the internal render function
+  // 3. Call the internal render function with the root context
   try {
-    render(rootComponent, targetElementId);
+    // Rename the internal function to avoid confusion
+    _renderInternal(rootComponent, targetElementId, rootContext);
   } catch (e, s) {
     print('Error during initial render in runApp: $e\n$s');
-    // Optionally dispose container on immediate error?
-    // _appProviderContainer?.dispose();
-    // _appProviderContainer = null;
+    // Dispose container on error during initial render
+    _appProviderContainer?.dispose();
+    _appProviderContainer = null;
     rethrow; // Rethrow the error after logging
-  } finally {
-    // Disposal should likely happen when the app unmounts (not implemented yet).
-    // print('Dust runApp finished.'); // Moved after render call completes
   }
+  // Note: Container disposal on app unmount is not handled yet.
   print('Dust runApp finished initial render call.');
 }

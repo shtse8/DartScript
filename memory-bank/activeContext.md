@@ -16,6 +16,17 @@
 
 ## Recent Changes
 
+- **Introduced Basic BuildContext:**
+  - Created `packages/component/lib/context.dart` defining a simple
+    `BuildContext` class holding a `ProviderContainer`.
+  - Added `late BuildContext context;` property to `State` class
+    (`packages/component/lib/state.dart`).
+  - Modified `renderer.dart` (`runApp`, `_renderInternal`, `_performRender`,
+    `_patch`, `_patchChildren`) to create and pass `BuildContext` down the tree
+    during initial render and updates.
+  - Updated `Consumer` widget to retrieve `ProviderContainer` from `context`
+    instead of a global variable.
+
 - **Completed Renderer DOM Abstraction:** Replaced remaining direct JS interop
   calls in `renderer.dart` (`addEventListener`, `removeEventListener`,
   `removeChild`, `replaceChild`, `insertBefore`, `textContent`) with
@@ -169,11 +180,11 @@
   closer to Flutter's `build(context, ref)`.
   - (Partially done) Continue refining handling of edge cases in patching.
   - Manage component lifecycle more robustly (e.g., `dispose`).
-- **Integrate Riverpod Properly:** (Basic integration done)
-  - Replace global `ProviderContainer` access with a context-based approach (see
-    Future Goal above).
-  - Ensure `WidgetRef` disposal and lifecycle are robust.
-  - Test more complex provider types (e.g., `StateProvider`, `FutureProvider`).
+- **Integrate Riverpod Properly:** (Context passing implemented)
+  - Replaced global `ProviderContainer` access with `BuildContext` passing.
+  - `Consumer` now uses `context.container`.
+  - Next steps: Ensure `WidgetRef` disposal and lifecycle are robust, test more
+    complex provider types.
 - **Structure Framework Core:** (`dust_dom` created) Continue defining the
   directory structure and modules (`packages/core`, etc.).
 - **(Done) Complete Renderer Refactoring:** All identified direct DOM JS interop
@@ -183,14 +194,13 @@
 
 ## Active Decisions & Considerations
 
-- **Riverpod Integration:** Initial integration uses a global
-  `ProviderContainer` accessed via `renderer.appProviderContainer`. `Consumer`
-  widget (extending `StatefulWidget`) created with a basic `WidgetRef`
-  implementation. This approach is functional but differs from Flutter's
-  `ConsumerWidget` pattern due to the lack of `BuildContext` and
-  `InheritedWidget` equivalents in the current framework. Refining container
-  access (context?) and potentially aligning closer to Flutter's pattern is
-  noted as a future goal (see Next Steps).
+- **Riverpod Integration:** `ProviderContainer` is now passed down via a basic
+  `BuildContext` object created by the renderer. `Consumer` accesses the
+  container through `context.container`. This removes the need for a global
+  container variable. The `Consumer` still extends `StatefulWidget` and uses a
+  custom `WidgetRef` due to framework limitations (lack of Flutter's
+  `InheritedWidget` equivalent). Aligning closer to Flutter's pattern remains a
+  future goal.
 - **Component Syntax:** Providing HTML helper functions (`div`, `h1`, etc.) in
   `package:dust_component/html.dart` for a more declarative UI definition
   experience.

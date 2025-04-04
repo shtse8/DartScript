@@ -8,8 +8,9 @@
   - UI built by composing `Component` instances (`StatelessWidget`,
     `StatefulWidget`).
   - `StatefulWidget` uses a `State` object for mutable state and UI building.
-  - `State` has lifecycle methods (`initState`, `build`, `dispose`, etc.) and
-    `setState` for triggering updates.
+  - `State` has lifecycle methods (`initState`, `build`, `dispose`, etc.), a
+    `setState` method for triggering updates, and a `context` property (a basic
+    `BuildContext`) providing access to framework information.
   - `State.build()` returns a `VNode` tree (with keys, attributes, children, and
     listeners using `DomEvent`) representing the desired UI structure.
 - **Declarative Rendering Engine (Keyed Diffing):**
@@ -32,11 +33,13 @@
 - **State Management:**
   - Basic component state managed via `State` and `setState`.
   - **Riverpod Integration (Basic):**
-    - `runApp` creates a global `ProviderContainer` (temporary).
-    - `Consumer` widget (`packages/component/lib/consumer.dart`) allows
-      components to `watch` providers via a `WidgetRef`.
-    - `WidgetRef` interacts with the global container and triggers rebuilds on
-      the `Consumer`'s state.
+    - `runApp` creates a root `ProviderContainer` and a root `BuildContext`
+      containing it.
+    - The `BuildContext` is passed down the component tree by the renderer.
+    - `Consumer` widget (`packages/component/lib/consumer.dart`) accesses the
+      `ProviderContainer` via `context.container`.
+    - `Consumer` uses a `WidgetRef` to interact with the container and trigger
+      rebuilds on its own `State` via `setState`.
   - Framework-level context/DI patterns (replacing global container) are future
     goals.
 - **Routing:** (Not yet implemented) Goal is a client-side SPA router.
@@ -74,12 +77,14 @@
   functions (`package:dust_component/html.dart`) for better readability. `VNode`
   includes `key`, `listeners` (using `DomEvent`), and `jsFunctionRefs`. Further
   refinement needed for props and context.
-- **State Management Approach:** Basic Riverpod integration implemented using a
-  global `ProviderContainer` (created in `runApp`) and a `Consumer` widget
-  (extending `StatefulWidget`). The `Consumer` uses a `WidgetRef` to interact
-  with the container and trigger rebuilds via `setState`. Refining container
-  access (e.g., via context) and aligning closer to Flutter's `ConsumerWidget`
-  pattern are future goals.
+- **State Management Approach:** Basic Riverpod integration implemented.
+  `ProviderContainer` is created at the root (`runApp`) and passed down via a
+  simple `BuildContext` object, which is accessible within `State` objects
+  (`state.context`). `Consumer` widget uses this context to get the container.
+  This avoids global variables but still relies on a custom `Consumer`
+  implementation. Aligning closer to Flutter's `ConsumerWidget` pattern
+  (requiring a more complex `BuildContext` and rendering integration) is a
+  future goal.
 - **JS/WASM Bridge Implementation:** Using `dart:js_interop`. Renderer now uses
   the `dust_dom` abstraction layer instead of direct JS interop calls for DOM
   manipulation. Event listener callbacks still use `.toJS` on a wrapper
@@ -95,7 +100,10 @@
 - **Component Pattern:** Core UI building block.
 - **State Management Pattern:** Using `State` for local state. Riverpod
   integration provides `Provider`s for app state, accessed via `Consumer` widget
-  and `WidgetRef`.
+  (which gets the `ProviderContainer` from its `BuildContext`) and `WidgetRef`.
+- **Context Pattern (Basic):** A simple `BuildContext` object is created by the
+  renderer and passed down to `State` objects, primarily carrying the
+  `ProviderContainer`.
 - **Observer Pattern:** Implicitly used via `StreamProvider` and `setState`
   triggering updates.
 - **Callback Pattern:** Used for `State` to request updates from the renderer.

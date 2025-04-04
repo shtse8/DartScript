@@ -1,5 +1,5 @@
 import 'package:riverpod/riverpod.dart';
-import 'package:dust_renderer/renderer.dart'; // To access appProviderContainer (temporary)
+// import 'package:dust_renderer/renderer.dart'; // No longer needed for global access
 
 import 'component.dart';
 import 'state.dart';
@@ -30,8 +30,9 @@ class _ConsumerState extends State<Consumer> {
   @override
   void initState() {
     super.initState();
-    // Get the container (using the temporary global getter)
-    final container = appProviderContainer;
+    // Get the container from the BuildContext provided by the framework
+    // This assumes the renderer correctly sets `this.context` before calling initState
+    final container = context.container;
     // Create a WidgetRef associated with this state
     _ref = WidgetRef(container, this);
     // Initial build
