@@ -801,12 +801,18 @@ void _patchChildren(dom.DomElement parentDomNode, List<VNode>? oldChOriginal,
 
       if (idxInOld == null) {
         // New node, create and insert
+        // New node, patch it into the DOM (oldVNode is null)
         print(
-            '>>> _patchChildren [Case 5a: New Node]: Creating key ${newStartVNode?.key}');
-        final dom.DomNode newDomNode =
-            _createDomElement(newStartVNode!); // Returns DomNode
-        _domInsertBefore(newDomNode,
-            getDomNodeBefore(newStartIdx)); // Pass DomNode, returns DomNode?
+            '>>> _patchChildren [Case 5a: New Node]: Patching new node with key ${newStartVNode?.key}');
+        // Call _patch recursively, which will handle mounting components or creating elements
+        _patch(parentDomNode, newStartVNode, null, context);
+        // Get the newly created/mounted DOM node from the VNode after patching
+        final newDomNode = newStartVNode?.domNode;
+        if (newDomNode is dom.DomNode) {
+          _domInsertBefore(newDomNode, getDomNodeBefore(newStartIdx));
+        } else {
+          print('Error: New node patch did not result in a valid domNode.');
+        }
       } else {
         // Found old node with same key, patch and move
         print(

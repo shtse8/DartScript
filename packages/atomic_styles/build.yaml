@@ -14,8 +14,9 @@ builders:
     builder_factories: [
       "cssAggregatorBuilder",
     ] # Assuming factory name matches class
-    # build_extensions are now defined within the Builder itself.
-    # This builder reads inputs based on required_inputs and outputs to a fixed path.
+    # Define expected output for the package applying this builder.
+    # The builder aggregates inputs based on required_inputs.
+    build_extensions: { ".$package$": ["web/atomic_styles.css"] }
     auto_apply: root_package # Should only be applied by the root package
     build_to: source
     # This builder needs to run after all atomicScanner instances have completed.

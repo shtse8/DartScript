@@ -45,8 +45,10 @@ Dust aims to provide a comprehensive feature set for modern web development:
 - 🚀 **WASM Powered:** Runs your Dart code directly in the browser via
   WebAssembly.
 - 🛡️ **Type Safe:** Leverage Dart's strong type system throughout the framework.
-- 🔄 **State Management:** Built-in component state (`setState`) with plans for
-  integrating popular solutions.
+- 🔄 **State Management:** Built-in component state (`setState`) with basic
+  Riverpod integration via `BuildContext`.
+- 🎁 **Props:** Pass data down the component tree using standard Dart
+  constructors and a `props` map.
 - 🔗 **JS Interop:** Seamlessly interact with JavaScript libraries and browser
   APIs when needed.
 - 🎨 **Atomic CSS (Build-Time):** Includes a powerful, build-time Atomic CSS
@@ -63,11 +65,8 @@ Dust aims to provide a comprehensive feature set for modern web development:
     Accessibility).
   - **Maintainable & Organized:** Rules are now split into logical files within
     the `packages/atomic_styles/lib/src/rules/` directory.
-  - **(Current Limitation):** The aggregation step (`AtomicCssAggregator`)
-    currently only processes classes from the single `.classes` file that
-    triggered it, not globally across all files due to `PostProcessBuilder`
-    limitations. This needs refactoring for correct global aggregation (see
-    `memory-bank/progress.md`).
+  - **(Resolved):** Aggregation logic now correctly processes classes from all
+    source files using a standard `Builder`.
 - _Upcoming:_ Routing, Advanced State Management, Build Tools, Hot Reload, and
   more!
 
@@ -76,7 +75,8 @@ Dust aims to provide a comprehensive feature set for modern web development:
 <!-- Optional: Add a GIF or screenshot of the demo app here -->
 <!-- e.g., ![Dust Todo List Demo](path/to/demo.gif) -->
 
-Try the current Todo List demo:
+Try the current Props Tester demo (demonstrates props and conditional event
+listeners):
 
 1. **Ensure Dart SDK is installed.**
 2. **Get dependencies:**
@@ -86,65 +86,70 @@ Try the current Todo List demo:
 3. **Run the development server:** Navigate to the project root directory and
    run:
    ```bash
-   dart run build_runner serve web --live-reload
+   dart run build_runner serve web:8081 --live-reload
    ```
-   _(This will compile the app, start a server (usually on `localhost:8080`),
-   and enable Hot Restart. Use a different port if needed, e.g., `web:8081`)_
-4. **Open in browser:** Open the URL provided by `build_runner` (e.g.,
-   `http://localhost:8080`).
+   _(This will compile the app, start a server on `localhost:8081`, and enable
+   Hot Restart.)_
+4. **Open in browser:** Open `http://localhost:8081`.
 
-You should see the interactive Todo List application demonstrating basic state
-management, event handling, and keyed list diffing.
+You should see a button and a "Hello..." message. Clicking the button cycles
+through different names, demonstrating props updates. When the name is longer
+than 5 characters, hovering over the "Hello..." message will log to the console,
+demonstrating conditional event listener addition/removal.
 
 ## Basic Example
 
-Here's a simple example using Riverpod for state management:
+Here's a simple "Hello World" example demonstrating passing props:
 
-**1. Define a Provider (`lib/providers.dart`):**
-
-```dart
-import 'package:riverpod/riverpod.dart';
-
-// Simple provider holding a message string
-final messageProvider = Provider<String>((ref) => 'Hello from Riverpod!');
-```
-
-**2. Create your component using `Consumer` (`lib/hello_consumer.dart`):**
+**1. Create your component (`lib/hello_world.dart`):**
 
 ```dart
-import 'package:dust_component/component.dart';
-import 'package:dust_component/consumer.dart'; // Import Consumer
+import 'package:dust_component/stateful_component.dart';
+import 'package:dust_component/state.dart';
+import 'package:dust_component/context.dart';
 import 'package:dust_component/vnode.dart';
-import 'package:dust_component/html.dart';
-import 'package:riverpod/riverpod.dart'; // Import Riverpod
-import 'providers.dart'; // Import your provider
+import 'package:dust_component/html.dart' as html;
+import 'package:dust_renderer/dom_event.dart';
+import 'package:dust_component/key.dart';
 
-class HelloConsumer extends Consumer { // Extend Consumer
-  HelloConsumer() : super(builder: (ref) { // Pass builder to super constructor
-    // Watch the provider
-    final message = ref.watch(messageProvider);
+class HelloWorld extends StatefulWidget {
+  // Constructor accepts key and props
+  const HelloWorld({super.key, super.props});
 
-    // Build UI using the message
-    return div(children: [
-      h1(
-        text: message, // Use the message from the provider
-        attributes: {'style': 'color: green;'},
-      ),
-      // You can add buttons here to interact with other providers (e.g., StateProvider)
-    ]);
-  });
+  @override
+  State<HelloWorld> createState() => _HelloWorldState();
+}
+
+class _HelloWorldState extends State<HelloWorld> {
+  // Helper to get the name prop safely
+  String get _displayName => widget.props['name'] as String? ?? 'World';
+
+  @override
+  VNode build() {
+    final currentDisplayName = _displayName;
+    print('Building HelloWorld component (name: $currentDisplayName)...');
+
+    return html.h1(
+      key: widget.key,
+      text: 'Hello $currentDisplayName!',
+      attributes: {'class': 'hello-world-heading'},
+    );
+  }
 }
 ```
 
-**3. Create the entry point (`web/main.dart`):**
+**2. Create the entry point (`web/main.dart`):**
 
 ```dart
-import 'package:dust_app/hello_consumer.dart'; // Import the new consumer component
+import 'package:dust_app/hello_world.dart'; // Import the component
 import 'package:dust_renderer/renderer.dart';
 
 void main() {
-  // Mount the consumer component
-  runApp(HelloConsumer(), 'app');
+  // Create the component instance, passing name via props map
+  final app = HelloWorld(props: {'name': 'Developer'});
+
+  // Mount the component
+  runApp(app, 'app');
 }
 ```
 
@@ -155,6 +160,9 @@ void main() {
 <html>
   <head>
     <title>Dust App</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="atomic_styles.css">
+    <!-- Link generated CSS -->
   </head>
   <body>
     <div id="app"></div>
@@ -167,10 +175,10 @@ void main() {
 **4. Run the development server:**
 
 ```bash
-dart run build_runner serve web
+dart run build_runner serve web:8081
 ```
 
-Then open the provided URL in your browser.
+Then open `http://localhost:8081` in your browser.
 
 ## Roadmap & Status
 
@@ -196,7 +204,7 @@ implementation status.
   - [x] Keys for Diffing (`key` property)
   - [x] Event Listeners (`listeners` property using `DomEvent`)
   - [x] Internal Listener Reference Storage (`jsFunctionRefs`)
-- [ ] Props Handling
+- [x] Props Handling (Basic Map-based)
 - [x] Basic Context API (`BuildContext` carrying `ProviderContainer`)
 
 **Renderer:**
