@@ -244,9 +244,7 @@ void _updateComponent(dom.DomElement parentElement, VNode newComponentVNode,
     return;
   }
 
-  // Basic check: If component types or keys don't match, unmount old and mount new.
-  // TODO: This is a simplification. More sophisticated logic might be needed,
-  // especially around state preservation if only the parent changed props.
+  // Check if component types or keys don't match. If they do, unmount old and mount new.
   if (newComponent.runtimeType != oldComponent.runtimeType ||
       newComponent.key != oldComponent.key) {
     print(
@@ -255,6 +253,12 @@ void _updateComponent(dom.DomElement parentElement, VNode newComponentVNode,
     _mountComponent(parentElement, newComponentVNode, context);
     return;
   }
+
+  // --- Types and Keys Match: Reuse existing state and update ---
+  // Carry over the state object from the old VNode to the new one
+  newComponentVNode.state = oldComponentVNode.state;
+  // Carry over the DOM node reference as well (might be updated after patching rendered tree)
+  newComponentVNode.domNode = oldComponentVNode.domNode;
 
   print(
       'Updating component: ${newComponent.runtimeType} with key ${newComponent.key}');
@@ -409,7 +413,8 @@ void _removeListenersFromNode(VNode vnode) {
       print(
           '  -> Removing ${vnode.jsFunctionRefs!.length} listeners for node key ${vnode.key}');
       vnode.jsFunctionRefs!.forEach((eventName, jsFunction) {
-        print('     - Removing listener for "$eventName"');
+        print(
+            '     - Removing listener for "$eventName" via _removeListenersFromNode');
         domElement.removeEventListener(eventName, jsFunction);
       });
       // Clear the refs after removing
@@ -455,7 +460,6 @@ void removeVNode(dom.DomElement parentDomNode, VNode vnode) {
     // This case should ideally not happen if domNode was set correctly
     print('Error: Cannot remove, vnode.domNode is not a valid DomNode type.');
   }
-  // TODO: Call component lifecycle hooks (dispose) if applicable
 }
 
 // --- End Helper Functions ---
@@ -617,6 +621,8 @@ void _patch(dom.DomElement parentElement, VNode? newVNode, VNode? oldVNode,
         // Use the removeEventListener from DomElementExtension
         (domNode as dom.DomElement)
             .removeEventListener(eventName, oldJsFunction);
+        print(
+            '  -> Listener for "$eventName" removed via _patch (callback changed or event removed)');
         // Remove references from the newVNode as well, since it initially copied them
         newVNode.jsFunctionRefs?.remove(eventName);
         newVNode.dartCallbackRefs?.remove(eventName); // Also remove Dart ref

@@ -41,6 +41,10 @@
       patches rendered tree).
     - Implemented `_unmountComponent` (calls dispose, recursively unmounts
       rendered tree using `removeVNode`).
+    - **Refined `_updateComponent`:** Now correctly reuses the existing `State`
+      object when component type and key match, ensuring `didUpdateWidget` is
+      called appropriately when props change (instead of always
+      unmounting/mounting).
   - **Refined Event Handling:** Includes `DomEvent` wrapper and recursive
     listener removal during unmount/node removal via `removeVNode`. Listener
     updates in `_patch` are now optimized using `identical()` checks on Dart
@@ -134,6 +138,11 @@
     before DOM node detachment.
   - Improved robustness of `_unmountComponent` DOM node checks.
   - Updated relevant components/demos (`VNode`, `renderer`).
+  - Removed incorrect TODO comment regarding component lifecycle hooks from
+    `removeVNode` helper, as lifecycle is handled in `_unmountComponent`.
+  - Added detailed debug logging (`print` statements) to listener removal paths
+    in `_patch` and `_removeListenersFromNode` to aid in verifying removal
+    logic.
 - **JS Interop for Events Resolved:** Confirmed `.toJS` extension method is the
   correct approach for WASM event listeners (still used for callback
   conversion).

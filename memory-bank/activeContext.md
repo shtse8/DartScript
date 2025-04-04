@@ -11,6 +11,16 @@
 
 ## Recent Changes
 
+- **Added Debug Logging for Listener Removal:** Inserted detailed `print`
+  statements in `renderer.dart` (`_patch` and `_removeListenersFromNode`) to
+  better track when and why event listeners are being removed, aiding in
+  debugging the recursive removal logic.
+
+- **Refined Component Update Logic:** Modified `_updateComponent` in
+  `renderer.dart` to reuse the existing `State` object when component type and
+  key match, instead of always unmounting and mounting. This ensures
+  `didUpdateWidget` is called correctly when props change.
+
 - **Setup Props Testing:**
   - Converted `HelloWorld` to `StatefulWidget` to manage listener state
     internally.
