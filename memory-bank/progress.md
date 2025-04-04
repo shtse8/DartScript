@@ -22,17 +22,21 @@
   - `State.build()` method now **returns `VNode`**.
   - Basic lifecycle methods (`initState`, `dispose`, `setState`, etc.) defined
     in `State`.
-- **Renderer (Very Basic):**
-  - `packages/renderer` provides a `render` function.
-  - Can handle initial rendering of `StatefulWidget` (creates state, calls
-    `initState`, calls `build`).
-  - Can render basic **`VNode` representations** (element nodes with direct
-    text, ignoring children/attributes for now) to DOM elements.
+- **Renderer (Basic Patching Implemented):**
+  - `packages/renderer` provides `render` and internal `_patch` functions.
+  - Handles initial rendering and updates via `_patch`.
+  - `_createDomElement` helper creates DOM nodes from `VNode` and stores
+    reference in `VNode.domNode`.
+  - `_patch` function implements basic diffing:
+    - Handles node addition/removal/type replacement.
+    - Updates text node content.
+    - Adds/updates/removes element attributes.
+    - Recursively patches children using a basic indexed approach.
 - **State Update (Simplified PoC):**
   - `State.setState` triggers a callback mechanism.
   - Renderer receives the callback and re-runs `State.build()`.
-  - Renderer **replaces the entire content** of the target DOM element with the
-    new `VNode` result (no diffing).
+  - Renderer now uses the `_patch` function, moving away from full `innerHTML`
+    replacement for updates.
   - **Result:** A simple stateful component (like the clock demo) can now
     visually update, albeit inefficiently.
 - **Demo Application:**
@@ -43,8 +47,8 @@
 ## What's Left to Build (High Level - Framework Focus)
 
 - **Core Framework Implementation:**
-  - **Rendering Engine (Diffing):** Replace the simple renderer with one that
-    uses a Virtual DOM or similar diffing strategy for efficient DOM updates.
+  - **Rendering Engine (Diffing):** (Basic implementation done) Refine diffing
+    algorithm (e.g., keyed children), optimize patching.
   - **Component Model Refinement:** (`VNode` defined) Handle props, context,
     keys.
   - **DOM Abstraction:** Create a robust, type-safe Dart layer over DOM
@@ -65,23 +69,23 @@
 - **VNode Introduced & Integrated:** Successfully defined `VNode` and updated
   the component model (`State.build`), renderer, and demo (`ClockComponent`) to
   use it.
-- **Basic Stateful Update PoC Works with VNode:** Confirmed that the existing
-  update mechanism functions correctly with `VNode` as the build output (still
-  using full content replacement).
+- **Basic Diffing/Patching Implemented:** Renderer now performs basic diffing
+  for updates instead of full replacement. Handles common cases like
+  text/attribute changes and simple child list modifications.
 - **Improved WASM Loading:** Loading mechanism remains clean
   (`app_bootstrap.js`).
 - **Core Component Structure Updated:** `Component`/`State`/`VNode` structure is
   in place.
-- **Renderer Adapted (Still Basic):** The renderer now consumes `VNode` but
-  still needs a major overhaul for diffing, attribute/child handling, and event
-  handling.
-- **Foundation Laid for Diffing:** Introducing `VNode` is the necessary first
-  step towards implementing a proper diffing algorithm in the renderer.
+- **Renderer Structure Improved:** Introduced `_patch` function and
+  `VNode.domNode` linking, providing a better structure for rendering logic.
+- **Basic Diffing Algorithm Implemented:** Moved beyond just laying the
+  foundation; a simple diffing/patching mechanism is now in place.
 
 ## Known Issues / Challenges
 
-- **Renderer Inefficiency:** Current full-content replacement on update is not
-  performant.
+- **Renderer Diffing Inefficiency:** The current child diffing algorithm is
+  basic (indexed) and can be inefficient for list reordering/insertions. Keyed
+  diffing is needed.
 - **JS Interop Performance:** Still a consideration for the eventual DOM
   abstraction layer.
 - **WASM Debugging:** Remains a factor.

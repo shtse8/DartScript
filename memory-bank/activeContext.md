@@ -2,11 +2,11 @@
 
 ## Current Focus
 
-- **Implementing Proper Diffing/Patching:** Starting the process of replacing
-  the renderer's crude content replacement with a basic diffing algorithm.
-- **Refining Component API:** Defining the `build()` return type as `VNode`.
-- **Updating Renderer:** Modifying the basic renderer to work with the new
-  `VNode` structure returned by `build()`.
+- **Implementing Basic Diffing/Patching:** Implemented initial diffing logic in
+  the renderer's `_patch` function, handling node addition, removal, type
+  replacement, text updates, attribute updates, and basic child list diffing.
+- **Refining Renderer Structure:** Introduced `_patch` function and associated
+  `VNode.domNode` reference for future diffing improvements.
 
 ## Recent Changes
 
@@ -19,9 +19,18 @@
   - Modified `State.build()` method in `packages/component/lib/state.dart` to
     return `VNode` instead of `dynamic`/`Map`.
 - **Updated Renderer (`renderer.dart`):**
-  - Modified the basic renderer (`_performRender` and stateless handling in
-    `render`) to consume `VNode` objects instead of `Map`. It now accesses
-    `vnode.tag` and `vnode.text` (or children for text).
+  - Introduced `_patch` function to handle DOM updates based on VNode
+    comparison.
+  - `_performRender` now calls `_patch`.
+  - `_createDomElement` now populates `VNode.domNode`.
+  - `_patch` implements basic diffing for:
+    - Node addition/removal (null checks).
+    - Node type replacement (tag/type mismatch).
+    - Text node content updates.
+    - Element attribute addition/update/removal.
+    - Basic indexed child list diffing (add/remove at end, recursive patch).
+  - Added necessary JS interop definitions (`removeChild`, `replaceChild`,
+    `removeAttribute`, `parentNode`).
 - **Updated Clock Demo (`lib/clock.dart`):**
   - Modified `ClockComponent`'s `build` method to return a `VNode` (a `span`
     element containing a text `VNode`) instead of a `Map`.
@@ -33,14 +42,12 @@
 
 ## Next Steps
 
-- **Implement Proper Diffing/Patching:** Replace the renderer's crude content
-  replacement with a basic diffing algorithm to update only changed parts of the
-  DOM for better performance.
+- **Refine Diffing/Patching:** Improve the child diffing algorithm (e.g., using
+  keys for better reconciliation), optimize attribute patching.
 - **Refine Component API:** (Partially done by introducing VNode) Continue
   refining props, context handling.
 - **Improve Renderer:**
-  - Handle `VNode` children, attributes, and different node types (text vs.
-    element) correctly during rendering/patching.
+  - (Partially done) Continue refining handling of edge cases in patching.
   - Manage component lifecycle more robustly (e.g., `dispose`).
 - **Integrate Riverpod Properly:** Explore providing `ProviderContainer` /
   `WidgetRef` through the framework's context instead of creating a container
@@ -52,8 +59,9 @@
 
 - **VNode as Build Output:** Confirmed `VNode` as the standard return type for
   `build()`. The renderer now expects this structure.
-- **Renderer Update Strategy:** The renderer still uses full content replacement
-  but now operates on the `VNode` structure. Diffing is the next major step.
+- **Renderer Update Strategy:** Moved from full `innerHTML` replacement to a
+  basic diffing/patching approach within the `_patch` function. It handles
+  common cases but needs further optimization (e.g., keyed children).
 - **VNode Location:** Decided to place `VNode` within the `component` package to
   avoid circular dependencies with the `renderer`.
 - **WASM Loading:** Confirmed `app_bootstrap.js` approach.
