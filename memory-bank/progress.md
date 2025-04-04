@@ -14,43 +14,41 @@
   - `js/app_bootstrap.js` handles fetching, compiling, instantiating WASM, and
     calling Dart `main`.
   - `index.html` correctly loads the bootstrap script.
-- **Component Model (Basic + VNode):**
+- **Component Model (VNode + Key):**
   - Abstract classes for `Component`, `StatelessWidget`, `StatefulWidget`, and
     `State` defined in `packages/component`.
-  - **`VNode` structure defined** in `packages/component/lib/vnode.dart` to
-    represent the output of `build`.
-  - `State.build()` method now **returns `VNode`**.
-  - Basic lifecycle methods (`initState`, `dispose`, `setState`, etc.) defined
-    in `State`.
-- **Renderer (Basic Patching Implemented):**
-  - `packages/renderer` provides `render` and internal `_patch` functions.
-  - Handles initial rendering and updates via `_patch`.
+  - **`VNode` structure defined** with `key` property added.
+  - `State.build()` method returns `VNode`.
+  - Basic lifecycle methods defined in `State`.
+- **Renderer (Keyed Diffing Implemented):**
+  - `packages/renderer` provides `render` function.
+  - `_patch` function handles node/attribute updates and delegates child
+    patching.
+  - **`_patchChildren` function implements keyed reconciliation algorithm.**
   - `_createDomElement` helper creates DOM nodes from `VNode` and stores
     reference in `VNode.domNode`.
-  - `_patch` function implements basic diffing:
-    - Handles node addition/removal/type replacement.
-    - Updates text node content.
-    - Adds/updates/removes element attributes.
-    - Recursively patches children using a basic indexed approach.
-- **State Update (Simplified PoC):**
+  - JS Interop updated for `insertBefore` and `tagName`.
+  - Detailed logging added for debugging diffing.
+- **State Update (Keyed Diffing):**
   - `State.setState` triggers a callback mechanism.
-  - Renderer receives the callback and re-runs `State.build()`.
-  - Renderer now uses the `_patch` function, moving away from full `innerHTML`
-    replacement for updates.
-  - **Result:** A simple stateful component (like the clock demo) can now
-    visually update, albeit inefficiently.
-- **Demo Application:**
-  - `ClockComponent` demonstrates using `StatefulWidget`, Riverpod
-    `StreamProvider`, `setState`, and **building a `VNode`** to display updating
-    time (initial state + updates work).
+  - Renderer receives the callback, re-runs `State.build()`, and uses `_patch`
+    (which calls `_patchChildren`) to apply updates efficiently using keys.
+  - **Result:** Stateful components with lists (like `TodoListComponent`) can
+    update efficiently, handling additions, removals, and reordering correctly.
+- **Demo Application (TodoList):**
+  - `TodoListComponent` created to specifically test keyed diffing.
+  - Demonstrates using `StatefulWidget`, `setState`, keys in `VNode`, and
+    automatic updates via `Timer`.
+  - `main.dart` updated to render `TodoListComponent` into `#app` div.
+  - `index.html` updated to use `#app` div.
 
 ## What's Left to Build (High Level - Framework Focus)
 
 - **Core Framework Implementation:**
-  - **Rendering Engine (Diffing):** (Basic implementation done) Refine diffing
-    algorithm (e.g., keyed children), optimize patching.
-  - **Component Model Refinement:** (`VNode` defined) Handle props, context,
-    keys.
+  - **Rendering Engine (Diffing):** (Keyed diffing implemented) Further optimize
+    patching logic, handle edge cases.
+  - **Component Model Refinement:** (`VNode` with `key` defined) Handle props,
+    context.
   - **DOM Abstraction:** Create a robust, type-safe Dart layer over DOM
     operations instead of direct JS interop in the renderer.
   - **Event Handling:** Implement DOM event listeners and dispatching to Dart
@@ -66,26 +64,29 @@
 
 ## Current Status
 
-- **VNode Introduced & Integrated:** Successfully defined `VNode` and updated
-  the component model (`State.build`), renderer, and demo (`ClockComponent`) to
-  use it.
-- **Basic Diffing/Patching Implemented:** Renderer now performs basic diffing
-  for updates instead of full replacement. Handles common cases like
-  text/attribute changes and simple child list modifications.
+- **Keyed Diffing Implemented & Tested:** Successfully added `key` to `VNode`,
+  implemented keyed reconciliation in `_patchChildren`, and verified with
+  `TodoListComponent`.
+- **Renderer Refactored:** `_patch` now delegates child patching to
+  `_patchChildren`. JS Interop and logging improved.
+- **Demo Updated:** Switched from `ClockComponent` to `TodoListComponent` to
+  test list diffing. Target element ID standardized to `app`.
+- **(Previous) VNode Introduced & Integrated.**
+- **(Previous) Basic Patching Foundation Laid.**
 - **Improved WASM Loading:** Loading mechanism remains clean
   (`app_bootstrap.js`).
 - **Core Component Structure Updated:** `Component`/`State`/`VNode` structure is
   in place.
 - **Renderer Structure Improved:** Introduced `_patch` function and
   `VNode.domNode` linking, providing a better structure for rendering logic.
-- **Basic Diffing Algorithm Implemented:** Moved beyond just laying the
-  foundation; a simple diffing/patching mechanism is now in place.
+- **Keyed Diffing Algorithm Implemented:** Replaced basic indexed approach.
 
 ## Known Issues / Challenges
 
-- **Renderer Diffing Inefficiency:** The current child diffing algorithm is
-  basic (indexed) and can be inefficient for list reordering/insertions. Keyed
-  diffing is needed.
+- **Event Handling:** Not yet implemented, preventing user interaction with
+  demos.
+- **Renderer Optimization:** Keyed diffing is implemented but can likely be
+  further optimized.
 - **JS Interop Performance:** Still a consideration for the eventual DOM
   abstraction layer.
 - **WASM Debugging:** Remains a factor.

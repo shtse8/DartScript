@@ -3,7 +3,7 @@
 
 import 'dart:js_interop';
 
-import 'package:dust_app/clock.dart'; // Import the new ClockComponent
+import 'todo_list.dart'; // Import the new TodoListComponent
 import 'package:dust_renderer/renderer.dart'; // Import the render function via package URI
 
 // --- JS Interop for console.log ---
@@ -21,14 +21,14 @@ void main() {
       'Dust Application main() executed (Dart print).'); // Keep Dart print too
 
   // 1. Create an instance of the root component
-  final app = ClockComponent(); // Use ClockComponent
-  consoleLog('>>> ClockComponent instance created.'.toJS);
+  final app = TodoListComponent(); // Use TodoListComponent
+  consoleLog('>>> TodoListComponent instance created.'.toJS);
 
   // 2. Render the component into the target element
   //    The target element ID comes from index.html
   consoleLog('>>> Calling render function...'.toJS);
   try {
-    render(app, 'output'); // Use the render function from the renderer package
+    render(app, 'app'); // Render into the 'app' div
     consoleLog('>>> render function finished.'.toJS);
   } catch (e, s) {
     consoleLog('>>> ERROR during render:'.toJS);

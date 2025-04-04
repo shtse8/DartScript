@@ -30,6 +30,9 @@ extension JSAnyExtension on JSAny {
   external JSAny?
       get parentNode; // Added to access parent for removal/replacement
   external void removeAttribute(JSString name); // Added for removing attributes
+  external void insertBefore(
+      JSAny newNode, JSAny? referenceNode); // Added for inserting nodes
+  external JSString get tagName; // Added for getting element tag name
 }
 // --- End JS Interop ---
 
@@ -63,10 +66,16 @@ JSAny _createDomElement(VNode vnode) {
 
   // 4. Recursively Create and Append Children
   if (vnode.children != null) {
+    if (vnode.tag == 'ul')
+      print('>>> _createDomElement: Creating children for <ul>');
     for (final childVNode in vnode.children!) {
+      print(
+          '>>> _createDomElement: Creating child ${childVNode.tag ?? 'text'} (key: ${childVNode.key}) for parent <${vnode.tag}>');
       final JSAny childElement = _createDomElement(childVNode);
       element.appendChild(childElement);
     }
+    if (vnode.tag == 'ul')
+      print('>>> _createDomElement: Finished creating children for <ul>');
   } else if (vnode.text != null) {
     // Handle case where an element node might have direct text content specified
     // (though children is preferred for text content via text nodes)
@@ -102,13 +111,10 @@ void _performRender(State componentState, JSAny targetElement) {
   }
 }
 
-// Removed incorrect comment block left by previous partial diff apply.
-/// Patches the DOM to reflect the difference between the new and old VNode trees.
-///
 /// Patches the DOM to reflect the difference between the new and old VNode trees.
 void _patch(JSAny parentElement, VNode? newVNode, VNode? oldVNode) {
   print(
-      'Patching: parent=${parentElement.hashCode}, new=[${newVNode?.tag ?? newVNode?.text?.substring(0, 5) ?? 'null'}], old=[${oldVNode?.tag ?? oldVNode?.text?.substring(0, 5) ?? 'null'}]');
+      'Patching: parent=${parentElement.hashCode}, new=[${newVNode?.tag ?? newVNode?.text?.substring(0, min(5, newVNode.text?.length ?? 0)) ?? 'null'}], old=[${oldVNode?.tag ?? oldVNode?.text?.substring(0, min(5, oldVNode.text?.length ?? 0)) ?? 'null'}]');
 
   // Case 1: Old VNode exists, New VNode is null -> Remove the old DOM node
   if (newVNode == null) {
@@ -197,39 +203,200 @@ void _patch(JSAny parentElement, VNode? newVNode, VNode? oldVNode) {
     }
   });
 
-  // 4c: Patch Children (Recursive Step)
-  final oldChildren = oldVNode.children ?? [];
-  final newChildren = newVNode.children ?? [];
-  final oldLength = oldChildren.length;
-  final newLength = newChildren.length;
-  final commonLength = oldLength < newLength ? oldLength : newLength;
-
-  print(
-      'Patching children for <${newVNode.tag}>: old=${oldLength}, new=${newLength}');
-
-  // Patch common children
-  for (int i = 0; i < commonLength; i++) {
-    _patch(domNode, newChildren[i], oldChildren[i]);
-  }
-
-  // Add new children if new list is longer
-  if (newLength > oldLength) {
-    print('Adding ${newLength - oldLength} new children...');
-    for (int i = oldLength; i < newLength; i++) {
-      // Since there's no corresponding old child, pass null for oldVNode
-      _patch(domNode, newChildren[i], null);
-    }
-  }
-  // Remove old children if old list is longer
-  else if (oldLength > newLength) {
-    print('Removing ${oldLength - newLength} old children...');
-    for (int i = newLength; i < oldLength; i++) {
-      // Since there's no corresponding new child, pass null for newVNode
-      _patch(domNode, null, oldChildren[i]);
-    }
-  }
+  // 4c: Patch Children (Keyed Reconciliation)
+  _patchChildren(domNode, oldVNode.children, newVNode.children);
 
   print('Finished patching children for <${newVNode.tag}>.');
+}
+
+// Helper function for min to avoid import 'dart:math' just for this
+int min(int a, int b) => a < b ? a : b;
+
+/// Patches the children of a DOM element using a keyed reconciliation algorithm.
+/// Based on common algorithms found in frameworks like Vue and Inferno.
+void _patchChildren(JSAny parentDomNode, List<VNode>? oldChOriginal,
+    List<VNode>? newChOriginal) {
+  // Work with copies that allow nulls for marking moved nodes
+  List<VNode?> oldCh = oldChOriginal?.map((e) => e as VNode?).toList() ?? [];
+  List<VNode?> newCh = newChOriginal?.map((e) => e as VNode?).toList() ?? [];
+
+  // Use the new tagName getter from JSAnyExtension
+  final parentTag = (parentDomNode as JSAny).tagName.toDart;
+  print(
+      '>>> _patchChildren START for parent <$parentTag>: old=${oldCh.length}, new=${newCh.length}');
+
+  int oldStartIdx = 0;
+  int newStartIdx = 0;
+  int oldEndIdx = oldCh.length - 1;
+  int newEndIdx = newCh.length - 1;
+
+  VNode? oldStartVNode = oldCh.isNotEmpty ? oldCh[0] : null;
+  VNode? newStartVNode = newCh.isNotEmpty ? newCh[0] : null;
+  VNode? oldEndVNode = oldCh.isNotEmpty ? oldCh[oldEndIdx] : null;
+  VNode? newEndVNode = newCh.isNotEmpty ? newCh[newEndIdx] : null;
+
+  Map<Object, int>? oldKeyToIdx; // Lazily created map for old keys
+
+  bool isSameVNode(VNode? vnode1, VNode? vnode2) {
+    // Basic check: same key and same tag (or both text nodes)
+    return vnode1?.key == vnode2?.key && vnode1?.tag == vnode2?.tag;
+  }
+
+  void removeVNode(VNode vnode) {
+    if (vnode.domNode != null) {
+      print('Removing DOM node (key: ${vnode.key}): ${vnode.domNode.hashCode}');
+      if (vnode.domNode is JSAny) {
+        // FIX: Use parentDomNode
+        parentDomNode.removeChild(vnode.domNode as JSAny);
+      } else {
+        print('Error: Cannot remove, vnode.domNode is not JSAny');
+      }
+      // TODO: Call component lifecycle hooks (dispose) if applicable
+    }
+  }
+
+  JSAny? getDomNodeBefore(int index) {
+    // Helper to find the DOM node to insert before
+    // FIX: Add null checks (!) since newCh is List<VNode?>
+    if (index < newCh!.length) {
+      // Check length first with !
+      final nextVNode = newCh[index]; // Access element
+      if (nextVNode != null && nextVNode.domNode is JSAny) {
+        // Check if VNode and its domNode are valid
+        return nextVNode.domNode as JSAny;
+      }
+    }
+    return null; // Insert at the end
+  }
+
+  // Renamed helper to avoid potential conflicts and clarify purpose
+  void _domInsertBefore(JSAny newNode, JSAny? referenceNode) {
+    // FIX: Use the extension method directly
+    parentDomNode.insertBefore(newNode, referenceNode);
+    print(
+        'Inserted DOM node ${newNode.hashCode} before ${referenceNode?.hashCode ?? 'end'}');
+  }
+
+  while (oldStartIdx <= oldEndIdx && newStartIdx <= newEndIdx) {
+    // --- Skip null markers (nodes that were moved) ---
+    if (oldStartVNode == null) {
+      oldStartVNode = ++oldStartIdx <= oldEndIdx ? oldCh[oldStartIdx] : null;
+    } else if (oldEndVNode == null) {
+      oldEndVNode = --oldEndIdx >= oldStartIdx ? oldCh[oldEndIdx] : null;
+      // --- Skip null nodes in new list (less common but possible) ---
+    } else if (newStartVNode == null) {
+      newStartVNode = ++newStartIdx <= newEndIdx ? newCh[newStartIdx] : null;
+    } else if (newEndVNode == null) {
+      newEndVNode = --newEndIdx >= newStartIdx ? newCh[newEndIdx] : null;
+      // --- Core comparison logic ---
+    } else if (isSameVNode(oldStartVNode, newStartVNode)) {
+      // Same start nodes
+      print(
+          '>>> _patchChildren [Case 1: Same Start]: Patching key ${newStartVNode?.key}');
+      _patch(parentDomNode, newStartVNode, oldStartVNode);
+      oldStartVNode = ++oldStartIdx <= oldEndIdx ? oldCh[oldStartIdx] : null;
+      newStartVNode = ++newStartIdx <= newEndIdx ? newCh[newStartIdx] : null;
+    } else if (isSameVNode(oldEndVNode, newEndVNode)) {
+      // Same end nodes
+      print(
+          '>>> _patchChildren [Case 2: Same End]: Patching key ${newEndVNode?.key}');
+      _patch(parentDomNode, newEndVNode, oldEndVNode);
+      oldEndVNode = --oldEndIdx >= oldStartIdx ? oldCh[oldEndIdx] : null;
+      newEndVNode = --newEndIdx >= newStartIdx ? newCh[newEndIdx] : null;
+    } else if (isSameVNode(oldStartVNode, newEndVNode)) {
+      // Node moved right
+      print(
+          '>>> _patchChildren [Case 3: Moved Right]: Patching key ${newEndVNode?.key}, moving DOM node');
+      _patch(parentDomNode, newEndVNode, oldStartVNode);
+      _domInsertBefore(
+          // Use renamed helper
+          oldStartVNode.domNode as JSAny,
+          getDomNodeBefore(newEndIdx + 1));
+      oldStartVNode = ++oldStartIdx <= oldEndIdx ? oldCh[oldStartIdx] : null;
+      newEndVNode = --newEndIdx >= newStartIdx ? newCh[newEndIdx] : null;
+    } else if (isSameVNode(oldEndVNode, newStartVNode)) {
+      // Node moved left
+      print(
+          '>>> _patchChildren [Case 4: Moved Left]: Patching key ${newStartVNode?.key}, moving DOM node');
+      _patch(parentDomNode, newStartVNode, oldEndVNode);
+      _domInsertBefore(
+          // Use renamed helper
+          oldEndVNode.domNode as JSAny,
+          getDomNodeBefore(
+              newStartIdx)); // Insert before the current newStartVNode's eventual position
+      oldEndVNode = --oldEndIdx >= oldStartIdx ? oldCh[oldEndIdx] : null;
+      newStartVNode = ++newStartIdx <= newEndIdx ? newCh[newStartIdx] : null;
+    } else {
+      // Fallback: Use keys to find the node or create a new one
+      oldKeyToIdx ??= {
+        for (int i = oldStartIdx; i <= oldEndIdx; i++)
+          if (oldCh[i]?.key != null) oldCh[i]!.key!: i
+      };
+
+      final idxInOld =
+          newStartVNode?.key == null ? null : oldKeyToIdx[newStartVNode!.key!];
+
+      if (idxInOld == null) {
+        // New node, create and insert
+        print(
+            '>>> _patchChildren [Case 5a: New Node]: Creating key ${newStartVNode?.key}');
+        final JSAny newDomNode = _createDomElement(
+            newStartVNode!); // Assume newStartVNode is not null here
+        _domInsertBefore(
+            newDomNode, getDomNodeBefore(newStartIdx)); // Use renamed helper
+      } else {
+        // Found old node with same key, patch and move
+        print(
+            '>>> _patchChildren [Case 5b: Found Key]: Patching key ${newStartVNode?.key}, moving DOM node');
+        final vnodeToMove = oldCh[idxInOld];
+        if (vnodeToMove == null) {
+          print(
+              'Error: Found null VNode in oldChildren at index $idxInOld for key ${newStartVNode?.key}. This might indicate a duplicate key or logic error.');
+        } else {
+          _patch(parentDomNode, newStartVNode!, vnodeToMove);
+          _domInsertBefore(
+              // Use renamed helper
+              vnodeToMove.domNode as JSAny,
+              getDomNodeBefore(newStartIdx));
+          // FIX: Assign null to List<VNode?> - This is now valid because oldCh is List<VNode?>
+          oldCh[idxInOld] =
+              null; // Mark as moved/processed - Should be valid now
+        }
+      }
+      newStartVNode = ++newStartIdx <= newEndIdx ? newCh[newStartIdx] : null;
+    }
+  }
+
+  // Cleanup remaining nodes in old list
+  if (oldStartIdx <= oldEndIdx) {
+    // Remove remaining old nodes
+    print(
+        '>>> _patchChildren [Cleanup Old]: Removing ${oldEndIdx - oldStartIdx + 1} nodes from index $oldStartIdx');
+    for (int i = oldStartIdx; i <= oldEndIdx; i++) {
+      // Only remove nodes that weren't marked as null (moved)
+      if (oldCh[i] != null) {
+        removeVNode(oldCh[i]!); // Not null checked above
+      }
+    }
+  }
+
+  // Add remaining new nodes
+  if (newStartIdx <= newEndIdx) {
+    // Add remaining new nodes
+    print(
+        '>>> _patchChildren [Cleanup New]: Adding ${newEndIdx - newStartIdx + 1} nodes from index $newStartIdx');
+    final JSAny? referenceNode =
+        getDomNodeBefore(newEndIdx + 1); // Find node after the last new node
+    for (int i = newStartIdx; i <= newEndIdx; i++) {
+      // Only add nodes that aren't null (shouldn't happen with newCh, but safe)
+      if (newCh[i] != null) {
+        final JSAny newDomNode =
+            _createDomElement(newCh[i]!); // Not null checked above
+        _domInsertBefore(newDomNode, referenceNode); // Use renamed helper
+      }
+    }
+  }
+  print('>>> _patchChildren END for parent <$parentTag>');
 }
 
 /// Renders a component into a target DOM element for the first time.
@@ -269,8 +436,6 @@ void render(Component component, String targetElementId) {
     print('Component is StatelessWidget, performing initial build...');
     // For stateless, we just build once and render (no updates handled yet)
     try {
-      final representation = component.build();
-      print('Stateless build returned: $representation');
       // Build the VNode tree
       final VNode newRootVNode = component.build();
       print('Stateless build returned VNode: [${newRootVNode.tag ?? 'text'}]');

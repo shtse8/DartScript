@@ -2,38 +2,48 @@
 
 ## Current Focus
 
-- **Implementing Basic Diffing/Patching:** Implemented initial diffing logic in
-  the renderer's `_patch` function, handling node addition, removal, type
-  replacement, text updates, attribute updates, and basic child list diffing.
-- **Refining Renderer Structure:** Introduced `_patch` function and associated
-  `VNode.domNode` reference for future diffing improvements.
+- **Keyed Child Diffing Implemented:** Replaced the basic indexed child diffing
+  in `_patch` with a keyed reconciliation algorithm (`_patchChildren`) in the
+  renderer.
+- **Testing Keyed Diffing:** Created `TodoListComponent` with automatic updates
+  (add/remove/shuffle) to verify the keyed diffing logic.
+- **Debugging Renderer:** Fixed various issues identified during diffing
+  implementation and testing (JS interop, type errors, logic errors).
 
 ## Recent Changes
 
-- **Introduced VNode Structure:**
-  - Defined a `VNode` class in `packages/component/lib/vnode.dart` to represent
-    virtual DOM nodes (elements and text).
-  - Moved `VNode` definition from `renderer` to `component` package to avoid
-    circular dependencies.
+- **Updated VNode Structure:**
+  - Added `key` property to `VNode` class in `packages/component/lib/vnode.dart`
+    to support keyed diffing.
+  - (Previous) Defined `VNode` class.
+  - (Previous) Moved `VNode` definition to `component` package.
 - **Updated Component API:**
   - Modified `State.build()` method in `packages/component/lib/state.dart` to
     return `VNode` instead of `dynamic`/`Map`.
 - **Updated Renderer (`renderer.dart`):**
-  - Introduced `_patch` function to handle DOM updates based on VNode
-    comparison.
-  - `_performRender` now calls `_patch`.
-  - `_createDomElement` now populates `VNode.domNode`.
-  - `_patch` implements basic diffing for:
-    - Node addition/removal (null checks).
-    - Node type replacement (tag/type mismatch).
-    - Text node content updates.
-    - Element attribute addition/update/removal.
-    - Basic indexed child list diffing (add/remove at end, recursive patch).
-  - Added necessary JS interop definitions (`removeChild`, `replaceChild`,
-    `removeAttribute`, `parentNode`).
-- **Updated Clock Demo (`lib/clock.dart`):**
-  - Modified `ClockComponent`'s `build` method to return a `VNode` (a `span`
-    element containing a text `VNode`) instead of a `Map`.
+  - Implemented `_patchChildren` function with a keyed reconciliation algorithm
+    (inspired by Vue/Inferno).
+  - `_patch` now calls `_patchChildren` for handling child updates.
+  - Added `insertBefore` and `tagName` to `JSAnyExtension` for JS interop.
+  - Fixed various bugs in `_patch` and `_patchChildren` related to null
+    handling, JS interop calls, and list manipulation.
+  - Added detailed logging to `_createDomElement` and `_patchChildren` for
+    debugging diffing logic.
+  - (Previous) Introduced `_patch` function.
+  - (Previous) `_performRender` calls `_patch`.
+  - (Previous) `_createDomElement` populates `VNode.domNode`.
+  - (Previous) Added basic JS interop definitions.
+- **Created TodoList Demo (`lib/todo_list.dart`):**
+  - Implemented a stateful `TodoListComponent` to test keyed diffing.
+  - Uses `item.id` as `key` for list items (`<li>`).
+  - Includes automatic timer-based updates (add, remove, shuffle) for testing.
+- **Updated Main Entry Point (`lib/main.dart`):**
+  - Changed `render` call to use `TodoListComponent` instead of
+    `ClockComponent`.
+  - Updated target element ID to `'app'`.
+- **Updated `index.html`:**
+  - Changed the target div ID from `'output'` to `'app'`.
+- **(Previous) Updated Clock Demo:** Modified `build` to return `VNode`.
 - **Previous Changes (Still Relevant):**
   - Added Riverpod Dependency & Clock Demo.
   - Improved WASM Loading (`js/app_bootstrap.js`).
@@ -42,8 +52,14 @@
 
 ## Next Steps
 
-- **Refine Diffing/Patching:** Improve the child diffing algorithm (e.g., using
-  keys for better reconciliation), optimize attribute patching.
+- **Implement Event Handling:** Allow user interaction with components (e.g.,
+  button clicks in `TodoListComponent`). This involves:
+  - Defining event listener attributes in `VNode`.
+  - Attaching/detaching listeners in the renderer (`_patch`).
+  - Creating a mechanism to dispatch DOM events back to Dart component
+    callbacks.
+- **Refine Diffing/Patching:** (Keyed diffing implemented) Further optimize
+  patching logic, handle edge cases more robustly.
 - **Refine Component API:** (Partially done by introducing VNode) Continue
   refining props, context handling.
 - **Improve Renderer:**
@@ -59,9 +75,9 @@
 
 - **VNode as Build Output:** Confirmed `VNode` as the standard return type for
   `build()`. The renderer now expects this structure.
-- **Renderer Update Strategy:** Moved from full `innerHTML` replacement to a
-  basic diffing/patching approach within the `_patch` function. It handles
-  common cases but needs further optimization (e.g., keyed children).
+- **Renderer Update Strategy:** Implemented keyed child reconciliation in
+  `_patchChildren`, replacing the basic indexed approach. Further optimization
+  is possible.
 - **VNode Location:** Decided to place `VNode` within the `component` package to
   avoid circular dependencies with the `renderer`.
 - **WASM Loading:** Confirmed `app_bootstrap.js` approach.

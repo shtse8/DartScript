@@ -19,8 +19,9 @@
     necessary bridge functions (imports/exports) for communication between Dart
     (WASM) and JS (including DOM APIs). The framework uses `dart:js_interop` to
     interact with this bridge.
-  - **DOM Manipulation:** Currently performed via direct JS interop calls within
-    the basic renderer. A Dart DOM abstraction layer is planned.
+  - **DOM Manipulation:** Performed via direct JS interop calls
+    (`JSAnyExtension`) within the renderer (`_patch`, `_patchChildren`). A Dart
+    DOM abstraction layer is planned.
 
 ## Development Environment
 
@@ -37,8 +38,8 @@
 - **Browser Compatibility:** Ensure compatibility with modern browsers
   supporting WASM and necessary web APIs.
 - **Bundle Size:** WASM bundle size (including Dart runtime) is a key factor.
-- **Rendering Performance:** Diffing/patching efficiency is crucial. JS/WASM
-  interop overhead for DOM calls must be minimized.
+- **Rendering Performance:** Keyed diffing implemented, but efficiency of the
+  algorithm and JS/WASM interop overhead for DOM calls remain important.
 - **State Management Overhead:** Consider performance implications of state
   management solutions.
 - **JS Interop Performance:** Minimize calls across the JS/WASM boundary.
@@ -56,9 +57,10 @@
   used sub-optimally in demo).
 - **(Framework Internal):**
   - `dust_component`: Defines core `Component`, `State`, `StatelessWidget`,
-    `StatefulWidget`, and now `VNode`.
+    `StatefulWidget`, and `VNode` (now including `key`).
   - `dust_renderer`: Depends on `dust_component` (including `VNode`) to render
-    component output.
+    component output using keyed diffing (`_patch`, `_patchChildren`). Uses
+    `JSAnyExtension` for DOM manipulation.
   - Others like `core`, `dom`, `router` planned.
 - **(Development):** `dhttpd` for serving files locally. `build_runner` might be
   used later.
