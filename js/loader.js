@@ -1,6 +1,19 @@
 // js/loader.js
 import { compileStreaming } from '../wasm/main.mjs'; // Import the necessary function
 
+// Define the function Dart will call
+window.dartScriptGetCode = function() {
+    console.log('JS: window.dartScriptGetCode() called by Dart.');
+    const dartScriptTag = document.querySelector('dart-script'); // Find the first tag
+    if (dartScriptTag) {
+        console.log('JS: Found <dart-script> tag, returning textContent.');
+        return dartScriptTag.textContent;
+    } else {
+        console.warn('JS: No <dart-script> tag found.');
+        return null; // Return null if no tag found
+    }
+};
+
 async function loadDartModule() {
     const outputDiv = document.getElementById('output');
     outputDiv.textContent = 'Loading Dart WASM module...';
@@ -20,27 +33,12 @@ async function loadDartModule() {
         outputDiv.textContent = 'Instantiating WASM module...';
         const instantiatedApp = await compiledApp.instantiate();
 
-        // 4. Invoke the Dart main() function (which schedules the update)
-        outputDiv.textContent = 'Invoking Dart main()...';
+        // 4. Invoke the Dart main() function, which will call back to JS
+        outputDiv.textContent = 'WASM module instantiated. Invoking Dart main()...';
         instantiatedApp.invokeMain();
-        outputDiv.textContent = 'Dart main() executed (update scheduled).';
+        outputDiv.textContent = 'Dart main() invoked (should have called JS back).';
 
-        // 5. Verification - Wait briefly and check if Dart updated the DOM
-        outputDiv.textContent += '\nWaiting for scheduled Dart update...';
-        // Wait a bit longer to ensure the Timer callback has a chance to run
-        await new Promise(resolve => setTimeout(resolve, 200)); // 200ms delay
-
-        const expectedText = 'Hello from Dart WASM! 👋 (Timer.run)';
-        if (outputDiv.textContent === expectedText) {
-             outputDiv.textContent += '\nVerification successful: DOM updated by scheduled Dart code!';
-             console.log('Verification successful.');
-        } else {
-            let errorMsg = '\nVerification failed:';
-            errorMsg += `\n - Expected output text: "${expectedText}", but got: "${outputDiv.textContent}"`;
-            outputDiv.textContent += errorMsg;
-            console.error('Verification failed:', errorMsg);
-        }
-
+        // PoC Verification logic removed - focus is now on <dart-script> tags
     } catch (error) {
         console.error('Error loading or running Dart module:', error);
         // Ensure the error message is displayed in the output div
