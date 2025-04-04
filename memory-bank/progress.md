@@ -7,9 +7,13 @@
   - Basic Dart-to-WASM compilation (`dart compile wasm`).
   - WASM module loading via dedicated JS bootstrap (`js/app_bootstrap.js`).
   - Basic JS/WASM communication (JS loads WASM, invokes Dart `main`).
-- **Basic DOM Interaction Layer:**
+- **DOM Abstraction Layer (`dust_dom`):**
+  - Created `packages/dom` with initial `@staticInterop` abstractions for
+    `DomNode`, `DomElement`, `DomTextNode`, `DomDocument`.
+  - Added as dependency to root and renderer.
+- **Basic DOM Interaction Layer:** (Being replaced by `dust_dom`)
   - JS functions for DOM manipulation available via `dart:js_interop` in the
-    basic renderer.
+    basic renderer (partially replaced).
 - **WASM Loading Mechanism:**
   - `js/app_bootstrap.js` handles fetching, compiling, instantiating WASM, and
     calling Dart `main`.
@@ -22,20 +26,27 @@
   - Added `dust_renderer` dependency to `component` package.
   - `State.build()` method returns `VNode`.
   - Basic lifecycle methods defined in `State`.
-- **Renderer (Keyed Diffing + Refined Event Handling):**
+- **Renderer (Keyed Diffing + Refined Event Handling + Initial DOM
+  Abstraction):**
   - `packages/renderer` provides `render` function.
+  - **Integrated `dust_dom`:** Started replacing direct JS interop calls with
+    `dust_dom` abstractions (e.g., `createElement`, `setAttribute`,
+    `appendChild`, event listeners).
   - **Created `DomEvent` wrapper** (`dom_event.dart`) for type-safe event
     handling.
   - `_patch` function handles node/attribute/listener updates and delegates
-    child patching.
-  - **`_patchChildren` function implements keyed reconciliation algorithm.**
-  - `_createDomElement` helper creates DOM nodes from `VNode`, attaches initial
-    listeners (now wrapping callbacks to pass `DomEvent`, converting with
-    `.toJS`, storing refs), and stores DOM reference in `VNode.domNode`.
+    child patching (partially refactored for `dust_dom`).
+  - **`_patchChildren` function implements keyed reconciliation algorithm**
+    (partially refactored for `dust_dom`).
+  - `_createDomElement` helper creates DOM nodes from `VNode` (using
+    `dust_dom`), attaches initial listeners (now wrapping callbacks to pass
+    `DomEvent`, converting with `.toJS`, storing refs), and stores DOM reference
+    in `VNode.domNode`.
   - **Improved listener update logic in `_patch`:** Always removes/adds
-    listeners when present in new VNode, wraps callbacks to pass `DomEvent`.
+    listeners when present in new VNode, wraps callbacks to pass `DomEvent` (now
+    uses `dust_dom` `addEventListener`/`removeEventListener`).
   - (Previous) JS Interop updated for `addEventListener` and
-    `removeEventListener`.
+    `removeEventListener` (being replaced).
 - **State Update (Keyed Diffing):**
   - `State.setState` triggers a callback mechanism.
   - Renderer receives the callback, re-runs `State.build()`, and uses `_patch`
@@ -57,8 +68,8 @@
     patching logic, handle edge cases.
   - **Component Model Refinement:** (`VNode` with `key` defined) Handle props,
     context.
-  - **DOM Abstraction:** Create a robust, type-safe Dart layer over DOM
-    operations instead of direct JS interop in the renderer.
+  - **DOM Abstraction:** (`dust_dom` created) Complete the abstraction layer and
+    fully replace direct JS interop in the renderer.
   - **Event Handling:** (Refined) Listener update logic improved, `DomEvent`
     wrapper implemented. Further testing on removal reliability and wrapper
     performance needed.
@@ -73,13 +84,20 @@
 
 ## Current Status
 
+- **DOM Abstraction Started:**
+  - Created `dust_dom` package with basic static interop classes.
+  - Started integrating `dust_dom` into the renderer, replacing some direct JS
+    calls.
+  - Successfully compiled WASM after initial integration.
 - **Event Handling Refined:**
   - Implemented `DomEvent` wrapper for type safety.
-  - Improved listener update logic in `_patch` for robustness.
+  - Improved listener update logic in `_patch` for robustness (now using
+    `dust_dom`).
   - Updated relevant components/demos (`VNode`, `renderer`,
     `TodoListComponent`).
 - **JS Interop for Events Resolved:** Confirmed `.toJS` extension method is the
-  correct approach for WASM event listeners.
+  correct approach for WASM event listeners (still used for callback
+  conversion).
 - **(Previous) Keyed Diffing Implemented & Tested.**
 - **(Previous) Renderer Refactored for Diffing.**
 - **(Previous) Demo Updated for Diffing.**
@@ -90,7 +108,8 @@
 - **Core Component Structure Updated:** `Component`/`State`/`VNode` structure is
   in place.
 - **Renderer Structure Improved:** Introduced `_patch` function and
-  `VNode.domNode` linking, providing a better structure for rendering logic.
+  `VNode.domNode` linking, providing a better structure for rendering logic (now
+  partially using `dust_dom`).
 - **Keyed Diffing Algorithm Implemented:** Replaced basic indexed approach.
 
 ## Known Issues / Challenges
@@ -100,8 +119,8 @@
   `DomEvent` wrapper needs consideration.
 - **Renderer Optimization:** Keyed diffing is implemented but can likely be
   further optimized.
-- **JS Interop Performance:** Still a consideration for the eventual DOM
-  abstraction layer.
+- **JS Interop Performance:** Still a consideration, but `@staticInterop` in
+  `dust_dom` aims to mitigate this compared to dynamic calls.
 - **WASM Debugging:** Remains a factor.
 - **Bundle Size:** Needs monitoring as framework grows.
 - **Hot Reload Implementation:** Still a significant challenge.

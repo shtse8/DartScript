@@ -192,6 +192,13 @@ packages:
       relative: true
     source: path
     version: "0.0.1"
+  dust_dom:
+    dependency: "direct main"
+    description:
+      path: "packages/dom"
+      relative: true
+    source: path
+    version: "0.0.1"
   dust_renderer:
     dependency: "direct main"
     description:

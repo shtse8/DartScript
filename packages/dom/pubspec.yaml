@@ -1,0 +1,14 @@
+name: dust_dom
+description: DOM abstraction layer for the Dust framework.
+version: 0.0.1
+# repository: https://github.com/your_org/dust
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  js: ^0.7.0 # Or use dart:js_interop directly if preferred for WASM
+
+dev_dependencies:
+  lints: ^3.0.0
+  test: ^1.24.0

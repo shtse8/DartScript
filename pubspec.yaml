@@ -12,6 +12,8 @@ dependencies:
     path: packages/component
   dust_renderer:
     path: packages/renderer
+  dust_dom:
+    path: packages/dom
   js: ^0.7.0 # For main application if it uses js_interop directly
 
 dev_dependencies:

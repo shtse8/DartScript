@@ -146,6 +146,12 @@
       "languageVersion": "3.0"
     },
     {
+      "name": "dust_dom",
+      "rootUri": "../packages/dom",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
       "name": "dust_renderer",
       "rootUri": "../packages/renderer",
       "packageUri": "lib/",
@@ -422,7 +428,7 @@
       "languageVersion": "3.0"
     }
   ],
-  "generated": "2025-04-04T13:01:51.885675Z",
+  "generated": "2025-04-04T16:36:28.488720Z",
   "generator": "pub",
   "generatorVersion": "3.7.2",
   "flutterRoot": "file:///C:/Users/shtse/flutter",

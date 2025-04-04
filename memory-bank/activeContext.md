@@ -2,7 +2,9 @@
 
 ## Current Focus
 
-- **Refining Event Handling:**
+- **Integrating DOM Abstraction:** Continue replacing direct JS interop calls in
+  `renderer.dart` with the new `dust_dom` abstractions.
+- **Refining Event Handling:** (Partially addressed)
   - Implemented `DomEvent` wrapper (`packages/renderer/lib/dom_event.dart`) for
     type-safe event object access in Dart callbacks.
   - Simplified and improved the listener update logic in the renderer's `_patch`
@@ -14,7 +16,24 @@
 
 ## Recent Changes
 
-- **Updated VNode Structure (`packages/component/lib/vnode.dart`):**
+- **Created `dust_dom` Package:**
+  - Created `packages/dom/lib` directory.
+  - Created `packages/dom/pubspec.yaml`.
+  - Created initial `packages/dom/lib/dom.dart` with basic `DomNode`,
+    `DomElement`, `DomTextNode`, `DomDocument` abstractions using
+    `@staticInterop`.
+  - Added `dust_dom` as a dependency to the root `pubspec.yaml` and
+    `packages/renderer/pubspec.yaml`.
+  - Ran `dart pub get` successfully in both directories.
+- **Started Renderer Refactoring (`packages/renderer/lib/renderer.dart`):**
+  - Imported `package:dust_dom/dom.dart`.
+  - Replaced direct JS interop for `getElementById`, `createElement`,
+    `createTextNode`, `setAttribute`, `removeAttribute`, `appendChild`,
+    `removeChild`, `replaceChild`, `insertBefore`, `textContent`, `tagName`,
+    `addEventListener`, `removeEventListener` with calls to `dust_dom`
+    abstractions where applicable (ongoing).
+  - Successfully compiled WASM after initial refactoring steps.
+- **(Previous) Updated VNode Structure (`packages/component/lib/vnode.dart`):**
   - **Updated `listeners` property type to
     `Map<String, void Function(DomEvent event)>?`**.
   - Added `jsFunctionRefs` property (Map<String, JSFunction>?) to store JS
@@ -84,25 +103,26 @@
 - **Integrate Riverpod Properly:** Explore providing `ProviderContainer` /
   `WidgetRef` through the framework's context instead of creating a container
   per component instance in the demo.
-- **Structure Framework Core:** Continue defining the directory structure and
-  modules (`packages/core`, `packages/dom`, etc.).
+- **Structure Framework Core:** (`dust_dom` created) Continue defining the
+  directory structure and modules (`packages/core`, etc.).
+- **Complete Renderer Refactoring:** Finish replacing all direct DOM JS interop
+  in the renderer with `dust_dom`.
 
 ## Active Decisions & Considerations
 
-- **Event Object Wrapping:** Decided to use a Dart wrapper class (`DomEvent`)
-  around the `JSAny` event object for better type safety and usability.
-- **Listener Update Strategy:** Simplified the logic in `_patch` to always
-  remove/add listeners when present in the new VNode, improving robustness for
-  inline functions.
-- **JS Interop for Events:** Confirmed using `.toJS` on a Dart wrapper function
-  `(JSAny jsEvent) { dartCallback(DomEvent(jsEvent)); }` is the way to pass the
-  wrapped event.
-- **Listener Reference Storage:** Storing `JSFunction` references
-  (`jsFunctionRefs`) remains necessary for removal.
+- **DOM Abstraction Strategy:** Using `@staticInterop` in `dust_dom` for type
+  safety and potential performance benefits over dynamic JS interop.
+- **Renderer Refactoring:** Proceeding incrementally, replacing direct JS calls
+  with `dust_dom` methods.
+- **Event Object Wrapping:** Using `DomEvent` wrapper.
+- **Listener Update Strategy:** Always remove/add in `_patch`.
+- **JS Interop for Events:** Using `.toJS` on wrapper.
+- **Listener Reference Storage:** Using `jsFunctionRefs` on `VNode`.
 - **(Previous) VNode as Build Output:** Confirmed.
 - **(Previous) Renderer Update Strategy:** Keyed diffing implemented.
 - **(Previous) VNode Location:** Confirmed.
 - **(Previous) WASM Loading:** Confirmed.
-- **(Previous) JS Interop:** Using `dart:js_interop`.
+- **(Previous) JS Interop:** Shifting away from direct JS interop in renderer
+  towards `dust_dom`.
 - **(Previous) State Management Integration:** Riverpod temporary.
 - **(Previous) Build Tooling:** `dhttpd` sufficient for now.

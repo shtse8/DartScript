@@ -73,20 +73,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.6"
-  dust_component:
-    dependency: "direct main"
-    description:
-      path: "../component"
-      relative: true
-    source: path
-    version: "0.0.1"
-  dust_dom:
-    dependency: "direct main"
-    description:
-      path: "../dom"
-      relative: true
-    source: path
-    version: "0.0.1"
   file:
     dependency: transitive
     description:

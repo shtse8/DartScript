@@ -56,18 +56,6 @@
       "languageVersion": "3.4"
     },
     {
-      "name": "dust_component",
-      "rootUri": "../../component",
-      "packageUri": "lib/",
-      "languageVersion": "3.0"
-    },
-    {
-      "name": "dust_dom",
-      "rootUri": "../../dom",
-      "packageUri": "lib/",
-      "languageVersion": "3.0"
-    },
-    {
       "name": "file",
       "rootUri": "file:///C:/Users/shtse/AppData/Local/Pub/Cache/hosted/pub.dev/file-7.0.1",
       "packageUri": "lib/",
@@ -302,13 +290,13 @@
       "languageVersion": "3.4"
     },
     {
-      "name": "dust_renderer",
+      "name": "dust_dom",
       "rootUri": "../",
       "packageUri": "lib/",
       "languageVersion": "3.0"
     }
   ],
-  "generated": "2025-04-04T16:49:11.465873Z",
+  "generated": "2025-04-04T16:36:04.306066Z",
   "generator": "pub",
   "generatorVersion": "3.7.2",
   "flutterRoot": "file:///C:/Users/shtse/flutter",
