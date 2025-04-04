@@ -140,10 +140,33 @@
 - **Refine Component API:** (Partially done by introducing VNode and HTML
   helpers) Continue refining props, context handling.
 - **Improve Renderer:**
+  - Manage component lifecycle more robustly (e.g., `dispose`).
+  - (Partially done) Continue refining handling of edge cases in patching.
+- **(Future Goal) Refactor Consumer/State Management:** Implement a context
+  mechanism (like `BuildContext` + `InheritedWidget`) to replace global
+  `ProviderContainer` access and potentially enable a `ConsumerWidget` pattern
+  closer to Flutter's `build(context, ref)`.
+- **(Future Goal) Refactor Consumer/State Management:** Implement a context
+  mechanism (like `BuildContext` + `InheritedWidget`) to replace global
+  `ProviderContainer` access and potentially enable a `ConsumerWidget` pattern
+  closer to Flutter's `build(context, ref)`.
+- **(Future Goal) Refactor Consumer/State Management:** Implement a context
+  mechanism (like `BuildContext` + `InheritedWidget`) to replace global
+  `ProviderContainer` access and potentially enable a `ConsumerWidget` pattern
+  closer to Flutter's `build(context, ref)`.
+- **(Future Goal) Refactor Consumer/State Management:** Implement a context
+  mechanism (like `BuildContext` + `InheritedWidget`) to replace global
+  `ProviderContainer` access and potentially enable a `ConsumerWidget` pattern
+  closer to Flutter's `build(context, ref)`.
+- **(Future Goal) Refactor Consumer/State Management:** Implement a context
+  mechanism (like `BuildContext` + `InheritedWidget`) to replace global
+  `ProviderContainer` access and potentially enable a `ConsumerWidget` pattern
+  closer to Flutter's `build(context, ref)`.
   - (Partially done) Continue refining handling of edge cases in patching.
   - Manage component lifecycle more robustly (e.g., `dispose`).
 - **Integrate Riverpod Properly:** (Basic integration done)
-  - Replace global `ProviderContainer` access with a context-based approach.
+  - Replace global `ProviderContainer` access with a context-based approach (see
+    Future Goal above).
   - Ensure `WidgetRef` disposal and lifecycle are robust.
   - Test more complex provider types (e.g., `StateProvider`, `FutureProvider`).
 - **Structure Framework Core:** (`dust_dom` created) Continue defining the
@@ -157,8 +180,12 @@
 
 - **Riverpod Integration:** Initial integration uses a global
   `ProviderContainer` accessed via `renderer.appProviderContainer`. `Consumer`
-  widget created with a basic `WidgetRef` implementation. Need to refine
-  container access (context?) and lifecycle management.
+  widget (extending `StatefulWidget`) created with a basic `WidgetRef`
+  implementation. This approach is functional but differs from Flutter's
+  `ConsumerWidget` pattern due to the lack of `BuildContext` and
+  `InheritedWidget` equivalents in the current framework. Refining container
+  access (context?) and potentially aligning closer to Flutter's pattern is
+  noted as a future goal (see Next Steps).
 - **Component Syntax:** Providing HTML helper functions (`div`, `h1`, etc.) in
   `package:dust_component/html.dart` for a more declarative UI definition
   experience.
@@ -182,30 +209,6 @@
   towards `dust_dom`.
 - **(Removed) State Management Integration:** Riverpod basic integration
   started.
-- **(Removed) Build Tooling:** `dhttpd` replaced by `build_runner`.
-
-- **Component Syntax:** Providing HTML helper functions (`div`, `h1`, etc.) in
-  `package:dust_component/html.dart` for a more declarative UI definition
-  experience.
-- **Application Entry Point:** Use `runApp` function in renderer as the public
-  API. User's `main.dart` should be simple and call `runApp`.
-- **Development Server:** Using `build_runner serve web` for development,
-  providing Hot Restart.
-- **DOM Abstraction Strategy:** Using `@staticInterop` in `dust_dom` for type
-  safety and potential performance benefits over dynamic JS interop.
-- **Renderer Refactoring:** Proceeding incrementally, replacing direct JS calls
-  with `dust_dom` methods.
-- **Event Object Wrapping:** Using `DomEvent` wrapper.
-- **Listener Update Strategy:** Always remove/add in `_patch`.
-- **JS Interop for Events:** Using `.toJS` on wrapper.
-- **Listener Reference Storage:** Using `jsFunctionRefs` on `VNode`.
-- **(Previous) VNode as Build Output:** Confirmed.
-- **(Previous) Renderer Update Strategy:** Keyed diffing implemented.
-- **(Previous) VNode Location:** Confirmed.
-- **(Previous) WASM Loading:** Confirmed (`build_runner` generates loader JS).
-- **(Previous) JS Interop:** Shifting away from direct JS interop in renderer
-  towards `dust_dom`.
-- **(Previous) State Management Integration:** Riverpod temporary.
 - **(Removed) Build Tooling:** `dhttpd` replaced by `build_runner`.
 
 - **Application Entry Point:** Use `runApp` function in renderer as the public

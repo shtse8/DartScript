@@ -72,8 +72,11 @@
   includes `key`, `listeners` (using `DomEvent`), and `jsFunctionRefs`. Further
   refinement needed for props and context.
 - **State Management Approach:** Basic Riverpod integration implemented using a
-  global container and `Consumer` widget. Need to refine container access
-  (context?) and lifecycle.
+  global `ProviderContainer` (created in `runApp`) and a `Consumer` widget
+  (extending `StatefulWidget`). The `Consumer` uses a `WidgetRef` to interact
+  with the container and trigger rebuilds via `setState`. Refining container
+  access (e.g., via context) and aligning closer to Flutter's `ConsumerWidget`
+  pattern are future goals.
 - **JS/WASM Bridge Implementation:** Using `dart:js_interop`. Confirmed `.toJS`
   extension method on a wrapper function
   `(JSAny jsEvent) { dartCallback(DomEvent(jsEvent)); }` for passing Dart
