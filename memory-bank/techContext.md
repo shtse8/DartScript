@@ -11,10 +11,10 @@
 - **CSS:** Used for styling; the framework needs mechanisms to manage
   component-specific styles.
 - **JavaScript:**
-  - **Bootstrap Loader (`js/app_bootstrap.js`):** A small, hand-written JS
-    module responsible for fetching, compiling, and instantiating the WASM
-    module, then invoking the Dart `main` function. This avoids modifying the
-    auto-generated `main.mjs`.
+  - **Bootstrap Loader:** Previously `js/app_bootstrap.js`. Now, `build_runner`
+    generates the necessary JS loader (`web/main.dart.js`) which handles WASM
+    loading and initialization based on the compiled output. The original
+    `js/app_bootstrap.js` is currently unused in the `build_runner` workflow.
   - **JS/WASM Bridge:** The auto-generated `wasm/main.mjs` provides the
     necessary bridge functions (imports/exports) for communication between Dart
     (WASM) and JS (including DOM APIs). The framework uses `dart:js_interop` to
@@ -30,10 +30,11 @@
 ## Development Environment
 
 - **Dart SDK:** Required for compiling Dart to WASM.
-- **Web Server:** A simple server like `dhttpd` is needed to serve files over
-  HTTP, avoiding CORS issues when loading WASM/JS modules.
-- **Build Tool / Dev Server (Future):** More sophisticated tooling will be
-  required for features like hot reload and optimized production builds.
+- **Development Server:** `dart run build_runner serve web` is now used. It
+  compiles Dart to WASM, serves the `web` directory, and provides Hot Restart
+  functionality. Replaces the need for `dhttpd` during development.
+- **Build Tool:** `build_runner` and `build_web_compilers` are used for the
+  development build process.
 - **Browser Developer Tools:** Essential for debugging (Console, Network,
   Performance tabs).
 
@@ -69,6 +70,8 @@
     listener management (including `DomEvent` wrapper). Uses `JSAnyExtension`
     for DOM manipulation.
   - Others like `core`, `dom`, `router` planned.
-- **(Development):** `dhttpd` for serving files locally. `build_runner` might be
-  used later.
-- **(Bootstrap):** `js/app_bootstrap.js` (hand-written).
+- **(Development):** `build_runner` and `build_web_compilers` are now the
+  primary development dependencies for serving and building the web app.
+- **(Bootstrap):** `build_runner` generates the necessary bootstrap JS
+  (`web/main.dart.js`). The hand-written `js/app_bootstrap.js` is currently
+  unused.

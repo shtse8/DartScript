@@ -60,21 +60,19 @@ Dust aims to provide a comprehensive feature set for modern web development:
 Try the current Todo List demo:
 
 1. **Ensure Dart SDK is installed.**
-2. **Compile the main Dart module to WASM:**
+2. **Get dependencies:**
    ```bash
-   dart compile wasm lib/main.dart -o wasm/main.wasm
+   dart pub get
    ```
-   _(This generates `wasm/main.wasm` and `wasm/main.mjs`)_
-3. **Activate `dhttpd` (if not already done):**
+3. **Run the development server:** Navigate to the project root directory and
+   run:
    ```bash
-   dart pub global activate dhttpd
+   dart run build_runner serve web --live-reload
    ```
-4. **Serve the files:** Navigate to the project root directory and run:
-   ```bash
-   dhttpd . -p 8080
-   ```
-   _(Or use a different port if 8080 is busy)_
-5. **Open in browser:** Open `http://localhost:8080`.
+   _(This will compile the app, start a server (usually on `localhost:8080`),
+   and enable Hot Restart. Use a different port if needed, e.g., `web:8081`)_
+4. **Open in browser:** Open the URL provided by `build_runner` (e.g.,
+   `http://localhost:8080`).
 
 You should see the interactive Todo List application demonstrating basic state
 management, event handling, and keyed list diffing.
@@ -133,7 +131,8 @@ implementation status.
 **Tooling:**
 
 - [ ] Build System Optimizations
-- [ ] Hot Reload / Hot Restart
+- [x] Hot Restart (via `build_runner serve`)
+- [ ] Hot Reload
 
 **Demo Application (`TodoListComponent`):**
 

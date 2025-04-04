@@ -3,7 +3,7 @@
 
 import 'dart:js_interop';
 
-import 'todo_list.dart'; // Import the new TodoListComponent
+import 'package:dust_app/todo_list.dart'; // Import the new TodoListComponent
 import 'package:dust_renderer/renderer.dart'; // Import the render function via package URI
 
 // --- JS Interop for console.log ---

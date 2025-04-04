@@ -16,6 +16,20 @@
 
 ## Recent Changes
 
+- **Setup `build_runner` Dev Server (Hot Restart):**
+  - Enabled `build_runner` and `build_web_compilers` in root `pubspec.yaml`.
+  - Ran `dart pub get`.
+  - Created `web/` directory.
+  - Moved `lib/main.dart` to `web/main.dart`.
+  - Moved `style.css` to `web/style.css`.
+  - Created `build.yaml` to configure WASM compilation for `web/main.dart`.
+  - Updated `web/index.html` to load `main.dart.js`.
+  - Updated `web/main.dart` import paths.
+  - Started dev server using `dart run build_runner serve web:8081`.
+  - Created `.gitignore` file.
+  - Cleaned Git index to remove previously committed ignored files
+    (`git rm --cached .`, `git add .`, `git commit`).
+
 - **Created `dust_dom` Package:**
   - Created `packages/dom/lib` directory.
   - Created `packages/dom/pubspec.yaml`.
@@ -87,6 +101,27 @@
 
 ## Next Steps
 
+- **Integrating DOM Abstraction:** Continue replacing direct JS interop calls in
+  `renderer.dart` with the new `dust_dom` abstractions.
+- **Refine Event Handling:** (Partially addressed) Further testing on listener
+  removal reliability might be needed. Consider performance implications of the
+  `DomEvent` wrapper creation on every event.
+- **Refine Diffing/Patching:** (Keyed diffing implemented) Further optimize
+  patching logic, handle edge cases more robustly.
+- **Refine Component API:** (Partially done by introducing VNode) Continue
+  refining props, context handling.
+- **Improve Renderer:**
+  - (Partially done) Continue refining handling of edge cases in patching.
+  - Manage component lifecycle more robustly (e.g., `dispose`).
+- **Integrate Riverpod Properly:** Explore providing `ProviderContainer` /
+  `WidgetRef` through the framework's context instead of creating a container
+  per component instance in the demo.
+- **Structure Framework Core:** (`dust_dom` created) Continue defining the
+  directory structure and modules (`packages/core`, etc.).
+- **Complete Renderer Refactoring:** Finish replacing all direct DOM JS interop
+  in the renderer with `dust_dom`.
+- **(Done) Setup Dev Server:** `build_runner` now provides Hot Restart.
+
 - **Refine Event Handling:** (Partially addressed)
   - Listener update logic improved in `_patch`.
   - `DomEvent` wrapper created.
@@ -110,6 +145,26 @@
 
 ## Active Decisions & Considerations
 
+- **Development Server:** Using `build_runner serve web` for development,
+  providing Hot Restart.
+- **DOM Abstraction Strategy:** Using `@staticInterop` in `dust_dom` for type
+  safety and potential performance benefits over dynamic JS interop.
+- **Renderer Refactoring:** Proceeding incrementally, replacing direct JS calls
+  with `dust_dom` methods.
+- **Event Object Wrapping:** Using `DomEvent` wrapper.
+- **Listener Update Strategy:** Always remove/add in `_patch`.
+- **JS Interop for Events:** Using `.toJS` on wrapper.
+- **Listener Reference Storage:** Using `jsFunctionRefs` on `VNode`.
+- **(Previous) VNode as Build Output:** Confirmed.
+- **(Previous) Renderer Update Strategy:** Keyed diffing implemented.
+- **(Previous) VNode Location:** Confirmed.
+- **(Previous) WASM Loading:** Confirmed (`app_bootstrap.js` still used by
+  `build_runner` generated JS).
+- **(Previous) JS Interop:** Shifting away from direct JS interop in renderer
+  towards `dust_dom`.
+- **(Previous) State Management Integration:** Riverpod temporary.
+- **(Removed) Build Tooling:** `dhttpd` replaced by `build_runner`.
+
 - **DOM Abstraction Strategy:** Using `@staticInterop` in `dust_dom` for type
   safety and potential performance benefits over dynamic JS interop.
 - **Renderer Refactoring:** Proceeding incrementally, replacing direct JS calls
@@ -125,4 +180,3 @@
 - **(Previous) JS Interop:** Shifting away from direct JS interop in renderer
   towards `dust_dom`.
 - **(Previous) State Management Integration:** Riverpod temporary.
-- **(Previous) Build Tooling:** `dhttpd` sufficient for now.
