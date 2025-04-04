@@ -56,6 +56,12 @@
       "languageVersion": "3.4"
     },
     {
+      "name": "dust_renderer",
+      "rootUri": "../../renderer",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
       "name": "file",
       "rootUri": "file:///C:/Users/shtse/AppData/Local/Pub/Cache/hosted/pub.dev/file-7.0.1",
       "packageUri": "lib/",
@@ -296,7 +302,7 @@
       "languageVersion": "3.0"
     }
   ],
-  "generated": "2025-04-04T10:48:03.699077Z",
+  "generated": "2025-04-04T16:26:08.857058Z",
   "generator": "pub",
   "generatorVersion": "3.7.2",
   "flutterRoot": "file:///C:/Users/shtse/flutter",

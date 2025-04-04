@@ -4,7 +4,8 @@ import 'package:dust_component/state.dart';
 import 'package:dust_component/vnode.dart';
 import 'dart:math'; // For random keys initially
 import 'dart:async'; // For Future.delayed
-import 'dart:js_interop'; // Needed for JSAny
+// import 'dart:js_interop'; // No longer needed directly here for events
+import 'package:dust_renderer/dom_event.dart'; // Import DomEvent
 
 // Simple Todo Item model
 class TodoItem {
@@ -138,7 +139,7 @@ class _TodoListState extends State<TodoListComponent> {
                   VNode.element('button',
                       // Remove 'disabled' attribute
                       listeners: {
-                        'click': (JSAny event) => _toggleItem(
+                        'click': (DomEvent event) => _toggleItem(
                             item.id) // Add click listener with JSAny
                       },
                       children: [
@@ -147,7 +148,7 @@ class _TodoListState extends State<TodoListComponent> {
                   VNode.element('button',
                       // Remove 'disabled' attribute
                       listeners: {
-                        'click': (JSAny event) => _removeItem(
+                        'click': (DomEvent event) => _removeItem(
                             item.id) // Add click listener with JSAny
                       },
                       children: [
@@ -159,7 +160,7 @@ class _TodoListState extends State<TodoListComponent> {
       VNode.element('button',
           // Remove 'disabled' attribute
           listeners: {
-            'click': (JSAny event) => _addItem(
+            'click': (DomEvent event) => _addItem(
                 'New Item Added Manually') // Add click listener with JSAny
           },
           children: [
@@ -168,7 +169,7 @@ class _TodoListState extends State<TodoListComponent> {
       VNode.element('button',
           // Remove 'disabled' attribute
           listeners: {
-            'click': (JSAny event) =>
+            'click': (DomEvent event) =>
                 _shuffleItems() // Add click listener with JSAny
           },
           children: [

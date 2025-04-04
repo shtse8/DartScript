@@ -11,7 +11,7 @@
   - `State` has lifecycle methods (`initState`, `build`, `dispose`, etc.) and
     `setState` for triggering updates.
   - `State.build()` returns a `VNode` tree (with keys, attributes, children, and
-    listeners) representing the desired UI structure.
+    listeners using `DomEvent`) representing the desired UI structure.
 - **Declarative Rendering Engine (Keyed Diffing):**
   - Developers declare UI in `build()` methods, returning a `VNode` tree.
   - **Initial Render:** Handles `StatefulWidget` creation and initial `build`
@@ -21,9 +21,10 @@
     the new `VNode` tree and calls `_patch`.
   - **Patching (`_patch`):** Compares the new and old `VNode` trees at the root
     level. Handles node addition/removal/replacement, text updates, attribute
-    updates, and **event listener updates**. Delegates child patching to
-    `_patchChildren`. `VNode.domNode` links VNodes to their corresponding DOM
-    nodes. `VNode.jsFunctionRefs` stores JS references for listeners.
+    updates, and **event listener updates** (now wrapping callbacks to pass
+    `DomEvent`). Delegates child patching to `_patchChildren`. `VNode.domNode`
+    links VNodes to their corresponding DOM nodes. `VNode.jsFunctionRefs` stores
+    JS references for listeners.
   - **Child Patching (`_patchChildren`):** Implements a keyed reconciliation
     algorithm to efficiently update child lists (handling additions, removals,
     reordering, and updates based on `VNode.key`).
@@ -42,8 +43,8 @@
     `addEventListener`). JS calls exported Dart functions (e.g., `$invokeMain`).
   - **DOM Access & Event Handling:** Currently direct JS interop calls within
     the renderer (`_createDomElement`, `_patch`). Dart event callbacks are
-    converted to `JSFunction` using `.toJS` extension method. A Dart DOM
-    abstraction layer is planned.
+    wrapped in a JS function that passes a `DomEvent` object, then converted to
+    `JSFunction` using `.toJS`. A Dart DOM abstraction layer is planned.
 - **Application Entry Point:**
   - `index.html` loads `js/app_bootstrap.js` as a module.
   - `app_bootstrap.js` fetches, compiles, and instantiates `wasm/main.wasm`.
@@ -59,12 +60,15 @@
   strategy (`_patch` delegating to `_patchChildren`). Further optimization is
   possible.
 - **Component API Design:** Current class-based approach is similar to Flutter.
-  `build()` return type is `VNode`. `VNode` now includes `key`, `listeners`, and
-  `jsFunctionRefs`. Further refinement needed for props and context.
+  `build()` return type is `VNode`. `VNode` now includes `key`, `listeners`
+  (using `DomEvent`), and `jsFunctionRefs`. Further refinement needed for props
+  and context.
 - **State Management Approach:** Provide built-in context or focus on
   integrating external libraries like Riverpod?
 - **JS/WASM Bridge Implementation:** Using `dart:js_interop`. Confirmed `.toJS`
-  extension method for passing Dart callbacks to JS for event listeners. How to
+  extension method on a wrapper function
+  `(JSAny jsEvent) { dartCallback(DomEvent(jsEvent)); }` for passing Dart
+  callbacks to JS for event listeners. Introduced `DomEvent` wrapper. How to
   create an efficient Dart DOM abstraction layer?
 - **Build Tooling Integration:** How to integrate for hot reload and production
   builds?
@@ -82,11 +86,14 @@
   load and initialize the WASM application.
 - **Virtual DOM Node Pattern:** Using `VNode` objects to represent the desired
   DOM structure in memory, linked to actual DOM nodes via `domNode` property,
-  and storing JS listener references in `jsFunctionRefs`.
+  using `DomEvent` for listeners, and storing JS listener references in
+  `jsFunctionRefs`.
 - **Diffing/Patching Pattern:** Comparing VNode trees (`_patch`) and applying
   targeted updates to the DOM (including attributes and listeners). Uses keyed
   reconciliation (`_patchChildren`) for efficient list updates.
-- **Event Listener Management Pattern:** Using `.toJS` to convert Dart
-  callbacks, storing the `JSFunction` reference on the `VNode`, and using these
-  references in `_patch` to add/remove listeners. (Removal needs further
-  refinement/testing).
+- **Event Listener Management Pattern:** Wrapping Dart callbacks
+  `(DomEvent event) => ...` in a JS function
+  `(JSAny jsEvent) { dartCallback(DomEvent(jsEvent)); }`, converting the wrapper
+  using `.toJS`, storing the `JSFunction` reference on the `VNode`, and using
+  these references in `_patch` to add/remove listeners. Listener update logic in
+  `_patch` simplified.

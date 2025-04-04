@@ -21,9 +21,11 @@
     interact with this bridge.
   - **DOM Manipulation & Event Handling:** Performed via direct JS interop calls
     (`JSAnyExtension`, including `addEventListener`/`removeEventListener`)
-    within the renderer (`_createDomElement`, `_patch`). Dart callbacks are
-    passed to JS using the `.toJS` extension method. A Dart DOM abstraction
-    layer is planned.
+    within the renderer (`_createDomElement`, `_patch`). Dart callbacks
+    (accepting `DomEvent`) are wrapped in a JS function and passed to JS using
+    the `.toJS` extension method. Introduced `DomEvent` wrapper
+    (`packages/renderer/lib/dom_event.dart`). A Dart DOM abstraction layer is
+    planned.
 
 ## Development Environment
 
@@ -60,11 +62,12 @@
   used sub-optimally in demo).
 - **(Framework Internal):**
   - `dust_component`: Defines core `Component`, `State`, `StatelessWidget`,
-    `StatefulWidget`, and `VNode` (now including `key`, `listeners`,
-    `jsFunctionRefs`).
+    `StatefulWidget`, and `VNode` (now including `key`, `listeners` using
+    `DomEvent`, `jsFunctionRefs`). Depends on `dust_renderer`.
   - `dust_renderer`: Depends on `dust_component` (including `VNode`) to render
     component output using keyed diffing (`_patch`, `_patchChildren`) and event
-    listener management. Uses `JSAnyExtension` for DOM manipulation.
+    listener management (including `DomEvent` wrapper). Uses `JSAnyExtension`
+    for DOM manipulation.
   - Others like `core`, `dom`, `router` planned.
 - **(Development):** `dhttpd` for serving files locally. `build_runner` might be
   used later.

@@ -1,4 +1,5 @@
-import 'dart:js_interop'; // Needed for JSAny in listener type
+import 'dart:js_interop'; // Needed for JSFunction
+import 'package:dust_renderer/dom_event.dart'; // Import using package dependency
 
 /// Represents a node in the Virtual DOM tree.
 class VNode {
@@ -11,8 +12,8 @@ class VNode {
 
   /// Event listeners attached to the element (e.g., {'click': (JSAny event) => print('Clicked!')}).
   /// The callback function will receive the DOM event object (likely JSAny?).
-  final Map<String, void Function(JSAny event)>?
-      listeners; // Use specific function type
+  final Map<String, void Function(DomEvent event)>?
+      listeners; // Use DomEvent wrapper
 
   /// The child nodes of this element.
   final List<VNode>? children;

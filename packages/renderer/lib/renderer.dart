@@ -7,6 +7,7 @@ import 'dart:js_interop'; // Import JSAny, JSString, JSFunction, JS, allowIntero
 // import 'dart:js_interop_unsafe'; // No longer needed? .toJS is on Function via js_interop
 import 'package:dust_component/stateless_component.dart'; // Import StatelessWidget
 import 'package:dust_component/vnode.dart'; // Import VNode
+import 'dom_event.dart'; // Import DomEvent wrapper
 
 // --- JS Interop ---
 @JS('document.createElement')
@@ -71,8 +72,10 @@ JSAny _createDomElement(VNode vnode) {
 // 4. Attach Event Listeners
   if (vnode.listeners != null) {
     vnode.listeners!.forEach((eventName, callback) {
-      // Convert the Dart callback directly to a JSFunction using the .toJS extension
-      final jsFunction = callback.toJS;
+      // Create a JS function that wraps the Dart callback and passes a DomEvent
+      final jsFunction = ((JSAny jsEvent) {
+        callback(DomEvent(jsEvent));
+      }).toJS;
       element.addEventListener(eventName.toJS, jsFunction);
       print('Added listener for "$eventName" on <${vnode.tag}>');
       // Store the JSFunction reference on the VNode for later removal
@@ -248,26 +251,39 @@ void _patch(JSAny parentElement, VNode? newVNode, VNode? oldVNode) {
   // Add or update listeners that are in new
   newListeners.forEach((eventName, newCallback) {
     final oldCallback = oldListeners[eventName];
-    // Only add/update if the callback function instance has changed
-    // or if it's a new listener.
-    if (!oldListeners.containsKey(eventName) || oldCallback != newCallback) {
-      print('Adding/Updating listener for "$eventName" on <${newVNode.tag}>');
+    // If the listener exists in the new VNode, ensure it's correctly attached.
+    // Always remove the old one (if found) and add the new one to handle
+    // cases where callback instances change (e.g., inline functions).
+    if (newListeners.containsKey(eventName)) {
+      print('Ensuring listener for "$eventName" on <${newVNode.tag}>');
 
       // Remove the old listener if it exists and we have its reference
       final oldJsFunction = oldVNode.jsFunctionRefs?[eventName];
       if (oldJsFunction != null) {
-        print('  -> Removing old listener first');
+        // Only remove if the callback function itself has actually changed,
+        // otherwise, we might remove a listener we intend to keep if the
+        // instance is the same (e.g., a method reference).
+        // However, always removing/adding is safer for inline functions.
+        // Let's stick to always removing/adding for simplicity and robustness.
+        print('  -> Removing old listener first (if found)');
         domNode.removeEventListener(eventName.toJS, oldJsFunction);
+      } else if (oldListeners.containsKey(eventName)) {
+        // Log if old listener existed but we didn't have its JS ref
+        print(
+            '  -> Warning: Old listener for "$eventName" existed but no JSFunction reference was found for removal.');
       }
 
       // Add the new listener
-      final newJsFunction = newCallback.toJS;
+      // Create a JS function that wraps the new Dart callback
+      final newJsFunction = ((JSAny jsEvent) {
+        newCallback(DomEvent(jsEvent));
+      }).toJS;
       domNode.addEventListener(eventName.toJS, newJsFunction);
+      print('  -> Added new listener');
 
-      // Store the new reference
+      // Store the new reference, overwriting any old one
       (newVNode.jsFunctionRefs ??= {})[eventName] = newJsFunction;
     }
-    // If oldCallback == newCallback, assume the listener is the same and do nothing.
   });
 
   // 4d: Patch Children (Keyed Reconciliation)

@@ -2,52 +2,54 @@
 
 ## Current Focus
 
-- **Basic Event Handling Implemented:** Added support for attaching and updating
-  event listeners (like 'click') to DOM elements via VNodes.
-- **Testing Event Handling:** Modified `TodoListComponent` to use click handlers
-  on buttons for adding, removing, toggling, and shuffling items.
-- **Debugging JS Interop for Events:** Resolved issues with converting Dart
-  callbacks to JSFunctions using `.toJS` extension method (instead of the
-  initially attempted `allowInterop`).
+- **Refining Event Handling:**
+  - Implemented `DomEvent` wrapper (`packages/renderer/lib/dom_event.dart`) for
+    type-safe event object access in Dart callbacks.
+  - Simplified and improved the listener update logic in the renderer's `_patch`
+    function to be more robust, especially for inline function definitions.
+  - Updated `VNode`, renderer, and `TodoListComponent` demo to use `DomEvent`.
+- **(Previous) Basic Event Handling Implemented & Tested.**
+- **(Previous) Debugging JS Interop for Events Resolved.**
 - **(Previous) Keyed Child Diffing Implemented & Tested.**
 
 ## Recent Changes
 
 - **Updated VNode Structure (`packages/component/lib/vnode.dart`):**
-  - Added `listeners` property (Map<String, void Function(JSAny event)>) to
-    define event callbacks.
+  - **Updated `listeners` property type to
+    `Map<String, void Function(DomEvent event)>?`**.
   - Added `jsFunctionRefs` property (Map<String, JSFunction>?) to store JS
     references of converted Dart callbacks for potential removal.
-  - Imported `dart:js_interop` for `JSAny` and `JSFunction`.
+  - Added `dust_renderer` as a path dependency in `pubspec.yaml`.
+  - Imported `package:dust_renderer/dom_event.dart`.
   - (Previous) Added `key` property.
 - **Updated Component API:**
   - Modified `State.build()` method in `packages/component/lib/state.dart` to
     return `VNode` instead of `dynamic`/`Map`.
+- **Created `packages/renderer/lib/dom_event.dart`:** Defined `DomEvent` wrapper
+  class.
 - **Updated Renderer (`packages/renderer/lib/renderer.dart`):**
-  - Added `addEventListener` and `removeEventListener` to `JSAnyExtension`.
+  - Imported `dom_event.dart`.
   - Modified `_createDomElement` to:
-    - Iterate over `vnode.listeners`.
-    - Convert Dart callbacks to `JSFunction` using `.toJS`.
-    - Call `element.addEventListener`.
-    - Store the resulting `JSFunction` reference in `vnode.jsFunctionRefs`.
-  - Modified `_patch` to:
-    - Copy `jsFunctionRefs` from old VNode to new VNode.
-    - Implement logic to add/update/remove event listeners:
-      - Iterate through `oldListeners` and remove listeners not present in
-        `newListeners` (using stored `jsFunctionRefs`).
-      - Iterate through `newListeners` and add/update listeners if the callback
-        function instance changes or is new, removing the old listener first if
-        found.
-  - Resolved issues related to finding/using `.toJS` (initially confused with
-    `allowInterop` and `dart:js_util`).
+    - Wrap the Dart callback in a JS function that creates and passes a
+      `DomEvent` object.
+    - Convert the wrapper function to `JSFunction` using `.toJS`.
+    - Store the resulting `JSFunction` reference.
+  - Modified `_patch`'s listener update logic:
+    - **Simplified update condition:** Always remove the old listener (if
+      reference exists) and add the new one when the event exists in the new
+      listeners map. This handles inline functions more robustly.
+    - Wrap the new Dart callback similarly to `_createDomElement` before
+      converting to `JSFunction`.
+  - (Previous) Added `addEventListener` and `removeEventListener` to
+    `JSAnyExtension`.
+  - (Previous) Resolved issues related to finding/using `.toJS`.
   - (Previous) Implemented `_patchChildren` with keyed reconciliation.
   - (Previous) Fixed various diffing bugs.
 - **Updated TodoList Demo (`lib/todo_list.dart`):**
-  - Added `click` listeners to 'Toggle', 'Remove', 'Add Item', and 'Shuffle
-    Items' buttons, calling the corresponding state methods (`_toggleItem`,
-    `_removeItem`, `_addItem`, `_shuffleItems`).
-  - Removed `disabled` attributes from buttons.
-  - Added `dart:js_interop` import for `JSAny` type in listener callbacks.
+  - **Updated listener callbacks to accept `DomEvent` instead of `JSAny`**.
+  - Imported `package:dust_renderer/dom_event.dart`.
+  - (Previous) Added `click` listeners.
+  - (Previous) Removed `disabled` attributes.
   - **Commented out the automatic `_scheduleTestUpdates` timer** in `initState`
     now that manual interaction works.
   - (Previous) Implemented component to test keyed diffing.
@@ -66,14 +68,12 @@
 
 ## Next Steps
 
-- **Refine Event Handling:**
-  - The current listener update logic in `_patch` works but could be more robust
-    (e.g., better comparison of function instances).
-  - Ensure proper removal of listeners using stored `jsFunctionRefs` (current
-    removal logic relies on finding the ref, which seems to work but needs
-    verification).
-  - Consider wrapping the `JSAny event` object passed to Dart callbacks into a
-    more Dart-friendly structure.
+- **Refine Event Handling:** (Partially addressed)
+  - Listener update logic improved in `_patch`.
+  - `DomEvent` wrapper created.
+  - Further testing on listener removal reliability might be needed.
+  - Consider performance implications of the `DomEvent` wrapper creation on
+    every event.
 - **Refine Diffing/Patching:** (Keyed diffing implemented) Further optimize
   patching logic, handle edge cases more robustly.
 - **Refine Component API:** (Partially done by introducing VNode) Continue
@@ -89,12 +89,16 @@
 
 ## Active Decisions & Considerations
 
-- **JS Interop for Events:** Confirmed using `.toJS` extension on Dart functions
-  is the correct way to get a `JSFunction` for `addEventListener` in WASM, not
-  `allowInterop` from `dart:js_util`.
-- **Listener Reference Storage:** Storing `JSFunction` references on the `VNode`
-  (`jsFunctionRefs`) seems necessary for correct listener removal during
-  patching.
+- **Event Object Wrapping:** Decided to use a Dart wrapper class (`DomEvent`)
+  around the `JSAny` event object for better type safety and usability.
+- **Listener Update Strategy:** Simplified the logic in `_patch` to always
+  remove/add listeners when present in the new VNode, improving robustness for
+  inline functions.
+- **JS Interop for Events:** Confirmed using `.toJS` on a Dart wrapper function
+  `(JSAny jsEvent) { dartCallback(DomEvent(jsEvent)); }` is the way to pass the
+  wrapped event.
+- **Listener Reference Storage:** Storing `JSFunction` references
+  (`jsFunctionRefs`) remains necessary for removal.
 - **(Previous) VNode as Build Output:** Confirmed.
 - **(Previous) Renderer Update Strategy:** Keyed diffing implemented.
 - **(Previous) VNode Location:** Confirmed.

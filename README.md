@@ -101,7 +101,7 @@ implementation status.
   - [x] Element Nodes (tag, attributes, children)
   - [x] Text Nodes
   - [x] Keys for Diffing (`key` property)
-  - [x] Event Listeners (`listeners` property)
+  - [x] Event Listeners (`listeners` property using `DomEvent`)
   - [x] Internal Listener Reference Storage (`jsFunctionRefs`)
 - [ ] Props Handling
 - [ ] Context API
@@ -114,7 +114,8 @@ implementation status.
   - [x] Node Addition/Removal/Replacement
   - [x] Text Content Update
   - [x] Attribute Update/Removal
-  - [x] Basic Event Listener Update/Removal (using `.toJS` and stored refs)
+  - [x] Event Listener Update/Removal (Improved logic, wraps callbacks for
+        `DomEvent`)
 - [x] Keyed Child Reconciliation (`_patchChildren` function)
 - [ ] Component Lifecycle Method Integration (`initState`, `dispose`, etc.)
 - [ ] DOM Abstraction Layer (Type-safe Dart API over DOM)
@@ -138,7 +139,7 @@ implementation status.
 
 - [x] Demonstrates `StatefulWidget` usage
 - [x] Demonstrates Keyed Diffing for lists
-- [x] Demonstrates Basic Event Handling (button clicks)
+- [x] Demonstrates Event Handling (button clicks using `DomEvent`)
 
 </details>
 
