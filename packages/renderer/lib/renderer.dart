@@ -63,9 +63,8 @@ dom.DomNode _createDomElement(VNode vnode) {
       final jsFunction = ((JSAny jsEvent) {
         callback(DomEvent(jsEvent));
       }).toJS;
-      // TODO: Replace with dom.DomElement addEventListener
-      element.addEventListener(
-          eventName, jsFunction); // Use DomElement extension
+      // Use the addEventListener from DomElementExtension
+      element.addEventListener(eventName, jsFunction);
       print('Added listener for "$eventName" on <${vnode.tag}>');
       // Store the JSFunction reference on the VNode for later removal
       (vnode.jsFunctionRefs ??= {})[eventName] = jsFunction;
@@ -134,9 +133,8 @@ void _patch(dom.DomElement parentElement, VNode? newVNode, VNode? oldVNode) {
       print('Removing old DOM node: ${oldVNode!.domNode.hashCode}');
       // Ensure oldVNode.domNode is JSAny before calling removeChild
       if (oldVNode.domNode is JSAny) {
-        // TODO: Replace with dom.DomElement removeChild
-        parentElement.removeChild(
-            oldVNode.domNode as dom.DomNode); // Use DomNode extension
+        // Use the removeChild from DomNodeExtension
+        parentElement.removeChild(oldVNode.domNode as dom.DomNode);
       } else {
         print('Error: oldVNode.domNode is not JSAny');
       }
@@ -167,9 +165,8 @@ void _patch(dom.DomElement parentElement, VNode? newVNode, VNode? oldVNode) {
 
     // Try to replace if the old DOM node reference is valid JSAny
     if (oldDomNodeObject is JSAny) {
-      // TODO: Replace with dom.DomElement replaceChild
-      parentElement.replaceChild(
-          newDomNode, oldDomNodeObject as dom.DomNode); // Use DomNode extension
+      // Use the replaceChild from DomNodeExtension
+      parentElement.replaceChild(newDomNode, oldDomNodeObject as dom.DomNode);
     } else {
       // Fallback: If the reference is lost or invalid, just append the new node.
       // This relies on the parentElement potentially being cleared beforehand
@@ -199,8 +196,8 @@ void _patch(dom.DomElement parentElement, VNode? newVNode, VNode? oldVNode) {
     // It's a text node
     if (oldVNode.text != newVNode.text) {
       print('Updating text node content...');
-      // TODO: Add textContent setter to DomNode extension? Or cast?
-      domNode.textContent = newVNode.text ?? ''; // Use DomNode extension setter
+      // Use the textContent setter from DomNodeExtension
+      domNode.textContent = newVNode.text ?? '';
     }
     return; // Nothing more to do for text nodes
   }
@@ -239,9 +236,9 @@ void _patch(dom.DomElement parentElement, VNode? newVNode, VNode? oldVNode) {
       final oldJsFunction = oldVNode.jsFunctionRefs?[eventName];
       if (oldJsFunction != null) {
         print('Removing listener for "$eventName" from <${newVNode.tag}>');
-        // TODO: Replace with dom.DomElement removeEventListener
-        (domNode as dom.DomElement).removeEventListener(
-            eventName, oldJsFunction); // Use DomElement extension
+        // Use the removeEventListener from DomElementExtension
+        (domNode as dom.DomElement)
+            .removeEventListener(eventName, oldJsFunction);
         newVNode.jsFunctionRefs
             ?.remove(eventName); // Remove from new VNode's refs too
       } else {
@@ -269,9 +266,9 @@ void _patch(dom.DomElement parentElement, VNode? newVNode, VNode? oldVNode) {
         // However, always removing/adding is safer for inline functions.
         // Let's stick to always removing/adding for simplicity and robustness.
         print('  -> Removing old listener first (if found)');
-        // TODO: Replace with dom.DomElement removeEventListener
-        (domNode as dom.DomElement).removeEventListener(
-            eventName, oldJsFunction); // Use DomElement extension
+        // Use the removeEventListener from DomElementExtension
+        (domNode as dom.DomElement)
+            .removeEventListener(eventName, oldJsFunction);
       } else if (oldListeners.containsKey(eventName)) {
         // Log if old listener existed but we didn't have its JS ref
         print(
@@ -283,9 +280,8 @@ void _patch(dom.DomElement parentElement, VNode? newVNode, VNode? oldVNode) {
       final newJsFunction = ((JSAny jsEvent) {
         newCallback(DomEvent(jsEvent));
       }).toJS;
-      // TODO: Replace with dom.DomElement addEventListener
-      (domNode as dom.DomElement).addEventListener(
-          eventName, newJsFunction); // Use DomElement extension
+      // Use the addEventListener from DomElementExtension
+      (domNode as dom.DomElement).addEventListener(eventName, newJsFunction);
       print('  -> Added new listener');
 
       // Store the new reference, overwriting any old one
@@ -340,9 +336,8 @@ void _patchChildren(dom.DomElement parentDomNode, List<VNode>? oldChOriginal,
       print('Removing DOM node (key: ${vnode.key}): ${vnode.domNode.hashCode}');
       if (vnode.domNode is JSAny) {
         // FIX: Use parentDomNode
-        // TODO: Replace with dom.DomElement removeChild
-        parentDomNode
-            .removeChild(vnode.domNode as dom.DomNode); // Use DomNode extension
+        // Use the removeChild from DomNodeExtension
+        parentDomNode.removeChild(vnode.domNode as dom.DomNode);
       } else {
         print('Error: Cannot remove, vnode.domNode is not JSAny');
       }
@@ -368,8 +363,8 @@ void _patchChildren(dom.DomElement parentDomNode, List<VNode>? oldChOriginal,
   // Renamed helper to avoid potential conflicts and clarify purpose
   void _domInsertBefore(dom.DomNode newNode, dom.DomNode? referenceNode) {
     // Use DomNode
-    // TODO: Replace with dom.DomElement insertBefore
-    parentDomNode.insertBefore(newNode, referenceNode); // Use DomNode extension
+    // Use the insertBefore from DomNodeExtension
+    parentDomNode.insertBefore(newNode, referenceNode);
     print(
         'Inserted DOM node ${newNode.hashCode} before ${referenceNode?.hashCode ?? 'end'}');
   }

@@ -47,10 +47,13 @@
   - **Dart <-> JS Communication:** Uses `dart:js_interop`. Dart calls JS
     functions (defined via `@JS`) for DOM manipulation and browser APIs (like
     `addEventListener`). JS calls exported Dart functions (e.g., `$invokeMain`).
-  - **DOM Access & Event Handling:** Currently direct JS interop calls within
-    the renderer (`_createDomElement`, `_patch`). Dart event callbacks are
-    wrapped in a JS function that passes a `DomEvent` object, then converted to
-    `JSFunction` using `.toJS`. A Dart DOM abstraction layer is planned.
+  - **DOM Access & Event Handling:** Renderer (`_createDomElement`, `_patch`)
+    now uses the `dust_dom` abstraction layer (`DomNode`, `DomElement`
+    extensions) for DOM manipulation (e.g., `appendChild`, `removeChild`,
+    `setAttribute`, `addEventListener`). Direct JS interop calls have been
+    removed from the renderer core logic. Dart event callbacks are still wrapped
+    in a JS function passing `DomEvent` and converted using `.toJS` before being
+    passed to `dust_dom`'s `addEventListener`.
 - **Application Entry Point:**
   - `web/index.html` loads the `build_runner` generated `web/main.dart.js` as a
     module.
@@ -77,11 +80,10 @@
   with the container and trigger rebuilds via `setState`. Refining container
   access (e.g., via context) and aligning closer to Flutter's `ConsumerWidget`
   pattern are future goals.
-- **JS/WASM Bridge Implementation:** Using `dart:js_interop`. Confirmed `.toJS`
-  extension method on a wrapper function
-  `(JSAny jsEvent) { dartCallback(DomEvent(jsEvent)); }` for passing Dart
-  callbacks to JS for event listeners. Introduced `DomEvent` wrapper. How to
-  create an efficient Dart DOM abstraction layer?
+- **JS/WASM Bridge Implementation:** Using `dart:js_interop`. Renderer now uses
+  the `dust_dom` abstraction layer instead of direct JS interop calls for DOM
+  manipulation. Event listener callbacks still use `.toJS` on a wrapper
+  function.
 - **Build Tooling Integration:** How to integrate for hot reload and production
   builds?
 
@@ -97,7 +99,8 @@
 - **Observer Pattern:** Implicitly used via `StreamProvider` and `setState`
   triggering updates.
 - **Callback Pattern:** Used for `State` to request updates from the renderer.
-- **Facade Pattern:** (Goal) For the Dart DOM abstraction layer.
+- **Facade Pattern:** Implemented via `dust_dom` package, providing a Dart API
+  over JS DOM objects using `@staticInterop`.
 - **Bootstrap Pattern:** `build_runner` generates the necessary JS bootstrap
   code (`web/main.dart.js`) to load and initialize the WASM application.
 - **Application Runner Pattern:** Framework provides a simple `runApp` function

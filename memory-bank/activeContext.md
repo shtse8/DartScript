@@ -16,6 +16,11 @@
 
 ## Recent Changes
 
+- **Completed Renderer DOM Abstraction:** Replaced remaining direct JS interop
+  calls in `renderer.dart` (`addEventListener`, `removeEventListener`,
+  `removeChild`, `replaceChild`, `insertBefore`, `textContent`) with
+  corresponding methods from `dust_dom`.
+
 - **Integrated Riverpod (Basic):**
   - Added `riverpod` dependency to `dust_component` and `dust_renderer`.
   - Modified `runApp` in `dust_renderer` to create and store a global
@@ -130,8 +135,8 @@
 
 ## Next Steps
 
-- **Integrating DOM Abstraction:** Continue replacing direct JS interop calls in
-  `renderer.dart` with the new `dust_dom` abstractions.
+- **(Done) Integrating DOM Abstraction:** All identified direct JS interop calls
+  in `renderer.dart` have been replaced with `dust_dom` abstractions.
 - **Refine Event Handling:** (Partially addressed) Further testing on listener
   removal reliability might be needed. Consider performance implications of the
   `DomEvent` wrapper creation on every event.
@@ -171,8 +176,8 @@
   - Test more complex provider types (e.g., `StateProvider`, `FutureProvider`).
 - **Structure Framework Core:** (`dust_dom` created) Continue defining the
   directory structure and modules (`packages/core`, etc.).
-- **Complete Renderer Refactoring:** Finish replacing all direct DOM JS interop
-  in the renderer with `dust_dom`.
+- **(Done) Complete Renderer Refactoring:** All identified direct DOM JS interop
+  calls in the renderer have been replaced with `dust_dom`.
 - **(Done) Setup Dev Server:** `build_runner` now provides Hot Restart.
 - **(Done) Refine Entry Point:** `runApp` function created for user convenience.
 
@@ -195,8 +200,8 @@
   providing Hot Restart.
 - **DOM Abstraction Strategy:** Using `@staticInterop` in `dust_dom` for type
   safety and potential performance benefits over dynamic JS interop.
-- **Renderer Refactoring:** Proceeding incrementally, replacing direct JS calls
-  with `dust_dom` methods.
+- **Renderer Refactoring:** Completed replacement of direct JS calls with
+  `dust_dom` methods in `renderer.dart`.
 - **Event Object Wrapping:** Using `DomEvent` wrapper.
 - **Listener Update Strategy:** Always remove/add in `_patch`.
 - **JS Interop for Events:** Using `.toJS` on wrapper.
@@ -205,8 +210,8 @@
 - **(Previous) Renderer Update Strategy:** Keyed diffing implemented.
 - **(Previous) VNode Location:** Confirmed.
 - **(Previous) WASM Loading:** Confirmed (`build_runner` generates loader JS).
-- **(Previous) JS Interop:** Shifting away from direct JS interop in renderer
-  towards `dust_dom`.
+- **(Previous) JS Interop:** Direct JS interop calls in the renderer have been
+  replaced by the `dust_dom` abstraction layer.
 - **(Removed) State Management Integration:** Riverpod basic integration
   started.
 - **(Removed) Build Tooling:** `dhttpd` replaced by `build_runner`.
@@ -217,8 +222,8 @@
   providing Hot Restart.
 - **DOM Abstraction Strategy:** Using `@staticInterop` in `dust_dom` for type
   safety and potential performance benefits over dynamic JS interop.
-- **Renderer Refactoring:** Proceeding incrementally, replacing direct JS calls
-  with `dust_dom` methods.
+- **Renderer Refactoring:** Completed replacement of direct JS calls with
+  `dust_dom` methods in `renderer.dart`.
 - **Event Object Wrapping:** Using `DomEvent` wrapper.
 - **Listener Update Strategy:** Always remove/add in `_patch`.
 - **JS Interop for Events:** Using `.toJS` on wrapper.
@@ -227,5 +232,5 @@
 - **(Previous) Renderer Update Strategy:** Keyed diffing implemented.
 - **(Previous) VNode Location:** Confirmed.
 - **(Previous) WASM Loading:** Confirmed (`build_runner` generates loader JS).
-- **(Previous) JS Interop:** Shifting away from direct JS interop in renderer
-  towards `dust_dom`.
+- **(Previous) JS Interop:** Direct JS interop calls in the renderer have been
+  replaced by the `dust_dom` abstraction layer.
