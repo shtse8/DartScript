@@ -1,0 +1,22 @@
+# Dart/Flutter general ignores
+.dart_tool/
+.packages
+build/
+pubspec.lock # Usually committed, but can be ignored in some workflows
+
+# build_runner output
+.dart_tool/build/
+web/*.dart.js
+web/*.dart.js.map
+web/*.wasm
+web/*.wasm.map
+web/*.mjs
+
+# IDE specific files
+.idea/
+*.iml
+.vscode/
+
+# OS specific files
+.DS_Store
+Thumbs.db
