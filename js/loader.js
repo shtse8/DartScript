@@ -11,13 +11,50 @@ window.dartScriptSetText = function(selector, text) {
         const element = document.querySelector(selector);
         if (element) {
             element.textContent = text;
+            return true; // Indicate success
         } else {
             console.warn(`JS: dartScriptSetText - Element not found for selector: ${selector}`);
+            return false; // Indicate not found
         }
     } catch (error) {
         console.error(`JS: Error in dartScriptSetText for selector '${selector}':`, error);
+        return false; // Indicate error
     }
 };
+
+window.dartScriptGetText = function(selector) {
+    console.log(`JS: dartScriptGetText called with selector='${selector}'`);
+    try {
+        const element = document.querySelector(selector);
+        if (element) {
+            return element.textContent;
+        } else {
+            console.warn(`JS: dartScriptGetText - Element not found for selector: ${selector}`);
+            return null; // Indicate not found
+        }
+    } catch (error) {
+        console.error(`JS: Error in dartScriptGetText for selector '${selector}':`, error);
+        return null; // Indicate error
+    }
+};
+
+window.dartScriptSetHtml = function(selector, html) {
+    console.log(`JS: dartScriptSetHtml called with selector='${selector}'`);
+    try {
+        const element = document.querySelector(selector);
+        if (element) {
+            element.innerHTML = html;
+            return true; // Indicate success
+        } else {
+            console.warn(`JS: dartScriptSetHtml - Element not found for selector: ${selector}`);
+            return false; // Indicate not found
+        }
+    } catch (error) {
+        console.error(`JS: Error in dartScriptSetHtml for selector '${selector}':`, error);
+        return false; // Indicate error
+    }
+};
+
 
 // --- Module Loading Logic ---
 async function loadDartScriptModules() {

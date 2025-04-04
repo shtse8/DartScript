@@ -32,9 +32,11 @@ The project currently demonstrates:
   - Loads, compiles, instantiates, and invokes the `main()` function of each
     WASM module.
 - A basic DartScript framework API exposed via JavaScript
-  (`window.dartScriptSetText`).
+  (`window.dartScriptSetText`, `window.dartScriptGetText`,
+  `window.dartScriptSetHtml`).
+- A Dart static class `DartScriptApi` providing wrappers for the JS functions.
 - A sample Dart WASM module (`dart/main.dart`) successfully calling the
-  framework API (`dartScriptSetText`) to update the DOM after being loaded via
+  framework API via `DartScriptApi` to update the DOM after being loaded via
   `<dart-script src="/wasm/main.mjs">`.
 
 ## How to Run
@@ -58,20 +60,23 @@ The project currently demonstrates:
    `http://localhost:8080`) in your web browser.
 
 You should see the heading "DartScript Proof of Concept" and the box below
-should update with the message "Hello from Dart WASM (via dartScriptSetText)!".
-Check the browser's developer console for additional logs.
+should update with the final HTML content set by `DartScriptApi.setHtml`. Check
+the browser's developer console for additional logs detailing the API calls.
 
 ## Next Steps
 
 Based on `memory-bank/activeContext.md`:
 
-- **Implement DartScript APIs:** Define and implement more Dart-side APIs for
-  DOM manipulation (e.g., getting elements, adding listeners), event handling,
-  etc.
-- **Configuration Passing:** Design a mechanism to pass configuration from tag
-  attributes to the loaded WASM module.
-- **Refine Error Handling:** Improve error reporting from within loaded Dart
-  WASM modules.
+- **Refine error handling:** Implement better error reporting from within the
+  loaded Dart WASM modules back to the main page/console.
+- **Configuration Passing:** Design and implement a mechanism to pass
+  configuration data (e.g., from tag attributes like
+  `<dart-script src="..." data-config="value">`) to the loaded WASM module's
+  `main` function.
+- **Expand DOM API:** Consider adding more essential DOM manipulation functions
+  (e.g., adding/removing elements, handling events).
+- **Package Management Exploration:** Begin research and planning for how
+  external Dart packages could be integrated or used.
 
 ## Memory Bank
 
