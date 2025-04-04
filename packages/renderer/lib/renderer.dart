@@ -149,18 +149,42 @@ void _mountComponent(
     // 2. Set update requester
     state.setUpdateRequester(() {
       print('Update requested by state for ${component.runtimeType}!');
-      // TODO: Implement update logic - needs access to old renderedVNode
-      // This will likely involve finding the componentVNode in the tree
-      // and triggering a re-patch starting from its parent.
-      // For now, just print.
-      print('!!! Component update via setState NOT FULLY IMPLEMENTED YET !!!');
-      // Potential future logic:
-      // if (componentVNode.renderedVNode != null && componentVNode.domNode?.parentNode != null) {
-      //   final parent = componentVNode.domNode!.parentNode as dom.DomElement;
-      //   final newRenderedVNode = state.build();
-      //   _patch(parent, newRenderedVNode, componentVNode.renderedVNode, context);
-      //   componentVNode.renderedVNode = newRenderedVNode;
-      // }
+      if (!state.mounted) {
+        print('  -> State is not mounted, ignoring update request.');
+        return;
+      }
+      if (componentVNode.renderedVNode == null) {
+        print(
+            '  -> Previous renderedVNode is null, cannot patch. Might indicate an issue.');
+        // Potentially try a full re-mount? Or log error.
+        return;
+      }
+      final currentDomNode =
+          componentVNode.domNode as dom.DomNode?; // Cast to DomNode?
+      if (currentDomNode?.parentNode == null ||
+          currentDomNode?.parentNode is! dom.DomElement) {
+        print(
+            '  -> Cannot find valid parent DOM element for patching. Aborting update.');
+        // This might happen if the component was removed from the DOM externally or structure is broken.
+        return;
+      }
+
+      // Get the parent DOM element from the currently rendered node's parent
+      final parent = (componentVNode.domNode as dom.DomNode).parentNode
+          as dom.DomElement; // Cast before accessing parentNode
+      final oldRenderedVNode = componentVNode.renderedVNode;
+
+      print('  -> Re-building component...');
+      final newRenderedVNode = state.build();
+      print('  -> Patching new rendered tree against old...');
+      _patch(parent, newRenderedVNode, oldRenderedVNode, context);
+
+      // Update references on the component VNode
+      componentVNode.renderedVNode = newRenderedVNode;
+      // Assume the root DOM node reference might change if the rendered root type changes
+      componentVNode.domNode =
+          newRenderedVNode?.domNode ?? oldRenderedVNode?.domNode;
+      print('  -> Update finished for ${component.runtimeType}.');
     });
 
     // 3. Set context & Initialize state (calls initState)

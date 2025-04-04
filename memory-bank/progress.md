@@ -45,12 +45,17 @@
   - **Keyed Diffing:** `_patchChildren` implements keyed reconciliation.
   - **DOM Interaction:** Uses `dust_dom` abstractions and `_createDomElement`
     helper.
-- **State Update (Keyed Diffing):**
-  - `State.setState` triggers a callback mechanism.
-  - Renderer receives the callback, re-runs `State.build()`, and uses `_patch`
-    (which calls `_patchChildren`) to apply updates efficiently using keys.
-  - **Result:** Stateful components with lists (like `TodoListComponent`) can
-    update efficiently, handling additions, removals, and reordering correctly.
+- **State Update (Keyed Diffing & setState):**
+  - **`setState` triggers update:** `State.setState` now correctly triggers the
+    `_updateRequester` callback provided by the renderer during mount.
+  - **Renderer handles update:** The callback in `_mountComponent` calls `build`
+    on the state and then calls `_patch` to diff the new rendered tree against
+    the old one, applying updates to the DOM.
+  - **Keyed diffing for children:** `_patchChildren` ensures efficient updates
+    for lists.
+  - **Result:** Stateful components (like `TodoListComponent`) now correctly
+    update their UI in response to `setState` calls, handling additions,
+    removals, toggles, and reordering.
 - **Demo Application (TodoList - Interactive with DomEvent):**
   - `TodoListComponent` updated to handle user interaction via buttons.
   - Demonstrates using `StatefulWidget`, `setState`, keys in `VNode`, and
@@ -114,9 +119,9 @@
 
 ## Known Issues / Challenges
 
-- **Component Lifecycle:** Basic mount/update/dispose implemented, but
-  `setState` update path needs full implementation. Fragment/multi-root
-  rendering not handled.
+- **Component Lifecycle & `setState`:** Basic mount/update/dispose implemented.
+  `setState` now correctly triggers component updates via the renderer's
+  patching mechanism. Fragment/multi-root rendering not handled.
 - **Event Handling Refinement:** Recursive listener removal implemented. Further
   testing needed. Performance impact of `DomEvent` wrapper needs consideration.
 - **Renderer Optimization:** Keyed diffing is implemented but can likely be

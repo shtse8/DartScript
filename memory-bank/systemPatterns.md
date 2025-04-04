@@ -9,8 +9,9 @@
     `StatefulWidget`), potentially with `Key`s.
   - `StatefulWidget` uses a `State` object for mutable state and UI building.
   - `State` has lifecycle methods (`initState`, `didUpdateWidget`, `build`,
-    `dispose`, etc.), a `setState` method for triggering updates (partially
-    implemented in renderer), and a `context` property (a basic `BuildContext`).
+    `dispose`, etc.), a `setState` method (which calls `_markNeedsBuild`), and a
+    `context` property (a basic `BuildContext`). `_markNeedsBuild` triggers an
+    update via the `_updateRequester` callback provided by the renderer.
   - `Component`s are represented in the VNode tree by `VNode` instances created
     with `VNode.component()`. These VNodes store the `Component` instance, its
     `key`, the associated `State` object (for StatefulWidgets, managed by the
@@ -24,9 +25,18 @@
     functions (e.g., `div()`, `h1()`) which return a `VNode` tree.
   - **Initial Render:** Handles `StatefulWidget` creation and initial `build`
     via `_patch` (with `oldVNode` as null).
-  - **Update Mechanism (Keyed Diffing):** `setState` calls a callback provided
-    by the renderer (`_performRender`). `_performRender` re-runs `build` to get
-    the new `VNode` tree and calls `_patch`.
+  - **Update Mechanism (Keyed Diffing & setState):**
+    - **Component Update (Parent Rebuild):** When a parent component rebuilds,
+      `_patch` might call `_updateComponent`. `_updateComponent` reuses the
+      existing `State` (if applicable), calls `frameworkUpdateWidget`
+      (triggering `didUpdateWidget`), then calls `build` and recursively patches
+      the new rendered tree against the old one.
+    - **Internal State Update (`setState`):** `State.setState` calls
+      `_markNeedsBuild`, which invokes the `_updateRequester` callback set
+      during `_mountComponent`. This callback now contains logic to get the
+      parent DOM node, call `build` on the state, and call `_patch` to diff the
+      new rendered tree against the previously rendered tree (`renderedVNode`
+      stored on the component's VNode).
   - **Patching (`_patch`):**
     - **Differentiates Node Types:** First checks if the new/old VNodes
       represent Components (`VNode.component != null`).
@@ -120,7 +130,9 @@
   `ProviderContainer`.
 - **Observer Pattern:** Implicitly used via `StreamProvider` and `setState`
   triggering updates.
-- **Callback Pattern:** Used for `State` to request updates from the renderer.
+- **Callback Pattern:** Used for `State` (`_updateRequester`) to request updates
+  from the renderer when `setState` is called. The renderer provides this
+  callback during component mounting.
 - **Facade Pattern:** Implemented via `dust_dom` package, providing a Dart API
   over JS DOM objects using `@staticInterop`.
 - **Bootstrap Pattern:** `build_runner` generates the necessary JS bootstrap

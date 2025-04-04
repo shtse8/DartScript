@@ -3,8 +3,7 @@
 ## Current Focus
 
 - **Refining Renderer & Component Lifecycle:** Further optimize patching logic,
-  handle edge cases, fully implement `setState` update path, address TODOs in
-  component mount/update/unmount.
+  handle edge cases, address TODOs in component mount/update/unmount.
 - **Refining Event Handling:** (Partially addressed)
   - Implemented `DomEvent` wrapper (`packages/renderer/lib/dom_event.dart`) for
     type-safe event object access in Dart callbacks.
@@ -31,15 +30,19 @@
     (`_removeListenersFromNode`, `_removeListenersRecursively`, `removeVNode`)
     outside `_patchChildren` and adjusted parameters/calls.
   - **Implemented `_mountComponent`:** Handles creation of `State` for
-    `StatefulWidget`, calls `build`, recursively patches the rendered tree, and
-    associates state/renderedVNode/domNode with the component VNode.
+    `StatefulWidget`, sets `updateRequester` callback (which now contains update
+    logic), calls `initState`/`build`, recursively patches the rendered tree,
+    and associates state/renderedVNode/domNode.
   - **Implemented `_updateComponent`:** Handles component type/key checks
     (simple unmount/mount for now), reuses `State` for `StatefulWidget`, calls
-    `frameworkUpdateWidget` and `build`, recursively patches the new rendered
-    tree against the old one.
+    `didUpdateWidget`/`build`, recursively patches the new rendered tree against
+    the old one.
   - **Implemented `_unmountComponent`:** Calls `dispose` on `State` for
     `StatefulWidget`, recursively unmounts the rendered tree (using
     `removeVNode` for cleanup), and clears references.
+  - **Implemented `setState` Update Path:** The `updateRequester` callback set
+    in `_mountComponent` now correctly calls `state.build()` and `_patch` to
+    update the component's rendered subtree when `setState` is called.
 
 - **Introduced Basic BuildContext:**
   - Created `packages/component/lib/context.dart` defining a simple
@@ -192,8 +195,10 @@
 - **Improve Renderer:**
   - **(Partially Done)** Manage component lifecycle (`mount`, `update`,
     `dispose`) via `_patch`, `_mountComponent`, `_updateComponent`,
-    `_unmountComponent`. Needs further refinement (e.g., `setState` update path,
-    fragment handling).
+    `_unmountComponent`.
+  - **(Partially Done)** Implemented basic `setState` update path via
+    `updateRequester` callback. Needs further refinement (e.g., fragment
+    handling, performance).
   - Continue refining handling of edge cases in patching.
 - **(Future Goal) Refactor Consumer/State Management:** Implement a context
   mechanism (like `BuildContext` + `InheritedWidget`) to replace global
@@ -256,7 +261,8 @@
 - **Component Lifecycle:** Basic mount, update, unmount logic implemented in
   `_patch` using helper functions. `State.dispose` is called during unmount.
   `State.initState` and `State.didUpdateWidget` are triggered via
-  `frameworkUpdateWidget`.
+  `frameworkUpdateWidget`. `setState` now triggers updates via the
+  `updateRequester` callback which calls `build` and `_patch`.
 - **JS Interop for Events:** Using `.toJS` on wrapper.
 - **Listener Reference Storage:** Using `jsFunctionRefs` on `VNode` (used for
   removal).
