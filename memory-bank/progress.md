@@ -43,8 +43,11 @@
     `DomEvent`, converting with `.toJS`, storing refs), and stores DOM reference
     in `VNode.domNode`.
   - **Improved listener update logic in `_patch`:** Always removes/adds
-    listeners when present in new VNode, wraps callbacks to pass `DomEvent` (now
-    uses `dust_dom` `addEventListener`/`removeEventListener`).
+    listeners when present in new VNode, wraps callbacks to pass `DomEvent`.
+  - **Implemented recursive listener removal:** `removeVNode` now recursively
+    traverses the VNode tree and uses stored `jsFunctionRefs` to call
+    `removeEventListener` before detaching the DOM node, ensuring proper
+    cleanup.
   - (Previous) JS Interop updated for `addEventListener` and
     `removeEventListener` (being replaced).
 - **State Update (Keyed Diffing):**
@@ -91,8 +94,9 @@
   - Successfully compiled WASM after initial integration.
 - **Event Handling Refined:**
   - Implemented `DomEvent` wrapper for type safety.
-  - Improved listener update logic in `_patch` for robustness (now using
-    `dust_dom`).
+  - Improved listener update logic in `_patch` for robustness.
+  - **Implemented recursive listener removal in `removeVNode`** ensuring cleanup
+    before DOM node detachment.
   - Updated relevant components/demos (`VNode`, `renderer`,
     `TodoListComponent`).
 - **JS Interop for Events Resolved:** Confirmed `.toJS` extension method is the
@@ -114,9 +118,9 @@
 
 ## Known Issues / Challenges
 
-- **Event Handling Refinement:** Listener update/removal logic improved but
-  needs further testing for edge cases and reliability. Performance impact of
-  `DomEvent` wrapper needs consideration.
+- **Event Handling Refinement:** Recursive listener removal implemented in
+  `removeVNode`. Further testing on edge cases and reliability might be needed.
+  Performance impact of `DomEvent` wrapper needs consideration.
 - **Renderer Optimization:** Keyed diffing is implemented but can likely be
   further optimized.
 - **JS Interop Performance:** Still a consideration, but `@staticInterop` in

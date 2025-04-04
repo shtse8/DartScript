@@ -120,9 +120,15 @@
 - **Diffing/Patching Pattern:** Comparing VNode trees (`_patch`) and applying
   targeted updates to the DOM (including attributes and listeners). Uses keyed
   reconciliation (`_patchChildren`) for efficient list updates.
-- **Event Listener Management Pattern:** Wrapping Dart callbacks
-  `(DomEvent event) => ...` in a JS function
-  `(JSAny jsEvent) { dartCallback(DomEvent(jsEvent)); }`, converting the wrapper
-  using `.toJS`, storing the `JSFunction` reference on the `VNode`, and using
-  these references in `_patch` to add/remove listeners. Listener update logic in
-  `_patch` simplified.
+- **Event Listener Management Pattern:**
+  - **Creation/Update:** Wrapping Dart callbacks `(DomEvent event) => ...` in a
+    JS function `(JSAny jsEvent) { dartCallback(DomEvent(jsEvent)); }`,
+    converting the wrapper using `.toJS`, storing the `JSFunction` reference on
+    the `VNode` (`jsFunctionRefs`), and using these references in `_patch` to
+    add/remove listeners during updates. Listener update logic in `_patch`
+    simplified (always remove/add).
+  - **Removal:** When a DOM node is removed during patching (`_patchChildren` ->
+    `removeVNode`), the framework now **recursively** traverses the
+    corresponding VNode and its children, using the stored `jsFunctionRefs` to
+    explicitly call `removeEventListener` for all associated listeners before
+    the DOM node is detached. This ensures proper cleanup.

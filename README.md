@@ -190,7 +190,7 @@ implementation status.
   - [x] Text Content Update
   - [x] Attribute Update/Removal
   - [x] Event Listener Update/Removal (Improved logic, wraps callbacks for
-        `DomEvent`)
+        `DomEvent`, **recursive cleanup on node removal**)
 - [x] Keyed Child Reconciliation (`_patchChildren` function)
 - [ ] Component Lifecycle Method Integration (`initState`, `dispose`, etc.)
 - [ ] DOM Abstraction Layer (Type-safe Dart API over DOM)
