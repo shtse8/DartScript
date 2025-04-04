@@ -1,5 +1,6 @@
 // packages/component/lib/state.dart
 import 'stateful_component.dart';
+import 'vnode.dart'; // Import the VNode definition
 
 /// Callback signature for requesting a component update.
 typedef UpdateRequester = void Function();
@@ -52,7 +53,9 @@ abstract class State<T extends StatefulWidget> {
   /// (e.g., after calling [initState], [didUpdateWidget], or [setState]).
   ///
   /// This method should not have side effects beyond building the UI.
-  dynamic build(); // Placeholder, return type TBD
+  /// Describes the part of the user interface represented by this state,
+  /// returning a [VNode] tree.
+  VNode build();
 
   /// Called when this object is inserted into the tree.
   ///

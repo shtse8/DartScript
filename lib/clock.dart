@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:riverpod/riverpod.dart';
 import 'package:dust_component/stateful_component.dart'; // Use StatefulWidget
 import 'package:dust_component/state.dart'; // Use State
+import 'package:dust_component/vnode.dart'; // Import VNode
 
 // 1. Define the time provider using StreamProvider
 final clockProvider = StreamProvider<DateTime>((ref) {
@@ -80,7 +81,9 @@ class _ClockComponentState extends State<ClockComponent> {
 
   // build method returns the Map representation the basic renderer understands
   @override
-  Map<String, String> build() {
+  // build method now returns a VNode
+  @override
+  VNode build() {
     String displayText;
     if (_isLoading) {
       displayText = 'Loading clock...';
@@ -97,9 +100,11 @@ class _ClockComponentState extends State<ClockComponent> {
     }
 
     // Return the Map representation for the basic renderer
-    return {
-      'tag': 'span', // Render as a <span> element
-      'text': displayText,
-    };
+    // Return a VNode representation
+    // Return a VNode representation: an element node containing a text node.
+    return VNode.element(
+      'span', // Render as a <span> element
+      children: [VNode.text(displayText)], // Text content as a child VNode
+    );
   }
 }

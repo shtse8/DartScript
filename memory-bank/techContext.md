@@ -54,8 +54,12 @@
 - **`dart:js_interop`:** Core for JS/WASM communication.
 - **`package:riverpod`:** Added for state management demonstration (currently
   used sub-optimally in demo).
-- **(Framework Internal):** `dust_component`, `dust_renderer` packages. Others
-  like `core`, `dom`, `router` planned.
+- **(Framework Internal):**
+  - `dust_component`: Defines core `Component`, `State`, `StatelessWidget`,
+    `StatefulWidget`, and now `VNode`.
+  - `dust_renderer`: Depends on `dust_component` (including `VNode`) to render
+    component output.
+  - Others like `core`, `dom`, `router` planned.
 - **(Development):** `dhttpd` for serving files locally. `build_runner` might be
   used later.
 - **(Bootstrap):** `js/app_bootstrap.js` (hand-written).

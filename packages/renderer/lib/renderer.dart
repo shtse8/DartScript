@@ -5,6 +5,7 @@ import 'package:dust_component/stateful_component.dart';
 import 'package:dust_component/state.dart';
 import 'dart:js_interop';
 import 'package:dust_component/stateless_component.dart'; // Import StatelessWidget
+import 'package:dust_component/vnode.dart'; // Import VNode
 
 // --- JS Interop ---
 @JS('document.createElement')
@@ -36,9 +37,11 @@ void _performRender(State componentState, JSAny targetElement) {
     print('State build returned: $representation');
 
     // 2. Interpret the representation and update DOM (very basic, replaces all content)
-    if (representation is Map<String, String>) {
-      final String? tag = representation['tag'];
-      final String? text = representation['text'];
+    // Check if the build result is a VNode
+    if (representation is VNode) {
+      final String? tag = representation.tag; // Access tag property
+      final String? text = representation
+          .text; // Access text property (for text nodes or simple elements)
 
       if (tag != null) {
         final JSAny element = _createElement(tag.toJS);
@@ -52,12 +55,16 @@ void _performRender(State componentState, JSAny targetElement) {
         targetElement.appendChild(element);
         print('Rendered/Updated <$tag> element.');
       } else {
-        print('Error: Representation map missing "tag" key.');
-        targetElement.textContent = 'Error: Invalid build result (no tag)'.toJS;
+        print(
+            'Error: VNode has no tag (potentially a text node, not fully handled yet).');
+        // For now, just display the text if available
+        targetElement.textContent =
+            (text ?? 'Error: Invalid VNode (no tag)').toJS;
       }
     } else {
+      // Handle cases where build() returns something other than VNode
       print(
-        'Error: Unsupported component representation type: ${representation.runtimeType}',
+        'Error: Unsupported build result type: ${representation.runtimeType}',
       );
       targetElement.textContent = 'Error: Cannot render component.'.toJS;
     }
@@ -112,9 +119,10 @@ void render(Component component, String targetElementId) {
       final representation = component.build();
       print('Stateless build returned: $representation');
       // Directly render the representation (similar logic as _performRender)
-      if (representation is Map<String, String>) {
-        final String? tag = representation['tag'];
-        final String? text = representation['text'];
+      // Check if the build result is a VNode
+      if (representation is VNode) {
+        final String? tag = representation.tag; // Access tag property
+        final String? text = representation.text; // Access text property
         if (tag != null) {
           final JSAny element = _createElement(tag.toJS);
           if (text != null) {
@@ -123,8 +131,18 @@ void render(Component component, String targetElementId) {
           _targetElement!.innerHTML = ''.toJS;
           _targetElement!.appendChild(element);
           print('Rendered stateless <$tag> element.');
-        } else {/* Error handling */}
-      } else {/* Error handling */}
+        } else {
+          print('Error: VNode has no tag (StatelessWidget).');
+          _targetElement!.textContent =
+              (text ?? 'Error: Invalid VNode (no tag)').toJS;
+        }
+      } else {
+        // Handle cases where build() returns something other than VNode
+        print(
+            'Error: Unsupported build result type (StatelessWidget): ${representation.runtimeType}');
+        _targetElement!.textContent =
+            'Error: Cannot render stateless component.'.toJS;
+      }
     } catch (e, s) {
       print('Error during stateless render: $e\n$s');
       _targetElement!.textContent = 'Render Error: $e'.toJS;

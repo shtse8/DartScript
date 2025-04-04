@@ -10,13 +10,15 @@
   - `StatefulWidget` uses a `State` object for mutable state and UI building.
   - `State` has lifecycle methods (`initState`, `build`, `dispose`, etc.) and
     `setState` for triggering updates.
+  - `State.build()` returns a `VNode` tree representing the desired UI
+    structure.
 - **Declarative Rendering Engine (Current PoC):**
-  - Developers declare UI in `build()` methods (currently returning a `Map` for
-    the basic renderer).
+  - Developers declare UI in `build()` methods, returning a `VNode` tree.
   - **Initial Render:** Handles `StatefulWidget` creation and initial `build`.
   - **Update Mechanism (Simplified):** `setState` calls a callback provided by
-    the renderer. The renderer re-runs `build` and **replaces the entire DOM
-    content** of the target element.
+    the renderer. The renderer re-runs `build` (which returns a `VNode`) and
+    **replaces the entire DOM content** of the target element based on the new
+    `VNode` (basic interpretation).
   - **Goal:** Evolve this into an efficient engine (e.g., Virtual DOM diffing)
     that minimizes DOM changes.
 - **State Management:**
@@ -48,7 +50,8 @@
 - **Rendering Strategy:** Currently basic replacement. **Decision needed:**
   Virtual DOM vs. Incremental DOM vs. other for efficient updates.
 - **Component API Design:** Current class-based approach is similar to Flutter.
-  `build()` return type needs definition (e.g., `VNode`).
+  `build()` return type is now defined as `VNode`. Further refinement needed for
+  props, context, keys.
 - **State Management Approach:** Provide built-in context or focus on
   integrating external libraries like Riverpod?
 - **JS/WASM Bridge Implementation:** Continue with `dart:js_interop`. How to
@@ -67,3 +70,5 @@
 - **Facade Pattern:** (Goal) For the Dart DOM abstraction layer.
 - **Bootstrap Pattern:** Using a dedicated JS module (`app_bootstrap.js`) to
   load and initialize the WASM application.
+- **Virtual DOM Node Pattern:** Using `VNode` objects to represent the desired
+  DOM structure in memory.

@@ -14,36 +14,39 @@
   - `js/app_bootstrap.js` handles fetching, compiling, instantiating WASM, and
     calling Dart `main`.
   - `index.html` correctly loads the bootstrap script.
-- **Component Model (Basic):**
+- **Component Model (Basic + VNode):**
   - Abstract classes for `Component`, `StatelessWidget`, `StatefulWidget`, and
     `State` defined in `packages/component`.
-  - Basic lifecycle methods (`initState`, `dispose`, `build`, `setState`,
-    `frameworkUpdateWidget`) defined in `State`.
+  - **`VNode` structure defined** in `packages/component/lib/vnode.dart` to
+    represent the output of `build`.
+  - `State.build()` method now **returns `VNode`**.
+  - Basic lifecycle methods (`initState`, `dispose`, `setState`, etc.) defined
+    in `State`.
 - **Renderer (Very Basic):**
   - `packages/renderer` provides a `render` function.
   - Can handle initial rendering of `StatefulWidget` (creates state, calls
     `initState`, calls `build`).
-  - Can render basic `Map<String, String>` representations
-    (`{'tag': '...', 'text': '...'}`) to DOM elements.
+  - Can render basic **`VNode` representations** (element nodes with direct
+    text, ignoring children/attributes for now) to DOM elements.
 - **State Update (Simplified PoC):**
   - `State.setState` triggers a callback mechanism.
   - Renderer receives the callback and re-runs `State.build()`.
   - Renderer **replaces the entire content** of the target DOM element with the
-    new result (no diffing).
+    new `VNode` result (no diffing).
   - **Result:** A simple stateful component (like the clock demo) can now
     visually update, albeit inefficiently.
 - **Demo Application:**
   - `ClockComponent` demonstrates using `StatefulWidget`, Riverpod
-    `StreamProvider`, and `setState` to display updating time (initial state +
-    updates work).
+    `StreamProvider`, `setState`, and **building a `VNode`** to display updating
+    time (initial state + updates work).
 
 ## What's Left to Build (High Level - Framework Focus)
 
 - **Core Framework Implementation:**
   - **Rendering Engine (Diffing):** Replace the simple renderer with one that
     uses a Virtual DOM or similar diffing strategy for efficient DOM updates.
-  - **Component Model Refinement:** Define `build()` return types (e.g.,
-    `VNode`), handle props, context.
+  - **Component Model Refinement:** (`VNode` defined) Handle props, context,
+    keys.
   - **DOM Abstraction:** Create a robust, type-safe Dart layer over DOM
     operations instead of direct JS interop in the renderer.
   - **Event Handling:** Implement DOM event listeners and dispatching to Dart
@@ -59,18 +62,21 @@
 
 ## Current Status
 
-- **Basic Stateful Update PoC Complete:** Successfully demonstrated that a
-  `StatefulWidget` can be rendered, receive external updates (via Riverpod
-  stream), trigger `setState`, and have the UI update (via simplified renderer).
-- **Improved WASM Loading:** Loading mechanism is cleaner using
-  `app_bootstrap.js`.
-- **Core Component Structure Defined:** Basic `Component`/`State` classes are in
-  place.
-- **Renderer Needs Major Overhaul:** The current renderer is a placeholder
-  proving basic concepts but lacks efficiency (no diffing) and features (event
-  handling, complex children).
-- **Ready for Renderer Enhancement:** The next major step is to build a more
-  sophisticated rendering engine.
+- **VNode Introduced & Integrated:** Successfully defined `VNode` and updated
+  the component model (`State.build`), renderer, and demo (`ClockComponent`) to
+  use it.
+- **Basic Stateful Update PoC Works with VNode:** Confirmed that the existing
+  update mechanism functions correctly with `VNode` as the build output (still
+  using full content replacement).
+- **Improved WASM Loading:** Loading mechanism remains clean
+  (`app_bootstrap.js`).
+- **Core Component Structure Updated:** `Component`/`State`/`VNode` structure is
+  in place.
+- **Renderer Adapted (Still Basic):** The renderer now consumes `VNode` but
+  still needs a major overhaul for diffing, attribute/child handling, and event
+  handling.
+- **Foundation Laid for Diffing:** Introducing `VNode` is the necessary first
+  step towards implementing a proper diffing algorithm in the renderer.
 
 ## Known Issues / Challenges
 
