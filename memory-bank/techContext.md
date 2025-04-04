@@ -19,9 +19,11 @@
     necessary bridge functions (imports/exports) for communication between Dart
     (WASM) and JS (including DOM APIs). The framework uses `dart:js_interop` to
     interact with this bridge.
-  - **DOM Manipulation:** Performed via direct JS interop calls
-    (`JSAnyExtension`) within the renderer (`_patch`, `_patchChildren`). A Dart
-    DOM abstraction layer is planned.
+  - **DOM Manipulation & Event Handling:** Performed via direct JS interop calls
+    (`JSAnyExtension`, including `addEventListener`/`removeEventListener`)
+    within the renderer (`_createDomElement`, `_patch`). Dart callbacks are
+    passed to JS using the `.toJS` extension method. A Dart DOM abstraction
+    layer is planned.
 
 ## Development Environment
 
@@ -52,15 +54,17 @@
 ## Dependencies
 
 - **Dart Standard Libraries:** `dart:core`, `dart:async`, etc.
-- **`dart:js_interop`:** Core for JS/WASM communication.
+- **`dart:js_interop`:** Core for JS/WASM communication (including `.toJS` for
+  callbacks).
 - **`package:riverpod`:** Added for state management demonstration (currently
   used sub-optimally in demo).
 - **(Framework Internal):**
   - `dust_component`: Defines core `Component`, `State`, `StatelessWidget`,
-    `StatefulWidget`, and `VNode` (now including `key`).
+    `StatefulWidget`, and `VNode` (now including `key`, `listeners`,
+    `jsFunctionRefs`).
   - `dust_renderer`: Depends on `dust_component` (including `VNode`) to render
-    component output using keyed diffing (`_patch`, `_patchChildren`). Uses
-    `JSAnyExtension` for DOM manipulation.
+    component output using keyed diffing (`_patch`, `_patchChildren`) and event
+    listener management. Uses `JSAnyExtension` for DOM manipulation.
   - Others like `core`, `dom`, `router` planned.
 - **(Development):** `dhttpd` for serving files locally. `build_runner` might be
   used later.

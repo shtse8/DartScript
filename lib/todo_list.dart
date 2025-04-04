@@ -4,6 +4,7 @@ import 'package:dust_component/state.dart';
 import 'package:dust_component/vnode.dart';
 import 'dart:math'; // For random keys initially
 import 'dart:async'; // For Future.delayed
+import 'dart:js_interop'; // Needed for JSAny
 
 // Simple Todo Item model
 class TodoItem {
@@ -29,8 +30,8 @@ class _TodoListState extends State<TodoListComponent> {
     _addItem('Implement Keyed Diffing');
     _addItem('Test Keyed Diffing');
 
-    // Schedule automatic state changes for testing
-    _scheduleTestUpdates();
+    // Schedule automatic state changes for testing (Now commented out)
+    // _scheduleTestUpdates();
   }
 
   @override
@@ -135,18 +136,44 @@ class _TodoListState extends State<TodoListComponent> {
                   VNode.text('${item.text} (ID: ${item.id}) '),
                   // Buttons are placeholders for now, event handling not implemented
                   VNode.element('button',
-                      attributes: {'disabled': ''},
-                      children: [VNode.text('Toggle')]),
+                      // Remove 'disabled' attribute
+                      listeners: {
+                        'click': (JSAny event) => _toggleItem(
+                            item.id) // Add click listener with JSAny
+                      },
+                      children: [
+                        VNode.text('Toggle')
+                      ]),
                   VNode.element('button',
-                      attributes: {'disabled': ''},
-                      children: [VNode.text('Remove')])
+                      // Remove 'disabled' attribute
+                      listeners: {
+                        'click': (JSAny event) => _removeItem(
+                            item.id) // Add click listener with JSAny
+                      },
+                      children: [
+                        VNode.text('Remove')
+                      ])
                 ]);
           }).toList()),
       // Buttons are placeholders for now, event handling not implemented
       VNode.element('button',
-          attributes: {'disabled': ''}, children: [VNode.text('Add Item')]),
+          // Remove 'disabled' attribute
+          listeners: {
+            'click': (JSAny event) => _addItem(
+                'New Item Added Manually') // Add click listener with JSAny
+          },
+          children: [
+            VNode.text('Add Item')
+          ]),
       VNode.element('button',
-          attributes: {'disabled': ''}, children: [VNode.text('Shuffle Items')])
+          // Remove 'disabled' attribute
+          listeners: {
+            'click': (JSAny event) =>
+                _shuffleItems() // Add click listener with JSAny
+          },
+          children: [
+            VNode.text('Shuffle Items')
+          ])
     ]);
     // NOTE: Buttons don't work yet as event handling is not implemented.
     // Automatic updates are scheduled in initState for testing.

@@ -3,7 +3,8 @@
 import 'package:dust_component/component.dart';
 import 'package:dust_component/stateful_component.dart';
 import 'package:dust_component/state.dart';
-import 'dart:js_interop';
+import 'dart:js_interop'; // Import JSAny, JSString, JSFunction, JS, allowInterop etc.
+// import 'dart:js_interop_unsafe'; // No longer needed? .toJS is on Function via js_interop
 import 'package:dust_component/stateless_component.dart'; // Import StatelessWidget
 import 'package:dust_component/vnode.dart'; // Import VNode
 
@@ -33,6 +34,10 @@ extension JSAnyExtension on JSAny {
   external void insertBefore(
       JSAny newNode, JSAny? referenceNode); // Added for inserting nodes
   external JSString get tagName; // Added for getting element tag name
+  external void addEventListener(
+      JSString type, JSFunction listener); // Added for events
+  external void removeEventListener(
+      JSString type, JSFunction listener); // Added for events
 }
 // --- End JS Interop ---
 
@@ -63,8 +68,19 @@ JSAny _createDomElement(VNode vnode) {
       print('Set attribute $name="$value" on <${vnode.tag}>');
     });
   }
+// 4. Attach Event Listeners
+  if (vnode.listeners != null) {
+    vnode.listeners!.forEach((eventName, callback) {
+      // Convert the Dart callback directly to a JSFunction using the .toJS extension
+      final jsFunction = callback.toJS;
+      element.addEventListener(eventName.toJS, jsFunction);
+      print('Added listener for "$eventName" on <${vnode.tag}>');
+      // Store the JSFunction reference on the VNode for later removal
+      (vnode.jsFunctionRefs ??= {})[eventName] = jsFunction;
+    });
+  }
 
-  // 4. Recursively Create and Append Children
+// 5. Recursively Create and Append Children
   if (vnode.children != null) {
     if (vnode.tag == 'ul')
       print('>>> _createDomElement: Creating children for <ul>');
@@ -168,7 +184,13 @@ void _patch(JSAny parentElement, VNode? newVNode, VNode? oldVNode) {
   // Ensure the domNode reference is carried over for patching
   final JSAny domNode =
       oldVNode.domNode as JSAny; // Assume it's JSAny if types match
-  newVNode.domNode = domNode; // Carry over the reference
+  newVNode.domNode = domNode; // Carry over the DOM node reference
+
+  // Carry over the JSFunction references from the old VNode to the new one
+  // so we can potentially remove old listeners later.
+  if (oldVNode.jsFunctionRefs != null) {
+    newVNode.jsFunctionRefs = Map.from(oldVNode.jsFunctionRefs!);
+  }
 
   // 4a: Patch Text Nodes
   if (newVNode.tag == null) {
@@ -203,7 +225,52 @@ void _patch(JSAny parentElement, VNode? newVNode, VNode? oldVNode) {
     }
   });
 
-  // 4c: Patch Children (Keyed Reconciliation)
+  // 4c: Patch Event Listeners
+  final oldListeners = oldVNode.listeners ?? const {};
+  final newListeners = newVNode.listeners ?? const {};
+
+  // Remove listeners that are in old but not in new
+  oldListeners.forEach((eventName, oldCallback) {
+    if (!newListeners.containsKey(eventName)) {
+      final oldJsFunction = oldVNode.jsFunctionRefs?[eventName];
+      if (oldJsFunction != null) {
+        print('Removing listener for "$eventName" from <${newVNode.tag}>');
+        domNode.removeEventListener(eventName.toJS, oldJsFunction);
+        newVNode.jsFunctionRefs
+            ?.remove(eventName); // Remove from new VNode's refs too
+      } else {
+        print(
+            'Warning: Could not remove listener for "$eventName" on <${newVNode.tag}> - JSFunction reference not found.');
+      }
+    }
+  });
+
+  // Add or update listeners that are in new
+  newListeners.forEach((eventName, newCallback) {
+    final oldCallback = oldListeners[eventName];
+    // Only add/update if the callback function instance has changed
+    // or if it's a new listener.
+    if (!oldListeners.containsKey(eventName) || oldCallback != newCallback) {
+      print('Adding/Updating listener for "$eventName" on <${newVNode.tag}>');
+
+      // Remove the old listener if it exists and we have its reference
+      final oldJsFunction = oldVNode.jsFunctionRefs?[eventName];
+      if (oldJsFunction != null) {
+        print('  -> Removing old listener first');
+        domNode.removeEventListener(eventName.toJS, oldJsFunction);
+      }
+
+      // Add the new listener
+      final newJsFunction = newCallback.toJS;
+      domNode.addEventListener(eventName.toJS, newJsFunction);
+
+      // Store the new reference
+      (newVNode.jsFunctionRefs ??= {})[eventName] = newJsFunction;
+    }
+    // If oldCallback == newCallback, assume the listener is the same and do nothing.
+  });
+
+  // 4d: Patch Children (Keyed Reconciliation)
   _patchChildren(domNode, oldVNode.children, newVNode.children);
 
   print('Finished patching children for <${newVNode.tag}>.');

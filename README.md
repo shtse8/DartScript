@@ -20,27 +20,70 @@ in Dart.
 (See `memory-bank/projectbrief.md` and other Memory Bank files for full details
 and the latest context).
 
-## Current Status (Transitioning)
+## Roadmap & Status
 
-The project is currently transitioning from its initial proof-of-concept phase
-("DartScript") towards the new framework ("Dust") goals.
+This section outlines the major functional goals and their current
+implementation status.
 
-Foundational elements that work:
+**Core:**
 
-- Compiling Dart to WASM (`dart compile wasm`).
-- Basic WASM module loading via JavaScript.
-- Rudimentary JS/WASM communication bridge for DOM manipulation (e.g.,
-  `setText`, `setHtml` via JS functions called from Dart).
+- [x] Dart -> WASM Compilation (`dart compile wasm`)
+- [x] WASM Module Loading (`js/app_bootstrap.js`)
+- [x] Basic JS/WASM Interop (`dart:js_interop`)
 
-## How to Run (Previous PoC - Will Change)
+**Component Model:**
 
-_The instructions below relate to the previous "DartScript" PoC and will be
-updated as the "Dust" framework takes shape._
+- [x] Base Component Classes (`Component`, `StatefulWidget`, `StatelessWidget`,
+      `State`)
+- [x] Virtual DOM Node (`VNode` Definition)
+  - [x] Element Nodes (tag, attributes, children)
+  - [x] Text Nodes
+  - [x] Keys for Diffing (`key` property)
+  - [x] Event Listeners (`listeners` property)
+  - [x] Internal Listener Reference Storage (`jsFunctionRefs`)
+- [ ] Props Handling
+- [ ] Context API
+
+**Renderer:**
+
+- [x] Initial Rendering (`render` function, `_createDomElement`)
+- [x] Basic DOM Manipulation via JS Interop (`JSAnyExtension`)
+- [x] Patching / Diffing (`_patch` function)
+  - [x] Node Addition/Removal/Replacement
+  - [x] Text Content Update
+  - [x] Attribute Update/Removal
+  - [x] Basic Event Listener Update/Removal (using `.toJS` and stored refs)
+- [x] Keyed Child Reconciliation (`_patchChildren` function)
+- [ ] Component Lifecycle Method Integration (`initState`, `dispose`, etc.)
+- [ ] DOM Abstraction Layer (Type-safe Dart API over DOM)
+- [ ] Performance Optimizations
+
+**State Management:**
+
+- [x] Basic Component State (`State`, `setState`)
+- [ ] Framework-Level Integration (e.g., Riverpod `ProviderScope`)
+
+**Routing:**
+
+- [ ] SPA Router Implementation
+
+**Tooling:**
+
+- [ ] Build System Optimizations
+- [ ] Hot Reload / Hot Restart
+
+**Demo Application (`TodoListComponent`):**
+
+- [x] Demonstrates `StatefulWidget` usage
+- [x] Demonstrates Keyed Diffing for lists
+- [x] Demonstrates Basic Event Handling (button clicks)
+
+## How to Run Current Demo
 
 1. **Ensure Dart SDK is installed.**
-2. **Compile the sample Dart module to WASM:**
+2. **Compile the main Dart module to WASM:**
    ```bash
-   dart compile wasm dart/main.dart -o wasm/main.wasm
+   dart compile wasm lib/main.dart -o wasm/main.wasm
    ```
    (Generates `wasm/main.wasm` and `wasm/main.mjs`)
 3. **Activate `dhttpd` (if not already done):**
@@ -49,11 +92,12 @@ updated as the "Dust" framework takes shape._
    ```
 4. **Serve the files:** Navigate to the project root directory and run:
    ```bash
-   dhttpd .
+   dhttpd . -p 8080
    ```
+   (Or use a different port if 8080 is busy)
 5. **Open in browser:** Open `http://localhost:8080`.
 
-You would see the output of the old PoC.
+You should see the interactive Todo List application.
 
 ## Design Philosophy & Technical Choices
 
@@ -131,20 +175,7 @@ the DOM.
 
 ---
 
-## Next Steps (Framework Development)
-
-Based on `memory-bank/activeContext.md`:
-
-- **Design Core Framework Architecture:** Define the Component Model, Rendering
-  Pipeline, and State Management approach.
-- **Implement Component API:** Define how developers will create UI components
-  in Dart.
-- **Build Basic Renderer:** Create a PoC renderer to translate simple components
-  to DOM nodes.
-- **Prototype State Management:** Explore basic state management patterns.
-- **Structure Framework Core:** Set up the initial directory structure
-  (`packages/core`, etc.).
-- **Update Documentation:** Keep Memory Bank aligned with design decisions.
+_This section is now covered by the Roadmap & Status above._
 
 ## Memory Bank
 

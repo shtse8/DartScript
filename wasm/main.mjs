@@ -93,8 +93,6 @@ class CompiledApp {
     // Imports
     const dart2wasm = {
 
-      _80: Date.now,
-      _82: s => new Date(s * 1000).getTimezoneOffset() * 60,
       _84: () => {
         let stackString = new Error().stack.toString();
         let frames = stackString.split('\n');
@@ -131,12 +129,8 @@ class CompiledApp {
       _169: Function.prototype.call.bind(DataView.prototype.getInt32),
       _175: Function.prototype.call.bind(DataView.prototype.getFloat32),
       _177: Function.prototype.call.bind(DataView.prototype.getFloat64),
-      _198: (ms, c) =>
-      setInterval(() => dartInstance.exports.$invokeCallback(c), ms),
-      _199: (handle) => clearInterval(handle),
       _200: (c) =>
       queueMicrotask(() => dartInstance.exports.$invokeCallback(c)),
-      _201: () => Date.now(),
       _202: x0 => globalThis.console.log(x0),
       _210: o => o === undefined,
       _229: o => typeof o === 'function' && o[jsWrappedDartFunctionSymbol] === true,
@@ -206,6 +200,10 @@ class CompiledApp {
       _318: (x0,x1) => x0.removeAttribute(x1),
       _319: (x0,x1,x2) => x0.insertBefore(x1,x2),
       _320: x0 => x0.tagName,
+      _321: (x0,x1,x2) => x0.addEventListener(x1,x2),
+      _322: (x0,x1,x2) => x0.removeEventListener(x1,x2),
+      _323: f => finalizeWrapper(f, function(x0) { return dartInstance.exports._323(f,arguments.length,x0) }),
+      _324: f => finalizeWrapper(f, function(x0) { return dartInstance.exports._324(f,arguments.length,x0) }),
 
     };
 
