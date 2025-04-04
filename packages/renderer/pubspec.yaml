@@ -12,6 +12,7 @@ dependencies:
   js: ^0.7.0 # For js_interop annotations if needed beyond dart:js_interop
   dust_dom:
     path: ../dom
+  riverpod: ^2.5.1
 
 dev_dependencies:
   lints: ^3.0.0

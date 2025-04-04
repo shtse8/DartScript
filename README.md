@@ -79,36 +79,53 @@ management, event handling, and keyed list diffing.
 
 ## Basic Example
 
-Here's a simple "Hello, World!" example:
+Here's a simple example using Riverpod for state management:
 
-**1. Create your component (`lib/hello_world.dart`):**
+**1. Define a Provider (`lib/providers.dart`):**
+
+```dart
+import 'package:riverpod/riverpod.dart';
+
+// Simple provider holding a message string
+final messageProvider = Provider<String>((ref) => 'Hello from Riverpod!');
+```
+
+**2. Create your component using `Consumer` (`lib/hello_consumer.dart`):**
 
 ```dart
 import 'package:dust_component/component.dart';
-import 'package:dust_component/stateless_component.dart';
+import 'package:dust_component/consumer.dart'; // Import Consumer
 import 'package:dust_component/vnode.dart';
-import 'package:dust_component/html.dart'; // Import the HTML helpers
+import 'package:dust_component/html.dart';
+import 'package:riverpod/riverpod.dart'; // Import Riverpod
+import 'providers.dart'; // Import your provider
 
-class HelloWorld extends StatelessWidget {
-  @override
-  VNode build() {
-    // Use the h1 helper function instead of VNode constructor directly
-    return h1(
-      text: 'Hello, Dust!',
-      attributes: {'style': 'color: blue;'},
-    );
-  }
+class HelloConsumer extends Consumer { // Extend Consumer
+  HelloConsumer() : super(builder: (ref) { // Pass builder to super constructor
+    // Watch the provider
+    final message = ref.watch(messageProvider);
+
+    // Build UI using the message
+    return div(children: [
+      h1(
+        text: message, // Use the message from the provider
+        attributes: {'style': 'color: green;'},
+      ),
+      // You can add buttons here to interact with other providers (e.g., StateProvider)
+    ]);
+  });
 }
 ```
 
-**2. Create the entry point (`web/main.dart`):**
+**3. Create the entry point (`web/main.dart`):**
 
 ```dart
-import 'package:dust_app/hello_world.dart'; // Assuming hello_world.dart is in lib/
+import 'package:dust_app/hello_consumer.dart'; // Import the new consumer component
 import 'package:dust_renderer/renderer.dart';
 
 void main() {
-  runApp(HelloWorld(), 'app'); // Mount HelloWorld component into the 'app' div
+  // Mount the consumer component
+  runApp(HelloConsumer(), 'app');
 }
 ```
 

@@ -9,6 +9,7 @@ environment:
 dependencies:
   dust_renderer:
     path: ../renderer # Add path dependency to the renderer package
+  riverpod: ^2.5.1
 #   meta: ^1.10.0 # Potentially needed for annotations later
 dev_dependencies:
   lints: ^3.0.0

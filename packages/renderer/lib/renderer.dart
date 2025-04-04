@@ -8,6 +8,7 @@ import 'package:dust_component/stateless_component.dart'; // Import StatelessWid
 import 'package:dust_component/vnode.dart'; // Import VNode
 import 'dom_event.dart'; // Import DomEvent wrapper
 import 'package:dust_dom/dom.dart' as dom; // Import the new DOM abstraction
+import 'package:riverpod/riverpod.dart'; // Import Riverpod
 // --- Old JS Interop (To be removed) ---
 // @JS('document.createElement') ... etc.
 // extension JSAnyExtension on JSAny { ... }
@@ -19,6 +20,18 @@ State? _mountedState;
 dom.DomElement? _targetElement; // Use DomElement from dust_dom
 VNode? _lastRenderedVNode; // Store the last rendered VNode tree
 // --- End Simple Renderer State ---
+
+// --- Global Provider Container (Temporary) ---
+// This is a simplification for now. Ideally, this should be managed
+// without a global variable, perhaps via context passed down the tree.
+ProviderContainer? _appProviderContainer;
+ProviderContainer get appProviderContainer {
+  if (_appProviderContainer == null) {
+    throw StateError('ProviderContainer not initialized. Call runApp first.');
+  }
+  return _appProviderContainer!;
+}
+// --- End Global Provider Container ---
 
 /// Recursively creates a DOM element (or text node) from a VNode.
 dom.DomNode _createDomElement(VNode vnode) {
@@ -546,8 +559,36 @@ void render(Component component, String targetElementId) {
 /// Mounts the given [rootComponent] into the DOM element with the specified
 /// [targetElementId].
 void runApp(Component rootComponent, String targetElementId) {
-  // TODO: Add framework initialization logic here if needed in the future.
   print('Dust runApp starting...');
-  render(rootComponent, targetElementId);
-  print('Dust runApp finished.');
+
+  // 1. Create the root ProviderContainer
+  // Dispose previous container if exists (e.g., during hot restart in dev)
+  _appProviderContainer?.dispose();
+  _appProviderContainer = ProviderContainer();
+  print('Dust ProviderContainer created.');
+
+  // TODO: How to make the container available to the component tree?
+  // Option 1 (Simplest for now): Global access via `appProviderContainer` getter.
+  // Option 2 (Better): Pass the container down through a context mechanism
+  //                    (requires adding context to Component/State).
+  // Option 3 (Riverpod way): Wrap the root component in a ProviderScope-like
+  //                          mechanism. This is complex as ProviderScope is a Widget.
+  //                          We might need a custom approach.
+
+  // For now, rely on the global container access.
+
+  // 2. Call the internal render function
+  try {
+    render(rootComponent, targetElementId);
+  } catch (e, s) {
+    print('Error during initial render in runApp: $e\n$s');
+    // Optionally dispose container on immediate error?
+    // _appProviderContainer?.dispose();
+    // _appProviderContainer = null;
+    rethrow; // Rethrow the error after logging
+  } finally {
+    // Disposal should likely happen when the app unmounts (not implemented yet).
+    // print('Dust runApp finished.'); // Moved after render call completes
+  }
+  print('Dust runApp finished initial render call.');
 }

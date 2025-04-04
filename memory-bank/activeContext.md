@@ -16,6 +16,17 @@
 
 ## Recent Changes
 
+- **Integrated Riverpod (Basic):**
+  - Added `riverpod` dependency to `dust_component` and `dust_renderer`.
+  - Modified `runApp` in `dust_renderer` to create and store a global
+    `ProviderContainer` (temporary solution).
+  - Created `Consumer` widget (`packages/component/lib/consumer.dart`) extending
+    `StatefulWidget`.
+  - Implemented a basic `WidgetRef` that allows `watch`, `read`, `listen` by
+    interacting with the global container and triggering `setState` on the
+    `_ConsumerState`.
+  - Updated `README.md` example to demonstrate basic Provider/Consumer usage.
+
 - **Introduced HTML Helper Functions:**
   - Created `packages/component/lib/html.dart` with functions (`div`, `h1`,
     `li`, `button`, `text`, etc.) for creating `VNode`s with a more declarative
@@ -131,9 +142,10 @@
 - **Improve Renderer:**
   - (Partially done) Continue refining handling of edge cases in patching.
   - Manage component lifecycle more robustly (e.g., `dispose`).
-- **Integrate Riverpod Properly:** Explore providing `ProviderContainer` /
-  `WidgetRef` through the framework's context instead of creating a container
-  per component instance in the demo.
+- **Integrate Riverpod Properly:** (Basic integration done)
+  - Replace global `ProviderContainer` access with a context-based approach.
+  - Ensure `WidgetRef` disposal and lifecycle are robust.
+  - Test more complex provider types (e.g., `StateProvider`, `FutureProvider`).
 - **Structure Framework Core:** (`dust_dom` created) Continue defining the
   directory structure and modules (`packages/core`, etc.).
 - **Complete Renderer Refactoring:** Finish replacing all direct DOM JS interop
@@ -142,6 +154,35 @@
 - **(Done) Refine Entry Point:** `runApp` function created for user convenience.
 
 ## Active Decisions & Considerations
+
+- **Riverpod Integration:** Initial integration uses a global
+  `ProviderContainer` accessed via `renderer.appProviderContainer`. `Consumer`
+  widget created with a basic `WidgetRef` implementation. Need to refine
+  container access (context?) and lifecycle management.
+- **Component Syntax:** Providing HTML helper functions (`div`, `h1`, etc.) in
+  `package:dust_component/html.dart` for a more declarative UI definition
+  experience.
+- **Application Entry Point:** Use `runApp` function in renderer as the public
+  API. User's `main.dart` should be simple and call `runApp`.
+- **Development Server:** Using `build_runner serve web` for development,
+  providing Hot Restart.
+- **DOM Abstraction Strategy:** Using `@staticInterop` in `dust_dom` for type
+  safety and potential performance benefits over dynamic JS interop.
+- **Renderer Refactoring:** Proceeding incrementally, replacing direct JS calls
+  with `dust_dom` methods.
+- **Event Object Wrapping:** Using `DomEvent` wrapper.
+- **Listener Update Strategy:** Always remove/add in `_patch`.
+- **JS Interop for Events:** Using `.toJS` on wrapper.
+- **Listener Reference Storage:** Using `jsFunctionRefs` on `VNode`.
+- **(Previous) VNode as Build Output:** Confirmed.
+- **(Previous) Renderer Update Strategy:** Keyed diffing implemented.
+- **(Previous) VNode Location:** Confirmed.
+- **(Previous) WASM Loading:** Confirmed (`build_runner` generates loader JS).
+- **(Previous) JS Interop:** Shifting away from direct JS interop in renderer
+  towards `dust_dom`.
+- **(Removed) State Management Integration:** Riverpod basic integration
+  started.
+- **(Removed) Build Tooling:** `dhttpd` replaced by `build_runner`.
 
 - **Component Syntax:** Providing HTML helper functions (`div`, `h1`, etc.) in
   `package:dust_component/html.dart` for a more declarative UI definition
@@ -185,5 +226,3 @@
 - **(Previous) WASM Loading:** Confirmed (`build_runner` generates loader JS).
 - **(Previous) JS Interop:** Shifting away from direct JS interop in renderer
   towards `dust_dom`.
-- **(Previous) State Management Integration:** Riverpod temporary.
-- **(Removed) Build Tooling:** `dhttpd` replaced by `build_runner`.
