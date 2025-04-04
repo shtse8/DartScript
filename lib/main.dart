@@ -3,22 +3,41 @@
 
 import 'dart:js_interop';
 
-import 'package:dust_app/hello_world.dart'; // Import from our own package
+import 'package:dust_app/clock.dart'; // Import the new ClockComponent
 import 'package:dust_renderer/renderer.dart'; // Import the render function via package URI
+
+// --- JS Interop for console.log ---
+@JS('console.log')
+external void consoleLog(JSAny? message);
+// --- End JS Interop ---
 
 // --- Main Entry Point ---
 // Called automatically by WASM loader
 void main() {
-  print('Dust Application main() executed.');
+  // Use console.log for more direct browser output
+  consoleLog('>>> Dust Application main() started via JS Interop'.toJS);
+
+  print(
+      'Dust Application main() executed (Dart print).'); // Keep Dart print too
 
   // 1. Create an instance of the root component
-  final app = HelloWorld();
+  final app = ClockComponent(); // Use ClockComponent
+  consoleLog('>>> ClockComponent instance created.'.toJS);
 
   // 2. Render the component into the target element
   //    The target element ID comes from index.html
-  render(app, 'output'); // Use the render function from the renderer package
+  consoleLog('>>> Calling render function...'.toJS);
+  try {
+    render(app, 'output'); // Use the render function from the renderer package
+    consoleLog('>>> render function finished.'.toJS);
+  } catch (e, s) {
+    consoleLog('>>> ERROR during render:'.toJS);
+    consoleLog(e.toString().toJS); // Log error message
+    consoleLog(s.toString().toJS); // Log stack trace
+  }
 
-  print('Dust application rendering initiated.');
+  print('Dust application rendering initiated (Dart print).');
+  consoleLog('>>> Dust Application main() finished.'.toJS);
 }
 
 // Removed old DartScriptApi and related JS interop definitions

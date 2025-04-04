@@ -1,65 +1,85 @@
 # Dust Progress
 
-## What Works (Foundational Elements)
+## What Works (Foundational Elements & Basic Update PoC)
 
-- **Memory Bank Established:** Core documentation structure created and updated
-  to reflect the new framework direction.
+- **Memory Bank Established:** Core documentation structure created and updated.
 - **Core WASM Capabilities Proven (PoC):**
   - Basic Dart-to-WASM compilation (`dart compile wasm`).
-  - WASM module loading via JavaScript (`main.mjs` helper).
-  - Basic JS/WASM communication (JS loads WASM, invokes `main`).
+  - WASM module loading via dedicated JS bootstrap (`js/app_bootstrap.js`).
+  - Basic JS/WASM communication (JS loads WASM, invokes Dart `main`).
 - **Basic DOM Interaction Layer:**
-  - JS functions (`window.dartScriptSetText`, etc.) created in `js/loader.js`.
-  - Dart wrappers (`DartScriptApi`) created in `dart/main.dart`.
-  - _This serves as a rudimentary basis for the future framework's DOM
-    abstraction._
+  - JS functions for DOM manipulation available via `dart:js_interop` in the
+    basic renderer.
 - **WASM Loading Mechanism:**
-  - `js/loader.js` can load pre-compiled WASM modules.
-  - _This mechanism will be adapted for loading the framework runtime and
-    application bundle._
+  - `js/app_bootstrap.js` handles fetching, compiling, instantiating WASM, and
+    calling Dart `main`.
+  - `index.html` correctly loads the bootstrap script.
+- **Component Model (Basic):**
+  - Abstract classes for `Component`, `StatelessWidget`, `StatefulWidget`, and
+    `State` defined in `packages/component`.
+  - Basic lifecycle methods (`initState`, `dispose`, `build`, `setState`,
+    `frameworkUpdateWidget`) defined in `State`.
+- **Renderer (Very Basic):**
+  - `packages/renderer` provides a `render` function.
+  - Can handle initial rendering of `StatefulWidget` (creates state, calls
+    `initState`, calls `build`).
+  - Can render basic `Map<String, String>` representations
+    (`{'tag': '...', 'text': '...'}`) to DOM elements.
+- **State Update (Simplified PoC):**
+  - `State.setState` triggers a callback mechanism.
+  - Renderer receives the callback and re-runs `State.build()`.
+  - Renderer **replaces the entire content** of the target DOM element with the
+    new result (no diffing).
+  - **Result:** A simple stateful component (like the clock demo) can now
+    visually update, albeit inefficiently.
+- **Demo Application:**
+  - `ClockComponent` demonstrates using `StatefulWidget`, Riverpod
+    `StreamProvider`, and `setState` to display updating time (initial state +
+    updates work).
 
 ## What's Left to Build (High Level - Framework Focus)
 
 - **Core Framework Implementation:**
-  - **Component Model:** Design and implement the API for defining components
-    (state, props, lifecycle).
-  - **Rendering Engine:** Build the engine to translate component definitions
-    into DOM operations (e.g., using Virtual DOM).
-  - **State Management:** Develop or integrate basic state management solutions.
-  - **Routing System:** Create a client-side router for SPA navigation.
-  - **DOM Abstraction:** Refine `DartScriptApi` into a robust, type-safe DOM
-    layer for the framework.
-  - **Event Handling:** Implement a system for handling DOM events within Dart
+  - **Rendering Engine (Diffing):** Replace the simple renderer with one that
+    uses a Virtual DOM or similar diffing strategy for efficient DOM updates.
+  - **Component Model Refinement:** Define `build()` return types (e.g.,
+    `VNode`), handle props, context.
+  - **DOM Abstraction:** Create a robust, type-safe Dart layer over DOM
+    operations instead of direct JS interop in the renderer.
+  - **Event Handling:** Implement DOM event listeners and dispatching to Dart
     components.
+  - **State Management Integration:** Provide framework-level support for state
+    management solutions like Riverpod (e.g., `ProviderScope`, context access).
+  - **Routing System:** Implement SPA routing.
 - **Developer Experience Tooling:**
-  - **Build System:** Develop a build process for development and production.
-  - **Development Server:** Create a dev server, ideally with Hot Reload
-    capabilities.
-- **Documentation & Examples:** Create comprehensive documentation and usage
-  examples for the framework.
+  - **Build System:** Integrate with `build_runner` or create custom tools for
+    optimized builds.
+  - **Development Server:** Implement hot reload/hot restart.
+- **Documentation & Examples:** Expand significantly.
 
 ## Current Status
 
-- **Major Pivot Completed:** Project direction officially shifted from a simple
-  script loader to building a full, modern Dart web framework inspired by
-  React/Vue.
-- **Memory Bank Updated:** All core documentation files (`projectbrief.md`,
-  `productContext.md`, `activeContext.md`, `systemPatterns.md`,
-  `techContext.md`) have been updated to reflect the new vision.
-- **Foundational WASM Work Validated:** The initial PoC confirmed the viability
-  of compiling Dart to WASM and basic JS interop.
-- **Ready for Framework Design & Prototyping:** The next phase involves
-  designing the core APIs (Component, Renderer) and building initial prototypes.
+- **Basic Stateful Update PoC Complete:** Successfully demonstrated that a
+  `StatefulWidget` can be rendered, receive external updates (via Riverpod
+  stream), trigger `setState`, and have the UI update (via simplified renderer).
+- **Improved WASM Loading:** Loading mechanism is cleaner using
+  `app_bootstrap.js`.
+- **Core Component Structure Defined:** Basic `Component`/`State` classes are in
+  place.
+- **Renderer Needs Major Overhaul:** The current renderer is a placeholder
+  proving basic concepts but lacks efficiency (no diffing) and features (event
+  handling, complex children).
+- **Ready for Renderer Enhancement:** The next major step is to build a more
+  sophisticated rendering engine.
 
 ## Known Issues / Challenges
 
-- **JS Interop Performance:** Calls across the JS/WASM boundary need careful
-  optimization, especially for rendering.
-- **`@JSExport` Limitations:** Direct JavaScript calls into Dart WASM remain
-  problematic; the framework must rely on Dart initiating interactions via the
-  JS bridge.
-- **WASM Debugging:** Requires careful use of browser developer tools.
-- **Bundle Size:** Managing the size of the compiled framework and application
-  WASM will be crucial for performance.
-- **Hot Reload Implementation:** Achieving efficient hot reload with WASM
-  presents technical challenges.
+- **Renderer Inefficiency:** Current full-content replacement on update is not
+  performant.
+- **JS Interop Performance:** Still a consideration for the eventual DOM
+  abstraction layer.
+- **WASM Debugging:** Remains a factor.
+- **Bundle Size:** Needs monitoring as framework grows.
+- **Hot Reload Implementation:** Still a significant challenge.
+- **Riverpod Integration:** Current demo uses a suboptimal pattern
+  (component-level container).

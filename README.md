@@ -55,6 +55,82 @@ updated as the "Dust" framework takes shape._
 
 You would see the output of the old PoC.
 
+## Design Philosophy & Technical Choices
+
+This section addresses some common questions regarding Dust's technical
+direction, based on the project's goals outlined in the Memory Bank.
+
+### Why Dart + WASM for the Frontend? (vs. Dart for SSR)
+
+Dust aims to be a modern frontend framework for building interactive Single Page
+Applications (SPAs), similar in scope to React or Vue. The choice of Dart
+compiled to WebAssembly (WASM) for the frontend, instead of using Dart for
+Server-Side Rendering (SSR), supports this goal in several ways:
+
+- **Rich Client-Side Interactivity:** WASM allows complex application logic and
+  UI updates to run directly in the browser, enabling smooth, app-like
+  experiences without constant server roundtrips.
+- **Potential Performance:** WASM offers near-native execution speed, which can
+  be beneficial for computationally intensive frontend tasks.
+- **Unified Language & Tooling:** Enables full-stack Dart development, allowing
+  code sharing (models, validation logic) and a consistent developer experience
+  across frontend and backend.
+- **Leveraging Dart's Strengths:** WASM allows running a Dart runtime that fully
+  supports the language's features (like true integers and strong typing)
+  directly in the browser.
+
+While SSR excels at fast initial loads and SEO, Dust prioritizes the rich
+interactivity and potential performance benefits of a client-side WASM approach
+for building complex web applications.
+
+### Why WASM? (vs. Dart compile js / Dart2JS)
+
+Dart can be compiled to either JavaScript (Dart2JS) or WASM. Dust specifically
+targets WASM based on these considerations:
+
+- **Runtime Performance:** WASM generally offers better and more predictable
+  runtime performance for intensive tasks compared to JavaScript.
+- **Full Dart Language Experience:** WASM allows running a more complete Dart
+  runtime, providing better fidelity with Dart's features compared to compiling
+  to JavaScript (which has limitations, e.g., only one number type).
+- **Future-Oriented:** WASM is a key part of the modern web platform's
+  evolution.
+
+However, there are trade-offs:
+
+- **Dart2JS:** Mature, excellent tree-shaking (potentially smaller bundles),
+  potentially faster initial load for smaller apps, potentially simpler JS
+  interop.
+- **WASM:** Potentially larger initial bundle (includes Dart runtime),
+  potentially slower startup (WASM compilation/instantiation), JS interop has
+  overhead.
+
+Dust's choice of WASM reflects a focus on maximizing runtime performance and
+leveraging the full capabilities of the Dart language in the browser, accepting
+the trade-off of potentially larger initial bundles.
+
+### How is Dust Different from Flutter Web?
+
+Both use Dart, but they differ significantly in their rendering approach and
+relationship with the web platform:
+
+- **Flutter Web:** Primarily uses its own rendering engine (Skia via
+  CanvasKit/WASM) to paint pixels directly onto an HTML canvas, largely
+  bypassing the standard DOM. It aims for pixel-perfect UI consistency across
+  all platforms. An alternative HTML renderer exists but mainly simulates
+  Flutter's layout.
+- **Dust (Goal):** Aims to be a **native web framework** that works _with_ the
+  standard HTML DOM. It intends to translate Dart components into standard HTML
+  elements (`div`, `span`, etc.) and manipulate them directly, similar to
+  React/Vue. This allows for potentially better integration with existing CSS,
+  JS libraries, and standard web platform features.
+
+In essence, Flutter Web brings the Flutter rendering model _to_ the web, while
+Dust aims to provide a Dart-based way to build _native_ web experiences using
+the DOM.
+
+---
+
 ## Next Steps (Framework Development)
 
 Based on `memory-bank/activeContext.md`:

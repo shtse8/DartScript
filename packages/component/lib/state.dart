@@ -1,6 +1,9 @@
 // packages/component/lib/state.dart
 import 'stateful_component.dart';
 
+/// Callback signature for requesting a component update.
+typedef UpdateRequester = void Function();
+
 /// The logic and internal state for a [StatefulWidget].
 ///
 /// Frameworks calls the [build] method of the [State] object whenever
@@ -32,7 +35,16 @@ abstract class State<T extends StatefulWidget> {
   /// update the [widget] property of this [State] object to refer to the new
   /// component and then call [build].
   T get widget => _widget!;
-  T? _widget; // Set by the framework
+  T? _widget; // Set by the framework via frameworkUpdateWidget
+
+  /// Callback provided by the framework (renderer) to request an update.
+  UpdateRequester? _updateRequester;
+
+  /// Sets the callback function that the State object should call when it needs
+  /// to be rebuilt (typically called by the framework/renderer during mounting).
+  void setUpdateRequester(UpdateRequester requester) {
+    _updateRequester = requester;
+  }
 
   /// Describes the part of the user interface represented by this state.
   ///
@@ -122,6 +134,7 @@ abstract class State<T extends StatefulWidget> {
   void dispose() {
     // Default implementation is empty.
     _widget = null; // Help with garbage collection
+    _updateRequester = null; // Clear requester on dispose
   }
 
   /// Whether this [State] object is currently in a tree.
@@ -133,21 +146,33 @@ abstract class State<T extends StatefulWidget> {
   /// to false.
   bool get mounted => _widget != null;
 
-  // Placeholder for framework interaction
+  // Internal method called by setState.
   void _markNeedsBuild() {
-    // This would interact with the framework's scheduler/renderer
-    print('State for $widget marked as needing build.');
+    // If an update requester is set, call it.
+    if (_updateRequester != null) {
+      print('State for $widget requesting update via callback.');
+      _updateRequester!();
+    } else {
+      // Fallback if no requester is set (shouldn't happen in a proper setup)
+      print('State for $widget marked as needing build, but no requester set.');
+    }
   }
 
-  // Called by the framework to set the initial widget
-  // and during updates.
-  void _updateWidget(T newWidget) {
+  // Called by the framework (e.g., renderer) to set the initial widget
+  // and trigger initial lifecycle methods or updates.
+  // Renamed from _updateWidget to make it accessible.
+  void frameworkUpdateWidget(T newWidget) {
     T? oldWidget = _widget;
     _widget = newWidget;
     if (oldWidget == null) {
+      // This is the initial mounting
       initState();
     } else if (oldWidget != newWidget) {
+      // This is an update
       didUpdateWidget(oldWidget);
     }
+    // Note: build() is typically called *after* initState or didUpdateWidget
+    // by the framework's rendering loop, triggered by _markNeedsBuild or
+    // initial render schedule.
   }
 }

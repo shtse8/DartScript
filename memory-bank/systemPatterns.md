@@ -2,65 +2,68 @@
 
 ## Core Framework Architecture
 
-- **WASM Runtime:** The foundation remains a Dart runtime compiled to
-  WebAssembly (WASM) using `dart compile wasm`, executing within the browser's
-  WASM VM.
+- **WASM Runtime:** Dart runtime compiled to WebAssembly (WASM) via
+  `dart compile wasm`.
 - **Component Model:**
-  - UI is built by composing reusable **Components**.
-  - Components encapsulate their own **State** and receive data via **Props**.
-  - Components have a defined **Lifecycle** (e.g., creation, update,
-    destruction).
-- **Declarative Rendering Engine:**
-  - Developers declare the desired UI state using components.
-  - The framework uses a mechanism (e.g., **Virtual DOM diffing** or similar) to
-    efficiently calculate the minimal DOM changes required to match the declared
-    state.
-  - Updates are batched and applied to the actual DOM.
+  - UI built by composing `Component` instances (`StatelessWidget`,
+    `StatefulWidget`).
+  - `StatefulWidget` uses a `State` object for mutable state and UI building.
+  - `State` has lifecycle methods (`initState`, `build`, `dispose`, etc.) and
+    `setState` for triggering updates.
+- **Declarative Rendering Engine (Current PoC):**
+  - Developers declare UI in `build()` methods (currently returning a `Map` for
+    the basic renderer).
+  - **Initial Render:** Handles `StatefulWidget` creation and initial `build`.
+  - **Update Mechanism (Simplified):** `setState` calls a callback provided by
+    the renderer. The renderer re-runs `build` and **replaces the entire DOM
+    content** of the target element.
+  - **Goal:** Evolve this into an efficient engine (e.g., Virtual DOM diffing)
+    that minimizes DOM changes.
 - **State Management:**
-  - Provides patterns for managing application state, potentially including:
-    - **Local Component State:** State confined to a single component.
-    - **Prop Drilling:** Passing state down the component tree.
-    - **Context API / Inherited Widget Pattern:** Making state available to
-      subtrees without explicit prop passing.
-    - **(Potentially) Integration with dedicated state management libraries.**
-- **Routing:**
-  - Implements a client-side routing system to enable Single Page Application
-    (SPA) navigation based on URL changes.
-- **JavaScript Bridge (Framework Focused):**
-  - Facilitates communication between the Dart WASM environment and browser
-    APIs.
-  - Optimized for framework needs: efficient batch DOM updates, event listener
-    management, access to browser APIs (fetch, localStorage, etc.).
-  - Relies on Dart calling predefined, optimized JS helper functions.
+  - Basic component state managed via `State` and `setState`.
+  - External libraries like Riverpod can be used (demonstrated in clock example,
+    though integration needs refinement).
+  - Framework-level context/DI patterns are future goals.
+- **Routing:** (Not yet implemented) Goal is a client-side SPA router.
+- **JavaScript Bridge:**
+  - **WASM Loading:** Handled by a dedicated JS bootstrap module
+    (`js/app_bootstrap.js`) which imports functions from the auto-generated
+    `wasm/main.mjs`.
+  - **Dart <-> JS Communication:** Uses `dart:js_interop`. Dart calls JS
+    functions (defined via `@JS`) for DOM manipulation and browser APIs. JS
+    calls exported Dart functions (e.g., `$invokeMain`).
+  - **DOM Access:** Currently direct JS interop calls within the renderer; a
+    Dart DOM abstraction layer is planned.
 - **Application Entry Point:**
-  - Moves away from `<dart-script>` for raw code.
-  - A standard JavaScript loader initializes the Dart WASM runtime and starts
-    the main Dart application/framework entry point (e.g., mounting the root
-    component).
-- **Sandboxing:** Execution remains within the browser's secure WASM sandbox.
+  - `index.html` loads `js/app_bootstrap.js` as a module.
+  - `app_bootstrap.js` fetches, compiles, and instantiates `wasm/main.wasm`.
+  - `app_bootstrap.js` calls the exported `$invokeMain` function in the WASM
+    module, which executes the Dart `main()` function in `lib/main.dart`.
+  - Dart `main()` typically calls the framework's `render` function to mount the
+    root component.
+- **Sandboxing:** Execution remains within the browser's WASM sandbox.
 
 ## Key Technical Decisions (Framework Context)
 
-- **Rendering Strategy:** Virtual DOM vs. other approaches (e.g., incremental
-  DOM, fine-grained reactivity)? Performance and complexity trade-offs.
-- **Component API Design:** Class-based vs. function-based components? How to
-  define state, props, lifecycle methods?
-- **State Management Approach:** Provide a built-in solution or recommend
-  external libraries? Simplicity vs. flexibility.
-- **JS/WASM Bridge Implementation:** Continue using `dart:js_interop`? How to
-  optimize calls for rendering performance?
-- **Build Tooling Integration:** How will the framework integrate with build
-  tools for development (hot reload) and production (tree shaking,
-  optimization)?
+- **Rendering Strategy:** Currently basic replacement. **Decision needed:**
+  Virtual DOM vs. Incremental DOM vs. other for efficient updates.
+- **Component API Design:** Current class-based approach is similar to Flutter.
+  `build()` return type needs definition (e.g., `VNode`).
+- **State Management Approach:** Provide built-in context or focus on
+  integrating external libraries like Riverpod?
+- **JS/WASM Bridge Implementation:** Continue with `dart:js_interop`. How to
+  create an efficient Dart DOM abstraction layer?
+- **Build Tooling Integration:** How to integrate for hot reload and production
+  builds?
 
 ## Core Patterns
 
-- **Component Pattern:** Building UI via composition.
-- **Observer Pattern:** Used extensively for state updates triggering
-  re-renders.
-- **Facade Pattern:** Creating Dart-friendly wrappers around browser APIs via
-  the JS bridge.
-- **Virtual DOM / Diffing Algorithm:** (If chosen) For efficient DOM updates.
-- **Dependency Injection / Service Locator:** Potentially used for managing
-  services or state.
-- **Router Pattern:** For managing application views and navigation.
+- **Component Pattern:** Core UI building block.
+- **State Management Pattern:** Using `State` for local state; external
+  libraries (Riverpod) for app state.
+- **Observer Pattern:** Implicitly used via `StreamProvider` and `setState`
+  triggering updates.
+- **Callback Pattern:** Used for `State` to request updates from the renderer.
+- **Facade Pattern:** (Goal) For the Dart DOM abstraction layer.
+- **Bootstrap Pattern:** Using a dedicated JS module (`app_bootstrap.js`) to
+  load and initialize the WASM application.
