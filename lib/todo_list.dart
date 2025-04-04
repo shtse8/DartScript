@@ -2,9 +2,9 @@ import 'package:dust_component/component.dart';
 import 'package:dust_component/stateful_component.dart';
 import 'package:dust_component/state.dart';
 import 'package:dust_component/vnode.dart';
+import 'package:dust_component/html.dart'; // Import HTML helpers
 import 'dart:math'; // For random keys initially
 import 'dart:async'; // For Future.delayed
-// import 'dart:js_interop'; // No longer needed directly here for events
 import 'package:dust_renderer/dom_event.dart'; // Import DomEvent
 
 // Simple Todo Item model
@@ -117,64 +117,44 @@ class _TodoListState extends State<TodoListComponent> {
 
   @override
   VNode build() {
-    print("Building TodoList VNode tree...");
-    return VNode.element('div', children: [
-      VNode.element('h1',
-          children: [VNode.text('Dust Todo List (Keyed Diffing Test)')]),
-      VNode.element('ul',
-          children: _items.map((item) {
-            // *** Use item.id as the key ***
-            print("Creating VNode for item ID: ${item.id}, text: ${item.text}");
-            return VNode.element('li',
-                key: item.id, // Key is crucial here!
-                attributes: {
-                  'style': item.completed
-                      ? 'text-decoration: line-through; color: grey;'
-                      : '',
-                  'data-id': '${item.id}' // Add data-id for easier inspection
-                },
-                children: [
-                  VNode.text('${item.text} (ID: ${item.id}) '),
-                  // Buttons are placeholders for now, event handling not implemented
-                  VNode.element('button',
-                      // Remove 'disabled' attribute
-                      listeners: {
-                        'click': (DomEvent event) => _toggleItem(
-                            item.id) // Add click listener with JSAny
-                      },
-                      children: [
-                        VNode.text('Toggle')
-                      ]),
-                  VNode.element('button',
-                      // Remove 'disabled' attribute
-                      listeners: {
-                        'click': (DomEvent event) => _removeItem(
-                            item.id) // Add click listener with JSAny
-                      },
-                      children: [
-                        VNode.text('Remove')
-                      ])
-                ]);
-          }).toList()),
-      // Buttons are placeholders for now, event handling not implemented
-      VNode.element('button',
-          // Remove 'disabled' attribute
-          listeners: {
-            'click': (DomEvent event) => _addItem(
-                'New Item Added Manually') // Add click listener with JSAny
-          },
-          children: [
-            VNode.text('Add Item')
-          ]),
-      VNode.element('button',
-          // Remove 'disabled' attribute
-          listeners: {
-            'click': (DomEvent event) =>
-                _shuffleItems() // Add click listener with JSAny
-          },
-          children: [
-            VNode.text('Shuffle Items')
-          ])
+    print("Building TodoList VNode tree using HTML helpers...");
+    return div(children: [
+      h1(text: 'Dust Todo List (Keyed Diffing Test)'),
+      ul(
+        children: _items.map((item) {
+          print("Creating VNode for item ID: ${item.id}, text: ${item.text}");
+          return li(
+            key: item.id, // Key is crucial here!
+            attributes: {
+              'style': item.completed
+                  ? 'text-decoration: line-through; color: grey;'
+                  : '',
+              'data-id': '${item.id}' // Add data-id for easier inspection
+            },
+            children: [
+              text('${item.text} (ID: ${item.id}) '), // Use text() helper
+              button(
+                listeners: {'click': (DomEvent event) => _toggleItem(item.id)},
+                text: 'Toggle',
+              ),
+              button(
+                listeners: {'click': (DomEvent event) => _removeItem(item.id)},
+                text: 'Remove',
+              ),
+            ],
+          );
+        }).toList(),
+      ),
+      button(
+        listeners: {
+          'click': (DomEvent event) => _addItem('New Item Added Manually')
+        },
+        text: 'Add Item',
+      ),
+      button(
+        listeners: {'click': (DomEvent event) => _shuffleItems()},
+        text: 'Shuffle Items',
+      ),
     ]);
     // NOTE: Buttons don't work yet as event handling is not implemented.
     // Automatic updates are scheduled in initState for testing.

@@ -13,7 +13,8 @@
   - `State.build()` returns a `VNode` tree (with keys, attributes, children, and
     listeners using `DomEvent`) representing the desired UI structure.
 - **Declarative Rendering Engine (Keyed Diffing):**
-  - Developers declare UI in `build()` methods, returning a `VNode` tree.
+  - Developers declare UI in `build()` methods, ideally using HTML helper
+    functions (e.g., `div()`, `h1()`) which return a `VNode` tree.
   - **Initial Render:** Handles `StatefulWidget` creation and initial `build`
     via `_patch` (with `oldVNode` as null).
   - **Update Mechanism (Keyed Diffing):** `setState` calls a callback provided
@@ -61,9 +62,10 @@
   strategy (`_patch` delegating to `_patchChildren`). Further optimization is
   possible.
 - **Component API Design:** Current class-based approach is similar to Flutter.
-  `build()` return type is `VNode`. `VNode` now includes `key`, `listeners`
-  (using `DomEvent`), and `jsFunctionRefs`. Further refinement needed for props
-  and context.
+  `build()` return type is `VNode`. Developers are encouraged to use HTML helper
+  functions (`package:dust_component/html.dart`) for better readability. `VNode`
+  includes `key`, `listeners` (using `DomEvent`), and `jsFunctionRefs`. Further
+  refinement needed for props and context.
 - **State Management Approach:** Provide built-in context or focus on
   integrating external libraries like Riverpod?
 - **JS/WASM Bridge Implementation:** Using `dart:js_interop`. Confirmed `.toJS`
@@ -75,6 +77,9 @@
   builds?
 
 ## Core Patterns
+
+- **Declarative UI Helpers Pattern:** Providing functions (`div`, `h1`, etc.)
+  that mirror HTML tags to simplify `VNode` creation in `build` methods.
 
 - **Component Pattern:** Core UI building block.
 - **State Management Pattern:** Using `State` for local state; external

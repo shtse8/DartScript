@@ -87,12 +87,13 @@ Here's a simple "Hello, World!" example:
 import 'package:dust_component/component.dart';
 import 'package:dust_component/stateless_component.dart';
 import 'package:dust_component/vnode.dart';
+import 'package:dust_component/html.dart'; // Import the HTML helpers
 
 class HelloWorld extends StatelessWidget {
   @override
-VNode build() {
-    return VNode(
-      tag: 'h1',
+  VNode build() {
+    // Use the h1 helper function instead of VNode constructor directly
+    return h1(
       text: 'Hello, Dust!',
       attributes: {'style': 'color: blue;'},
     );

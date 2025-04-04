@@ -16,6 +16,16 @@
 
 ## Recent Changes
 
+- **Introduced HTML Helper Functions:**
+  - Created `packages/component/lib/html.dart` with functions (`div`, `h1`,
+    `li`, `button`, `text`, etc.) for creating `VNode`s with a more declarative
+    syntax.
+  - Updated `_element` helper to use `VNode.element` and handle `text` parameter
+    correctly.
+  - Updated `text` helper to use `VNode.text`.
+  - Updated `README.md` basic example to use the new helpers.
+  - Updated `lib/todo_list.dart` demo to use the new helpers.
+
 - **Refined Application Entry Point:**
   - Added `runApp(Component component, String targetElementId)` function to
     `packages/renderer/lib/renderer.dart` as the public API for starting an
@@ -116,8 +126,8 @@
   `DomEvent` wrapper creation on every event.
 - **Refine Diffing/Patching:** (Keyed diffing implemented) Further optimize
   patching logic, handle edge cases more robustly.
-- **Refine Component API:** (Partially done by introducing VNode) Continue
-  refining props, context handling.
+- **Refine Component API:** (Partially done by introducing VNode and HTML
+  helpers) Continue refining props, context handling.
 - **Improve Renderer:**
   - (Partially done) Continue refining handling of edge cases in patching.
   - Manage component lifecycle more robustly (e.g., `dispose`).
@@ -132,6 +142,30 @@
 - **(Done) Refine Entry Point:** `runApp` function created for user convenience.
 
 ## Active Decisions & Considerations
+
+- **Component Syntax:** Providing HTML helper functions (`div`, `h1`, etc.) in
+  `package:dust_component/html.dart` for a more declarative UI definition
+  experience.
+- **Application Entry Point:** Use `runApp` function in renderer as the public
+  API. User's `main.dart` should be simple and call `runApp`.
+- **Development Server:** Using `build_runner serve web` for development,
+  providing Hot Restart.
+- **DOM Abstraction Strategy:** Using `@staticInterop` in `dust_dom` for type
+  safety and potential performance benefits over dynamic JS interop.
+- **Renderer Refactoring:** Proceeding incrementally, replacing direct JS calls
+  with `dust_dom` methods.
+- **Event Object Wrapping:** Using `DomEvent` wrapper.
+- **Listener Update Strategy:** Always remove/add in `_patch`.
+- **JS Interop for Events:** Using `.toJS` on wrapper.
+- **Listener Reference Storage:** Using `jsFunctionRefs` on `VNode`.
+- **(Previous) VNode as Build Output:** Confirmed.
+- **(Previous) Renderer Update Strategy:** Keyed diffing implemented.
+- **(Previous) VNode Location:** Confirmed.
+- **(Previous) WASM Loading:** Confirmed (`build_runner` generates loader JS).
+- **(Previous) JS Interop:** Shifting away from direct JS interop in renderer
+  towards `dust_dom`.
+- **(Previous) State Management Integration:** Riverpod temporary.
+- **(Removed) Build Tooling:** `dhttpd` replaced by `build_runner`.
 
 - **Application Entry Point:** Use `runApp` function in renderer as the public
   API. User's `main.dart` should be simple and call `runApp`.
