@@ -17,7 +17,9 @@ class JSWindow {}
 extension JSWindowExtension on JSWindow {
   external JSDocument get document;
   external JSConsole get console;
-  external JSFunction get dartScriptGetCode; // Expect this function in JS
+  // dartScriptGetCode removed - no longer calling this JS function
+  // Add definition for the new framework API function
+  external void dartScriptSetText(JSString selector, JSString text);
 }
 
 @JS()
@@ -56,57 +58,30 @@ String _getJsTypeString(JSAny? obj) {
 void main() {
   print('Dart WASM module main() executed.');
 
+  // Removed code that called window.dartScriptGetCode() as inline execution
+  // is no longer supported.
+  // This main function will be the entry point for WASM modules loaded via src.
+  // Framework-specific initialization or API setup might happen here later.
+
+  // Example: Use the new DartScript framework API to update the output div
   try {
-    print('Dart: Attempting to call window.dartScriptGetCode()...');
-    // Call the JS function defined in loader.js
-    final JSAny? codeResult = window.dartScriptGetCode.callAsFunction();
-
-    String? dartCode;
-    String receivedType = 'null';
-
-    // Try converting/casting to string directly
-    if (codeResult != null) {
-      try {
-        // Attempt direct cast and conversion
-        dartCode = (codeResult as JSString).toDart;
-        receivedType = 'string (via cast)';
-      } catch (castError) {
-        // If cast fails, get type string for logging
-        receivedType = _getJsTypeString(codeResult);
-        print('Dart: Failed to cast JS result to JSString: $castError');
-      }
-    }
-
-    // Check if we successfully got a Dart string
-    if (dartCode != null) {
-      print('--- Dart received code from JS ---');
-      print(dartCode);
-      print('----------------------------------');
-
-      // Update the DOM to show the received code
-      final outputDiv = window.document.querySelector('#output'.toJS);
-      if (outputDiv != null) {
-        outputDiv.textContent = 'Dart received code:\n${dartCode}'.toJS;
-      } else {
-        print('Error: Could not find #output div in main.');
-        window.console.error('Dart Error: Could not find #output div.'.toJS);
-      }
-    } else {
-      // Log error if conversion failed
-      print(
-        'Error: window.dartScriptGetCode() did not yield a Dart string. Received type: $receivedType',
-      );
-      window.console.error(
-        'Dart Error: window.dartScriptGetCode() did not yield a Dart string.'
-            .toJS,
-      );
-    }
+    print('Dart: Calling window.dartScriptSetText to update #output...');
+    window.dartScriptSetText(
+      '#output'.toJS, // Selector
+      'Hello from Dart WASM (via dartScriptSetText)!'.toJS, // Text
+    );
+    print('Dart: window.dartScriptSetText called successfully.');
   } catch (e) {
-    print('Error calling window.dartScriptGetCode() or processing result: $e');
+    print('Dart: Error calling window.dartScriptSetText: $e');
     try {
-      window.console.error('Dart Error calling JS: ${e.toString()}'.toJS);
+      // Attempt to log the error to the JS console as a fallback
+      window.console.error(
+        'Dart Error calling dartScriptSetText: ${e.toString()}'.toJS,
+      );
     } catch (consoleErr) {
-      print('Could not log main error to JS console: $consoleErr');
+      print(
+        'Dart: Could not log dartScriptSetText error to JS console: $consoleErr',
+      );
     }
   }
 }

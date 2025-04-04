@@ -93,7 +93,6 @@ class CompiledApp {
     // Imports
     const dart2wasm = {
 
-      _39: (o, c) => o instanceof c,
       _84: () => {
         let stackString = new Error().stack.toString();
         let frames = stackString.split('\n');
@@ -106,8 +105,6 @@ class CompiledApp {
       _104: s => JSON.stringify(s),
       _105: s => printToConsole(s),
       _106: a => a.join(''),
-      _109: (s, t) => s.split(t),
-      _116: (s, p, i) => s.indexOf(p, i),
       _122: (a, i) => a.push(i),
       _133: a => a.length,
       _135: (a, i) => a[i],
@@ -135,33 +132,29 @@ class CompiledApp {
       _200: (c) =>
       queueMicrotask(() => dartInstance.exports.$invokeCallback(c)),
       _202: () => globalThis.window,
-      _203: x0 => x0.document,
       _204: x0 => x0.console,
-      _205: x0 => x0.dartScriptGetCode,
-      _206: (x0,x1) => x0.querySelector(x1),
-      _207: (x0,x1) => x0.textContent = x1,
+      _205: (x0,x1,x2) => x0.dartScriptSetText(x1,x2),
       _208: (x0,x1) => x0.error(x1),
-      _209: x0 => x0.call(),
-      _217: o => o === undefined,
-      _236: o => typeof o === 'function' && o[jsWrappedDartFunctionSymbol] === true,
-      _240: (l, r) => l === r,
+      _216: o => o === undefined,
+      _235: o => typeof o === 'function' && o[jsWrappedDartFunctionSymbol] === true,
+      _239: (l, r) => l === r,
+      _240: o => o,
       _241: o => o,
       _242: o => o,
-      _243: o => o,
-      _244: b => !!b,
-      _245: o => o.length,
-      _248: (o, i) => o[i],
-      _249: f => f.dartFunction,
-      _250: l => arrayFromDartList(Int8Array, l),
-      _251: l => arrayFromDartList(Uint8Array, l),
-      _252: l => arrayFromDartList(Uint8ClampedArray, l),
-      _253: l => arrayFromDartList(Int16Array, l),
-      _254: l => arrayFromDartList(Uint16Array, l),
-      _255: l => arrayFromDartList(Int32Array, l),
-      _256: l => arrayFromDartList(Uint32Array, l),
-      _257: l => arrayFromDartList(Float32Array, l),
-      _258: l => arrayFromDartList(Float64Array, l),
-      _260: (data, length) => {
+      _243: b => !!b,
+      _244: o => o.length,
+      _247: (o, i) => o[i],
+      _248: f => f.dartFunction,
+      _249: l => arrayFromDartList(Int8Array, l),
+      _250: l => arrayFromDartList(Uint8Array, l),
+      _251: l => arrayFromDartList(Uint8ClampedArray, l),
+      _252: l => arrayFromDartList(Int16Array, l),
+      _253: l => arrayFromDartList(Uint16Array, l),
+      _254: l => arrayFromDartList(Int32Array, l),
+      _255: l => arrayFromDartList(Uint32Array, l),
+      _256: l => arrayFromDartList(Float32Array, l),
+      _257: l => arrayFromDartList(Float64Array, l),
+      _259: (data, length) => {
         const getValue = dartInstance.exports.$byteDataGetUint8;
         const view = new DataView(new ArrayBuffer(length));
         for (let i = 0; i < length; i++) {
@@ -169,12 +162,11 @@ class CompiledApp {
         }
         return view;
       },
-      _261: l => arrayFromDartList(Array, l),
-      _264: l => new Array(l),
-      _265: () => globalThis,
-      _268: (o, p) => o[p],
-      _272: o => String(o),
-      _274: o => {
+      _260: l => arrayFromDartList(Array, l),
+      _263: l => new Array(l),
+      _267: (o, p) => o[p],
+      _271: o => String(o),
+      _273: o => {
         if (o === undefined) return 1;
         var type = typeof o;
         if (type === 'boolean') return 2;
@@ -196,11 +188,10 @@ class CompiledApp {
         if (o instanceof ArrayBuffer) return 16;
         return 17;
       },
-      _300: (o, p) => o[p],
+      _302: x0 => x0.random(),
       _303: x0 => x0.random(),
-      _304: x0 => x0.random(),
-      _308: () => globalThis.Math,
-      _310: Function.prototype.call.bind(Number.prototype.toString),
+      _307: () => globalThis.Math,
+      _309: Function.prototype.call.bind(Number.prototype.toString),
 
     };
 
