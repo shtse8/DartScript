@@ -52,24 +52,15 @@ class AtomicStyleBuilder implements Builder {
       // Sort classes for consistent output in the .classes file
       final sortedClasses = currentFileClasses.toList()..sort();
       final outputContent = sortedClasses.join('\n');
-      // Check if output already exists to avoid duplicate write error if builder runs multiple times
-      if (!await buildStep.canRead(outputId)) {
-        await buildStep.writeAsString(outputId, outputContent);
-        if (currentFileClasses.isNotEmpty) {
-          print(
-              "AtomicStyleBuilder: Found ${currentFileClasses.length} classes in ${inputId.path}, wrote to ${outputId.path}");
-        } else {
-          // If no classes found, still write an empty file
-          print(
-              "AtomicStyleBuilder: No classes found in ${inputId.path}, wrote empty file to ${outputId.path}");
-        }
-      } else {
-        // If output exists, decide whether to overwrite or skip.
-        // Overwriting might be needed if source changed, but can cause issues.
-        // Skipping is safer for now to avoid InvalidOutputException.
+      // Always write the output, build_runner should handle overwrites if content is same.
+      await buildStep.writeAsString(outputId, outputContent);
+      if (currentFileClasses.isNotEmpty) {
         print(
-            "AtomicStyleBuilder: Output ${outputId.path} already exists, skipping write.");
-        // Optionally, read existing content and merge if needed, but that adds complexity.
+            "AtomicStyleBuilder: Found ${currentFileClasses.length} classes in ${inputId.path}, wrote to ${outputId.path}");
+      } else {
+        // If no classes found, still write an empty file
+        print(
+            "AtomicStyleBuilder: No classes found in ${inputId.path}, wrote empty file to ${outputId.path}");
       }
     } catch (e, s) {
       log.severe('Error processing ${inputId.path}: $e\n$s');

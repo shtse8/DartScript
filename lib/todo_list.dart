@@ -118,49 +118,104 @@ class _TodoListState extends State<TodoListComponent> {
   @override
   VNode build() {
     print("Building TodoList VNode tree using HTML helpers...");
-    return div(children: [
+    // Apply modern minimalist styles using Atomic CSS classes
+    return div(attributes: {
+      'class':
+          'p-6 max-w-lg mx-auto bg-gray-50 rounded-xl shadow-md mt-10 space-y-6'
+    }, children: [
       h1(
-        text: 'Dust Todo List (Keyed Diffing Test)',
+        text: 'My Todos',
         attributes: {
-          'class': 'text-blue-500 mb-4 font-bold'
-        }, // Added atomic classes
+          'class': 'text-3xl font-bold text-gray-800 text-center mb-6'
+        }, // Cleaner title
       ),
+      // Input field (Example - still not functional)
+      // div(attributes: {'class': 'flex shadow-sm rounded-md'}, children: [
+      //   input(attributes: {'class': 'border-gray-300 p-3 flex-grow rounded-l-md focus:ring-indigo-500 focus:border-indigo-500', 'placeholder': 'What needs to be done?'}),
+      //   button(attributes: {'class': 'bg-indigo-500 hover:bg-indigo-600 text-white font-semibold p-3 rounded-r-md'}, text: 'Add')
+      // ]),
       ul(
-        attributes: {'class': 'p-0'}, // Added atomic class
+        attributes: {
+          'class': 'list-none p-0 space-y-2'
+        }, // Remove default list styling, add vertical space
         children: _items.map((item) {
-          print("Creating VNode for item ID: ${item.id}, text: ${item.text}");
+          // print("Creating VNode for item ID: ${item.id}, text: ${item.text}");
           return li(
-            key: item.id, // Key is crucial here!
+            key: item.id,
             attributes: {
-              'style': item.completed
-                  ? 'text-decoration: line-through; color: grey;'
-                  : '',
-              'data-id': '${item.id}' // Add data-id for easier inspection
+              // Flex layout, padding, subtle border, rounded corners for items
+              // NOTE: 'last:border-b-0' requires specific setup or a different approach
+              'class':
+                  'flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200'
             },
             children: [
-              text('${item.text} (ID: ${item.id}) '), // Use text() helper
-              button(
-                listeners: {'click': (DomEvent event) => _toggleItem(item.id)},
-                text: 'Toggle',
-              ),
-              button(
-                listeners: {'click': (DomEvent event) => _removeItem(item.id)},
-                text: 'Remove',
-              ),
+              div(attributes: {
+                'class': 'flex items-center'
+              }, children: [
+                // Group checkbox and text
+                // Basic Checkbox simulation (non-functional) - Can be replaced with SVG later
+                span(attributes: {
+                  'class':
+                      'cursor-pointer mr-3 w-5 h-5 border-2 rounded ${item.completed ? 'bg-blue-500 border-blue-500' : 'border-gray-300'}'
+                }, listeners: {
+                  'click': (DomEvent event) => _toggleItem(item.id)
+                } // Make checkbox clickable
+                    ),
+                span(
+                  attributes: {
+                    // Conditional styling for completed items, slightly larger text
+                    'class':
+                        'text-lg ${item.completed ? 'line-through text-gray-400' : 'text-gray-900'}'
+                  },
+                  text: item.text,
+                ),
+              ]),
+              div(// Container for buttons - subtle icons/text buttons
+                  attributes: {
+                'class': 'flex items-center space-x-3'
+              }, children: [
+                // Removed Toggle button, click checkbox instead
+                button(
+                  attributes: {
+                    // Subtle remove button styling
+                    'class':
+                        'text-gray-400 hover:text-red-600 transition cursor-pointer' // Added cursor
+                  },
+                  listeners: {
+                    'click': (DomEvent event) => _removeItem(item.id)
+                  },
+                  // Replace text with an icon (e.g., trash can) later if possible
+                  text: '×', // Use '×' symbol for delete
+                ),
+              ])
             ],
           );
         }).toList(),
       ),
-      button(
-        listeners: {
-          'click': (DomEvent event) => _addItem('New Item Added Manually')
-        },
-        text: 'Add Item',
-      ),
-      button(
-        listeners: {'click': (DomEvent event) => _shuffleItems()},
-        text: 'Shuffle Items',
-      ),
+      // Add/Shuffle buttons container - less prominent
+      div(attributes: {
+        'class': 'mt-6 flex justify-end space-x-3'
+      }, children: [
+        // Align to end
+        button(
+          attributes: {
+            'class':
+                'text-sm text-indigo-600 hover:text-indigo-800 font-medium cursor-pointer'
+          }, // Subtle add button
+          listeners: {
+            'click': (DomEvent event) => _addItem('New Item Added Manually')
+          },
+          text: '+ Add Item',
+        ),
+        button(
+          attributes: {
+            'class':
+                'text-sm text-gray-500 hover:text-gray-700 font-medium cursor-pointer'
+          }, // Subtle shuffle button
+          listeners: {'click': (DomEvent event) => _shuffleItems()},
+          text: 'Shuffle',
+        ),
+      ])
     ]);
     // NOTE: Buttons don't work yet as event handling is not implemented.
     // Automatic updates are scheduled in initState for testing.
