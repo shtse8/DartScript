@@ -1,0 +1,19 @@
+name: dust_app
+description: Example application using the Dust framework.
+version: 0.0.1
+# publish_to: 'none' # Prevent accidental publishing
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  dust_component:
+    path: packages/component
+  dust_renderer:
+    path: packages/renderer
+  js: ^0.7.0 # For main application if it uses js_interop directly
+
+dev_dependencies:
+  lints: ^3.0.0
+  build_runner: ^2.4.0 # May be needed later
+  build_web_compilers: ^4.0.0 # May be needed later

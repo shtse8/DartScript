@@ -1,0 +1,16 @@
+name: dust_renderer
+description: Basic DOM renderer for the Dust web framework.
+version: 0.0.1
+# repository: https://github.com/your_org/dust/tree/main/packages/renderer # TODO: Update repository URL
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  dust_component:
+    path: ../component # Dependency on the local component package
+  js: ^0.7.0 # For js_interop annotations if needed beyond dart:js_interop
+
+dev_dependencies:
+  lints: ^3.0.0
+  test: ^1.24.0

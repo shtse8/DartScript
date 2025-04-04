@@ -131,30 +131,26 @@ class CompiledApp {
       _177: Function.prototype.call.bind(DataView.prototype.getFloat64),
       _200: (c) =>
       queueMicrotask(() => dartInstance.exports.$invokeCallback(c)),
-      _202: (x0,x1,x2) => x0.dartScriptSetText(x1,x2),
-      _203: (x0,x1) => x0.dartScriptGetText(x1),
-      _204: (x0,x1,x2) => x0.dartScriptSetHtml(x1,x2),
-      _205: () => globalThis.window,
-      _221: o => o === undefined,
-      _240: o => typeof o === 'function' && o[jsWrappedDartFunctionSymbol] === true,
-      _244: (l, r) => l === r,
-      _245: o => o,
-      _246: o => o,
-      _247: o => o,
-      _248: b => !!b,
-      _249: o => o.length,
-      _252: (o, i) => o[i],
-      _253: f => f.dartFunction,
-      _254: l => arrayFromDartList(Int8Array, l),
-      _255: l => arrayFromDartList(Uint8Array, l),
-      _256: l => arrayFromDartList(Uint8ClampedArray, l),
-      _257: l => arrayFromDartList(Int16Array, l),
-      _258: l => arrayFromDartList(Uint16Array, l),
-      _259: l => arrayFromDartList(Int32Array, l),
-      _260: l => arrayFromDartList(Uint32Array, l),
-      _261: l => arrayFromDartList(Float32Array, l),
-      _262: l => arrayFromDartList(Float64Array, l),
-      _264: (data, length) => {
+      _209: o => o === undefined,
+      _228: o => typeof o === 'function' && o[jsWrappedDartFunctionSymbol] === true,
+      _232: (l, r) => l === r,
+      _233: o => o,
+      _234: o => o,
+      _235: o => o,
+      _236: b => !!b,
+      _237: o => o.length,
+      _240: (o, i) => o[i],
+      _241: f => f.dartFunction,
+      _242: l => arrayFromDartList(Int8Array, l),
+      _243: l => arrayFromDartList(Uint8Array, l),
+      _244: l => arrayFromDartList(Uint8ClampedArray, l),
+      _245: l => arrayFromDartList(Int16Array, l),
+      _246: l => arrayFromDartList(Uint16Array, l),
+      _247: l => arrayFromDartList(Int32Array, l),
+      _248: l => arrayFromDartList(Uint32Array, l),
+      _249: l => arrayFromDartList(Float32Array, l),
+      _250: l => arrayFromDartList(Float64Array, l),
+      _252: (data, length) => {
         const getValue = dartInstance.exports.$byteDataGetUint8;
         const view = new DataView(new ArrayBuffer(length));
         for (let i = 0; i < length; i++) {
@@ -162,11 +158,11 @@ class CompiledApp {
         }
         return view;
       },
-      _265: l => arrayFromDartList(Array, l),
-      _268: l => new Array(l),
-      _272: (o, p) => o[p],
-      _276: o => String(o),
-      _278: o => {
+      _253: l => arrayFromDartList(Array, l),
+      _256: l => new Array(l),
+      _260: (o, p) => o[p],
+      _264: o => String(o),
+      _266: o => {
         if (o === undefined) return 1;
         var type = typeof o;
         if (type === 'boolean') return 2;
@@ -188,10 +184,14 @@ class CompiledApp {
         if (o instanceof ArrayBuffer) return 16;
         return 17;
       },
-      _307: x0 => x0.random(),
-      _308: x0 => x0.random(),
-      _312: () => globalThis.Math,
-      _314: Function.prototype.call.bind(Number.prototype.toString),
+      _295: x0 => x0.random(),
+      _296: x0 => x0.random(),
+      _300: () => globalThis.Math,
+      _302: Function.prototype.call.bind(Number.prototype.toString),
+      _307: x0 => globalThis.document.createElement(x0),
+      _308: x0 => globalThis.document.getElementById(x0),
+      _309: (x0,x1) => x0.textContent = x1,
+      _310: (x0,x1) => x0.appendChild(x1),
 
     };
 
