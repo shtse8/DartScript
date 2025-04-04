@@ -178,7 +178,7 @@ implementation status.
   - [x] Event Listeners (`listeners` property using `DomEvent`)
   - [x] Internal Listener Reference Storage (`jsFunctionRefs`)
 - [ ] Props Handling
-- [ ] Context API
+- [x] Basic Context API (`BuildContext` carrying `ProviderContainer`)
 
 **Renderer:**
 
@@ -199,7 +199,10 @@ implementation status.
 **State Management:**
 
 - [x] Basic Component State (`State`, `setState`)
-- [ ] Framework-Level Integration (e.g., Riverpod `ProviderScope`)
+- [x] Basic Riverpod Integration (`ProviderContainer` via `BuildContext`,
+      `Consumer` widget)
+- [ ] Improved Framework-Level Integration (e.g., `ProviderScope`, Flutter-like
+      `ConsumerWidget`)
 
 **Routing:**
 
