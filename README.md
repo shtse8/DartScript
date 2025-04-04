@@ -106,7 +106,8 @@ implementation status.
 
 **Renderer:**
 
-- [x] Initial Rendering (`render` function, `_createDomElement`)
+- [x] Initial Rendering (`runApp` function calling internal `render`,
+      `_createDomElement`)
 - [x] Basic DOM Manipulation via JS Interop (`JSAnyExtension`)
 - [x] Patching / Diffing (`_patch` function)
   - [x] Node Addition/Removal/Replacement

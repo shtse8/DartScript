@@ -16,6 +16,14 @@
 
 ## Recent Changes
 
+- **Refined Application Entry Point:**
+  - Added `runApp(Component component, String targetElementId)` function to
+    `packages/renderer/lib/renderer.dart` as the public API for starting an
+    application.
+  - Simplified `web/main.dart` to only import the root component and call
+    `runApp`, removing direct JS interop (`consoleLog`) and internal rendering
+    logic.
+
 - **Setup `build_runner` Dev Server (Hot Restart):**
   - Enabled `build_runner` and `build_web_compilers` in root `pubspec.yaml`.
   - Ran `dart pub get`.
@@ -27,8 +35,8 @@
   - Updated `web/main.dart` import paths.
   - Started dev server using `dart run build_runner serve web:8081`.
   - Created `.gitignore` file.
-  - Cleaned Git index to remove previously committed ignored files
-    (`git rm --cached .`, `git add .`, `git commit`).
+  - Cleaned Git index to remove previously committed ignored files (split into
+    two commits: "Add .gitignore" and "Setup build_runner...").
 
 - **Created `dust_dom` Package:**
   - Created `packages/dom/lib` directory.
@@ -121,30 +129,12 @@
 - **Complete Renderer Refactoring:** Finish replacing all direct DOM JS interop
   in the renderer with `dust_dom`.
 - **(Done) Setup Dev Server:** `build_runner` now provides Hot Restart.
-
-- **Refine Event Handling:** (Partially addressed)
-  - Listener update logic improved in `_patch`.
-  - `DomEvent` wrapper created.
-  - Further testing on listener removal reliability might be needed.
-  - Consider performance implications of the `DomEvent` wrapper creation on
-    every event.
-- **Refine Diffing/Patching:** (Keyed diffing implemented) Further optimize
-  patching logic, handle edge cases more robustly.
-- **Refine Component API:** (Partially done by introducing VNode) Continue
-  refining props, context handling.
-- **Improve Renderer:**
-  - (Partially done) Continue refining handling of edge cases in patching.
-  - Manage component lifecycle more robustly (e.g., `dispose`).
-- **Integrate Riverpod Properly:** Explore providing `ProviderContainer` /
-  `WidgetRef` through the framework's context instead of creating a container
-  per component instance in the demo.
-- **Structure Framework Core:** (`dust_dom` created) Continue defining the
-  directory structure and modules (`packages/core`, etc.).
-- **Complete Renderer Refactoring:** Finish replacing all direct DOM JS interop
-  in the renderer with `dust_dom`.
+- **(Done) Refine Entry Point:** `runApp` function created for user convenience.
 
 ## Active Decisions & Considerations
 
+- **Application Entry Point:** Use `runApp` function in renderer as the public
+  API. User's `main.dart` should be simple and call `runApp`.
 - **Development Server:** Using `build_runner serve web` for development,
   providing Hot Restart.
 - **DOM Abstraction Strategy:** Using `@staticInterop` in `dust_dom` for type
@@ -158,25 +148,8 @@
 - **(Previous) VNode as Build Output:** Confirmed.
 - **(Previous) Renderer Update Strategy:** Keyed diffing implemented.
 - **(Previous) VNode Location:** Confirmed.
-- **(Previous) WASM Loading:** Confirmed (`app_bootstrap.js` still used by
-  `build_runner` generated JS).
+- **(Previous) WASM Loading:** Confirmed (`build_runner` generates loader JS).
 - **(Previous) JS Interop:** Shifting away from direct JS interop in renderer
   towards `dust_dom`.
 - **(Previous) State Management Integration:** Riverpod temporary.
 - **(Removed) Build Tooling:** `dhttpd` replaced by `build_runner`.
-
-- **DOM Abstraction Strategy:** Using `@staticInterop` in `dust_dom` for type
-  safety and potential performance benefits over dynamic JS interop.
-- **Renderer Refactoring:** Proceeding incrementally, replacing direct JS calls
-  with `dust_dom` methods.
-- **Event Object Wrapping:** Using `DomEvent` wrapper.
-- **Listener Update Strategy:** Always remove/add in `_patch`.
-- **JS Interop for Events:** Using `.toJS` on wrapper.
-- **Listener Reference Storage:** Using `jsFunctionRefs` on `VNode`.
-- **(Previous) VNode as Build Output:** Confirmed.
-- **(Previous) Renderer Update Strategy:** Keyed diffing implemented.
-- **(Previous) VNode Location:** Confirmed.
-- **(Previous) WASM Loading:** Confirmed.
-- **(Previous) JS Interop:** Shifting away from direct JS interop in renderer
-  towards `dust_dom`.
-- **(Previous) State Management Integration:** Riverpod temporary.

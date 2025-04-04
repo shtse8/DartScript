@@ -1,45 +1,19 @@
-// lib/main.dart
-// Main entry point for the Dust application.
+// web/main.dart
+// User-facing entry point for the Dust application.
 
-import 'dart:js_interop';
+// Import the application's root component
+import 'package:dust_app/todo_list.dart';
+// Import the Dust framework's runApp function
+import 'package:dust_renderer/renderer.dart';
 
-import 'package:dust_app/todo_list.dart'; // Import the new TodoListComponent
-import 'package:dust_renderer/renderer.dart'; // Import the render function via package URI
-
-// --- JS Interop for console.log ---
-@JS('console.log')
-external void consoleLog(JSAny? message);
-// --- End JS Interop ---
-
-// --- Main Entry Point ---
-// Called automatically by WASM loader
 void main() {
-  // Use console.log for more direct browser output
-  consoleLog('>>> Dust Application main() started via JS Interop'.toJS);
+  // Create the root component instance
+  final app = TodoListComponent();
 
-  print(
-      'Dust Application main() executed (Dart print).'); // Keep Dart print too
+  // Run the application by mounting the root component to the 'app' element
+  runApp(app, 'app');
 
-  // 1. Create an instance of the root component
-  final app = TodoListComponent(); // Use TodoListComponent
-  consoleLog('>>> TodoListComponent instance created.'.toJS);
-
-  // 2. Render the component into the target element
-  //    The target element ID comes from index.html
-  consoleLog('>>> Calling render function...'.toJS);
-  try {
-    render(app, 'app'); // Render into the 'app' div
-    consoleLog('>>> render function finished.'.toJS);
-  } catch (e, s) {
-    consoleLog('>>> ERROR during render:'.toJS);
-    consoleLog(e.toString().toJS); // Log error message
-    consoleLog(s.toString().toJS); // Log stack trace
-  }
-
-  print('Dust application rendering initiated (Dart print).');
-  consoleLog('>>> Dust Application main() finished.'.toJS);
+  // Optional: Add any other application-specific initialization here,
+  // but avoid direct DOM manipulation or framework-internal logic.
+  print('Dust application started by user code.');
 }
-
-// Removed old DartScriptApi and related JS interop definitions
-// as rendering logic is now handled by the renderer package.
-// The renderer package itself uses js_interop for DOM manipulation.

@@ -540,3 +540,14 @@ void render(Component component, String targetElementId) {
 
   print('Initial render process finished.');
 }
+
+/// Public entry point for running a Dust application.
+///
+/// Mounts the given [rootComponent] into the DOM element with the specified
+/// [targetElementId].
+void runApp(Component rootComponent, String targetElementId) {
+  // TODO: Add framework initialization logic here if needed in the future.
+  print('Dust runApp starting...');
+  render(rootComponent, targetElementId);
+  print('Dust runApp finished.');
+}
