@@ -1,4 +1,4 @@
-# DartScript Technical Context
+# Dust Technical Context
 
 ## Core Technologies
 

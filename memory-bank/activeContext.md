@@ -1,4 +1,4 @@
-# DartScript Active Context
+# Dust Active Context
 
 ## Current Focus
 

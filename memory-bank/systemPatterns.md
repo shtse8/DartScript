@@ -1,4 +1,4 @@
-# DartScript System Patterns
+# Dust System Patterns
 
 ## Core Framework Architecture
 

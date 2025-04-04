@@ -1,4 +1,4 @@
-# DartScript Project Brief
+# Dust Project Brief
 
 ## Core Goals
 
