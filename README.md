@@ -49,9 +49,25 @@ Dust aims to provide a comprehensive feature set for modern web development:
   integrating popular solutions.
 - 🔗 **JS Interop:** Seamlessly interact with JavaScript libraries and browser
   APIs when needed.
-- 🎨 **Atomic CSS (Build-Time):** Automatically generate CSS based on utility
-  classes used in your components (similar to UnoCSS/Tailwind), keeping your CSS
-  bundle minimal. (Basic implementation)
+- 🎨 **Atomic CSS (Build-Time):** Includes a powerful, build-time Atomic CSS
+  generator (`dust_atomic_styles` package) inspired by Tailwind CSS.
+  - **Utility-First:** Define styles directly in your Dart component code using
+    utility classes (e.g., `m-4`, `p-2`, `text-blue-500`, `flex`,
+    `items-center`).
+  - **Automatic Generation:** The build system scans your Dart code, identifies
+    used atomic classes, and generates only the necessary CSS rules into
+    `web/atomic_styles.css`.
+  - **Extensive Rule Set:** Covers a wide range of CSS properties (Spacing,
+    Layout, Flexbox, Grid, Sizing, Typography, Backgrounds, Borders, Effects,
+    Filters, Interactivity, Transforms, Transitions, Animations, SVG,
+    Accessibility).
+  - **Maintainable & Organized:** Rules are now split into logical files within
+    the `packages/atomic_styles/lib/src/rules/` directory.
+  - **(Current Limitation):** The aggregation step (`AtomicCssAggregator`)
+    currently only processes classes from the single `.classes` file that
+    triggered it, not globally across all files due to `PostProcessBuilder`
+    limitations. This needs refactoring for correct global aggregation (see
+    `memory-bank/progress.md`).
 - _Upcoming:_ Routing, Advanced State Management, Build Tools, Hot Reload, and
   more!
 

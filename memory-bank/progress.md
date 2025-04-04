@@ -19,12 +19,15 @@
     calling Dart `main`.
   - `index.html` correctly loads the bootstrap script.
 - **Component Model (VNode + Key + Component Lifecycle Support):**
-  - Abstract classes for `Component` (now with `key`), `StatelessWidget`,
-    `StatefulWidget`, and `State` defined. `key.dart` created.
+  - Abstract classes for `Component` (now with `key` and `props`),
+    `StatelessWidget` (build takes `BuildContext`, constructor takes props),
+    `StatefulWidget` (constructor takes props), and `State` defined. `key.dart`
+    created.
   - **`VNode` structure updated:** Added `VNode.component` constructor,
-    `component`, `state`, and `renderedVNode` properties.
+    `component`, `state`, `renderedVNode`, and `dartCallbackRefs` properties.
   - HTML Helpers (`html.dart`) updated to accept `Component` as children.
-  - `State.build()` and `StatelessWidget.build()` return `VNode`.
+  - `State.build()` returns `VNode`. `StatelessWidget.build()` now accepts
+    `BuildContext` and returns `VNode?`.
   - Lifecycle methods (`initState`, `didUpdateWidget`, `dispose`) defined in
     `State`.
 - **Renderer (Component Lifecycle + Keyed Diffing + Event Handling):**
@@ -39,9 +42,11 @@
     - Implemented `_unmountComponent` (calls dispose, recursively unmounts
       rendered tree using `removeVNode`).
   - **Refined Event Handling:** Includes `DomEvent` wrapper and recursive
-    listener removal during unmount/node removal via `removeVNode` (now a
-    top-level helper). Listener updates in `_patch` use always remove/add
-    strategy.
+    listener removal during unmount/node removal via `removeVNode`. Listener
+    updates in `_patch` are now optimized using `identical()` checks on Dart
+    callbacks to avoid unnecessary remove/add operations. `VNode` now stores
+    original Dart callbacks (`dartCallbackRefs`). `_unmountComponent` logic
+    improved for robustness.
   - **Keyed Diffing:** `_patchChildren` implements keyed reconciliation.
   - **DOM Interaction:** Uses `dust_dom` abstractions and `_createDomElement`
     helper.
@@ -56,24 +61,38 @@
   - **Result:** Stateful components (like `TodoListComponent`) now correctly
     update their UI in response to `setState` calls, handling additions,
     removals, toggles, and reordering.
-- **Demo Application (TodoList - Interactive with DomEvent):**
-  - `TodoListComponent` updated to handle user interaction via buttons.
-  - Demonstrates using `StatefulWidget`, `setState`, keys in `VNode`, and
-    **event listeners** defined in `build()` (now using `DomEvent`).
-  - **Automatic test timer (`_scheduleTestUpdates`) disabled.**
-  - `main.dart` updated to render `TodoListComponent` into `#app` div.
-  - `index.html` updated to use `#app` div and link `atomic_styles.css`.
-- **Atomic CSS Generation (Build-Time):**
+- **Demo Application (Props Tester - Conditional Listener):**
+  - Created `PropTester` component (`lib/prop_tester.dart`) to cycle through
+    names.
+  - Converted `HelloWorld` (`lib/hello_world.dart`) to `StatefulWidget`.
+  - `HelloWorld` now conditionally adds/removes a `mouseover` listener based on
+    the length of the `name` prop received from `PropTester`.
+  - `main.dart` updated to render `PropTester` into `#app` div.
+  - This setup allows testing dynamic listener updates triggered by prop
+    changes.
+- **Atomic CSS Generation (Build-Time, Refactored & Expanded):**
   - Created `dust_atomic_styles` package.
-  - Defined initial atomic rules (margin, padding, text color, font weight) and
-    generator function.
-  - Implemented `AtomicStyleBuilder` (`atomicScanner`) to scan Dart files and
-    output `.classes` files to cache.
-  - Implemented `CssWriterBuilder` (`cssWriter`) triggered by
-    `web/atomic_styles.trigger` to aggregate `.classes` files and write final
-    `web/atomic_styles.css`.
-  - Configured builders in `packages/atomic_styles/build.yaml` and applied them
-    in root `build.yaml`.
+  - **Significantly expanded rule set:** Defined a comprehensive set of atomic
+    rules covering spacing, layout, flexbox, grid, sizing, typography,
+    backgrounds, borders, effects (shadows, opacity), filters, interactivity
+    (cursor, user-select), transforms, transitions, animations, SVG styling, and
+    accessibility utilities.
+  - **Refactored rule structure:** Split rules into category-specific files
+    within `packages/atomic_styles/lib/src/rules/` for better maintainability.
+    Shared constants (`spacingScale`, `colors`) moved to
+    `packages/atomic_styles/lib/src/constants.dart`.
+    `packages/atomic_styles/lib/src/rules.dart` now imports and merges these
+    rule maps using the spread operator (`...`).
+  - Implemented `AtomicStyleBuilder` (`atomicScanner`) to scan Dart files
+    (`lib/**`, `web/**`) using `analyzer` and extract class names from HTML
+    helper functions, outputting per-file `.classes` files to cache.
+  - Implemented `AtomicCssAggregator` (`cssAggregatorBuilder`) as a `Builder` to
+    read all `.classes` files using `findAssets`, aggregate unique class names,
+    generate final CSS using `generateAtomicCss`, and write to
+    `web/atomic_styles.css`. (Refactored from `PostProcessBuilder`).
+  - Configured builders (`atomicScanner`, `cssAggregatorBuilder`) in
+    `packages/atomic_styles/build.yaml` (updated for aggregator) and applied
+    them in the root `build.yaml`.
   - Tested successfully with classes added to `TodoListComponent`.
 
 ## What's Left to Build (High Level - Framework Focus)
@@ -81,13 +100,14 @@
 - **Core Framework Implementation:**
   - **Rendering Engine (Diffing):** (Keyed diffing implemented) Further optimize
     patching logic, handle edge cases.
-  - **Component Model Refinement:** (`VNode` structure updated, `key` added)
-    Handle props, refine context usage.
+  - **Component Model Refinement:** (Props basics implemented, `VNode` structure
+    updated, `key` added, `StatelessWidget` context handled) Consider typed
+    props.
   - **DOM Abstraction:** (`dust_dom` created) Integration mostly complete in
     core rendering path.
-  - **Event Handling:** (Refined) Listener update logic improved, `DomEvent`
-    wrapper implemented. Further testing on removal reliability and wrapper
-    performance needed.
+  - **Event Handling:** (Optimized) Listener update logic now uses `identical()`
+    check. `DomEvent` wrapper implemented. Recursive removal logic in place.
+    Further testing on removal reliability needed.
   - **State Management Integration:** Provide framework-level support for state
     management solutions like Riverpod (e.g., `ProviderScope`, context access).
   - **Routing System:** Implement SPA routing.
@@ -95,8 +115,8 @@
   - **Build System:** Integrate with `build_runner` or create custom tools for
     optimized builds.
   - **Development Server:** Implement hot reload/hot restart.
-  - **Atomic CSS:** (Basic implementation working) Refine rule set, improve
-    builder efficiency/robustness if needed, add documentation.
+  - **Atomic CSS:** (Aggregation refactored) Rule set is extensive. Builder now
+    correctly aggregates classes using `Builder` and `findAssets`.
 - **Documentation & Examples:** Expand significantly.
 
 ## Current Status
@@ -106,16 +126,19 @@
   - Started integrating `dust_dom` into the renderer, replacing some direct JS
     calls.
   - Successfully compiled WASM after initial integration.
-- **Event Handling Refined:**
+- **Event Handling Optimized & Refined:**
   - Implemented `DomEvent` wrapper for type safety.
-  - Improved listener update logic in `_patch` for robustness.
-  - **Implemented recursive listener removal in `removeVNode`** ensuring cleanup
+  - Optimized listener update logic in `_patch` using `identical()` checks on
+    Dart callbacks stored in `VNode.dartCallbackRefs`.
+  - Implemented recursive listener removal in `removeVNode` ensuring cleanup
     before DOM node detachment.
-  - Updated relevant components/demos (`VNode`, `renderer`,
-    `TodoListComponent`).
+  - Improved robustness of `_unmountComponent` DOM node checks.
+  - Updated relevant components/demos (`VNode`, `renderer`).
 - **JS Interop for Events Resolved:** Confirmed `.toJS` extension method is the
   correct approach for WASM event listeners (still used for callback
   conversion).
+- **Props Implemented:** Component hierarchy now supports passing data down via
+  `props` map.
 - **(Previous) Keyed Diffing Implemented & Tested.**
 - **(Previous) Renderer Refactored for Diffing.**
 - **(Previous) Demo Updated for Diffing.**
@@ -123,24 +146,27 @@
 - **(Previous) Basic Patching Foundation Laid.**
 - **Improved WASM Loading:** Loading mechanism remains clean
   (`app_bootstrap.js`).
-- **Core Component Structure Updated:** `Component` (with `key`), `State`,
-  `VNode` (with `component`, `state`, `renderedVNode`) structure updated. HTML
-  helpers support components.
+- **Core Component Structure Updated:** `Component` (with `key`, `props`),
+  `State`, `StatelessWidget` (build takes `BuildContext`, constructor takes
+  props), `StatefulWidget` (constructor takes props), `VNode` (with `component`,
+  `state`, `renderedVNode`, `dartCallbackRefs`) structure updated. HTML helpers
+  support components.
 - **Renderer Structure Improved:** Refactored `_patch` to handle component
   lifecycle via `_mountComponent`, `_updateComponent`, `_unmountComponent`.
   Listener/node removal helpers moved to top level.
 - **Keyed Diffing Algorithm Implemented.**
-- **Atomic CSS Generation Implemented:** Two-phase builder (`atomicScanner` +
-  `cssWriter`) successfully generates `web/atomic_styles.css` based on used
-  classes.
+- **Atomic CSS Generation Refactored:** Two-phase builder (`atomicScanner` +
+  `cssAggregatorBuilder`) successfully generates `web/atomic_styles.css` based
+  on used classes, with the aggregator now correctly reading all inputs.
 
 ## Known Issues / Challenges
 
 - **Component Lifecycle & `setState`:** Basic mount/update/dispose implemented.
   `setState` now correctly triggers component updates via the renderer's
   patching mechanism. Fragment/multi-root rendering not handled.
-- **Event Handling Refinement:** Recursive listener removal implemented. Further
-  testing needed. Performance impact of `DomEvent` wrapper needs consideration.
+- **Event Handling Refinement:** Recursive listener removal implemented.
+  `identical()` optimization added for listener updates. Further testing needed.
+  Performance impact of `DomEvent` wrapper needs consideration.
 - **Renderer Optimization:** Keyed diffing is implemented but can likely be
   further optimized.
 - **JS Interop Performance:** Still a consideration, but `@staticInterop` in
@@ -148,8 +174,8 @@
 - **WASM Debugging:** Remains a factor.
 - **Bundle Size:** Needs monitoring as framework grows.
 - **Hot Reload Implementation:** Still a significant challenge.
-- **Atomic CSS Builder:** Current two-phase approach (Scanner -> Writer via
-  `.classes` files) works but might not be the most efficient for large projects
-  or complex watch mode scenarios. Rule set is currently basic.
+- **(Resolved) Atomic CSS Builder Aggregation:** The `AtomicCssAggregator` has
+  been refactored from `PostProcessBuilder` to `Builder` and now correctly uses
+  `buildStep.findAssets` to aggregate classes from all `.classes` files.
 - **Riverpod Integration:** Current demo uses a suboptimal pattern
   (component-level container).

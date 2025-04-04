@@ -33,7 +33,9 @@ class VNode {
   /// Using JSAny? from dart:js_interop (implicitly, as it's used by the renderer).
   Object? domNode; // Use Object? for flexibility, renderer will handle JSAny?
   Map<String, JSFunction>?
-      jsFunctionRefs; // Public map to store JSFunction references for listeners
+      jsFunctionRefs; // Stores JSFunction references for removal
+  Map<String, Function>?
+      dartCallbackRefs; // Stores original Dart callbacks for comparison
 
   /// For VNodes representing a Component, this holds the component instance.
   /// Null for element and text nodes.
@@ -54,6 +56,7 @@ class VNode {
         component = null, // Not a component node
         domNode = null,
         jsFunctionRefs = null,
+        dartCallbackRefs = null, // Initialize new field
         state = null, // Not a stateful component node
         renderedVNode = null; // Not a component node
 
@@ -67,6 +70,7 @@ class VNode {
         component = null, // Not a component node
         domNode = null,
         jsFunctionRefs = null,
+        dartCallbackRefs = null, // Initialize new field
         state = null, // Not a stateful component node
         renderedVNode = null; // Not a component node
 
@@ -81,6 +85,7 @@ class VNode {
         text = null,
         domNode = null, // Will be managed by the component's rendered output
         jsFunctionRefs = null,
+        dartCallbackRefs = null, // Initialize new field
         state =
             null, // Will be set by the renderer during mount if StatefulWidget
         renderedVNode = null; // Will be set by the renderer during mount/update

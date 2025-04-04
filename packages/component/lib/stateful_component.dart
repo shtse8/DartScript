@@ -18,8 +18,8 @@ import 'state.dart'; // Will be created next
 /// by the component can change dynamically, e.g. due to having an internal
 /// clock-driven state, or depending on some system state.
 abstract class StatefulWidget extends Component {
-  /// Initializes [key] for subclasses.
-  const StatefulWidget(); // Consider adding Key later
+  /// Initializes [key] and [props] for subclasses.
+  const StatefulWidget({super.key, super.props});
 
   /// Creates the mutable state for this component at a given location in the tree.
   ///
@@ -40,14 +40,6 @@ abstract class StatefulWidget extends Component {
   /// [State] objects.
   State createState();
 
-  /// Stateful components themselves don't have a build method.
-  /// The UI is built by the associated State object.
-  @override
-  dynamic build() {
-    // This should ideally not be callable directly.
-    // The framework interacts with the State object created by createState.
-    throw UnimplementedError(
-      'StatefulWidget does not build directly. Use its State object.',
-    );
-  }
+  // StatefulWidget itself doesn't build. The State object does.
+  // The base Component class no longer defines an abstract build method.
 }

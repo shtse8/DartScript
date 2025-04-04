@@ -16,8 +16,11 @@ abstract class Component {
   /// is inserted into the tree.
   final Key? key;
 
+  /// Properties passed down from the parent component.
+  final Map<String, dynamic> props;
+
   /// Constructs a [Component].
-  const Component({this.key});
+  const Component({this.key, this.props = const {}});
 
   /// Describes the part of the user interface represented by this component.
   ///

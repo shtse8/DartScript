@@ -11,15 +11,17 @@ builders:
   # Builder that writes the final aggregated CSS file
   cssWriter:
     import: "package:dust_atomic_styles/builder.dart"
-    builder_factories: ["cssWriterBuilder"]
-    # Triggered by the trigger file, outputs final CSS (paths relative to root of the package applying it)
-    build_extensions: {
-      "^web/atomic_styles.trigger": ["^web/atomic_styles.css"],
-    }
+    builder_factories: [
+      "cssAggregatorBuilder",
+    ] # Assuming factory name matches class
+    # build_extensions are now defined within the Builder itself.
+    # This builder reads inputs based on required_inputs and outputs to a fixed path.
     auto_apply: root_package # Should only be applied by the root package
     build_to: source
     # This builder needs to run after all atomicScanner instances have completed.
-    required_inputs: [".classes"] # Depends on the output of atomicScanner
+    required_inputs: [
+      ".classes",
+    ] # Depends on the output of atomicScanner. Ensures ordering.
 # Optional: Configure output path via options
 # defaults:
 #   options:

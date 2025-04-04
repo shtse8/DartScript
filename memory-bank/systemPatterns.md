@@ -6,18 +6,21 @@
   `dart compile wasm`.
 - **Component Model:**
   - UI built by composing `Component` instances (`StatelessWidget`,
-    `StatefulWidget`), potentially with `Key`s.
+    `StatefulWidget`), potentially with `Key`s and `props`.
   - `StatefulWidget` uses a `State` object for mutable state and UI building.
   - `State` has lifecycle methods (`initState`, `didUpdateWidget`, `build`,
-    `dispose`, etc.), a `setState` method (which calls `_markNeedsBuild`), and a
-    `context` property (a basic `BuildContext`). `_markNeedsBuild` triggers an
-    update via the `_updateRequester` callback provided by the renderer.
+    `dispose`, etc.), a `setState` method (which calls `_markNeedsBuild`), a
+    `context` property (a basic `BuildContext`), and access to the component's
+    `props` via the `widget` getter. `_markNeedsBuild` triggers an update via
+    the `_updateRequester` callback provided by the renderer.
   - `Component`s are represented in the VNode tree by `VNode` instances created
     with `VNode.component()`. These VNodes store the `Component` instance, its
     `key`, the associated `State` object (for StatefulWidgets, managed by the
     renderer), and the `VNode` tree rendered by the component (`renderedVNode`).
-  - `State.build()` and `StatelessWidget.build()` return a `VNode` tree
-    representing the component's internal structure.
+  - `State.build()` returns a `VNode` tree representing the component's internal
+    structure.
+  - `StatelessWidget.build(BuildContext context)` now accepts context and
+    returns a `VNode?` tree.
   - HTML helper functions (`html.dart`) now accept `Component` instances as
     children and create `VNode.component` nodes.
 - **Declarative Rendering Engine (Keyed Diffing):**
@@ -28,9 +31,10 @@
   - **Update Mechanism (Keyed Diffing & setState):**
     - **Component Update (Parent Rebuild):** When a parent component rebuilds,
       `_patch` might call `_updateComponent`. `_updateComponent` reuses the
-      existing `State` (if applicable), calls `frameworkUpdateWidget`
-      (triggering `didUpdateWidget`), then calls `build` and recursively patches
-      the new rendered tree against the old one.
+      existing `State` (if applicable), calls `frameworkUpdateWidget` (which
+      updates `state.widget` with the new component instance containing new
+      props and triggers `didUpdateWidget`), then calls `build` and recursively
+      patches the new rendered tree against the old one.
     - **Internal State Update (`setState`):** `State.setState` calls
       `_markNeedsBuild`, which invokes the `_updateRequester` callback set
       during `_mountComponent`. This callback now contains logic to get the
@@ -97,10 +101,12 @@
   strategy (`_patch` delegating to `_patchChildren`). Further optimization is
   possible.
 - **Component API Design:** Current class-based approach is similar to Flutter.
-  `build()` return type is `VNode`. Developers are encouraged to use HTML helper
-  functions (`package:dust_component/html.dart`) for better readability. `VNode`
-  includes `key`, `listeners` (using `DomEvent`), and `jsFunctionRefs`. Further
-  refinement needed for props and context.
+  `Component` base class now includes a `props` map (`Map<String, dynamic>`).
+  `State.build()` returns `VNode`. `StatelessWidget.build()` now accepts
+  `BuildContext` and returns `VNode?`. Developers are encouraged to use HTML
+  helper functions (`package:dust_component/html.dart`) for better readability.
+  `VNode` includes `key`, `listeners` (using `DomEvent`), `jsFunctionRefs`, and
+  `dartCallbackRefs`.
 - **State Management Approach:** Basic Riverpod integration implemented.
   `ProviderContainer` is created at the root (`runApp`) and passed down via a
   simple `BuildContext` object, which is accessible within `State` objects
@@ -121,7 +127,7 @@
 - **Declarative UI Helpers Pattern:** Providing functions (`div`, `h1`, etc.)
   that mirror HTML tags to simplify `VNode` creation in `build` methods.
 
-- **Component Pattern:** Core UI building block.
+- **Component Pattern:** Core UI building block, now includes `props` map.
 - **State Management Pattern:** Using `State` for local state. Riverpod
   integration provides `Provider`s for app state, accessed via `Consumer` widget
   (which gets the `ProviderContainer` from its `BuildContext`) and `WidgetRef`.
@@ -142,7 +148,7 @@
 - **Virtual DOM Node Pattern:** Using `VNode` objects to represent the desired
   structure.
   - `VNode.element`: Represents HTML elements (tag, attributes, children,
-    listeners, key, domNode, jsFunctionRefs).
+    listeners, key, domNode, jsFunctionRefs, dartCallbackRefs).
   - `VNode.text`: Represents text content (text, domNode).
   - `VNode.component`: Represents a `Component` instance (component, key, state,
     renderedVNode, domNode - linking to the root DOM node of the rendered
@@ -154,30 +160,66 @@
 - **Event Listener Management Pattern:**
   - **Creation/Update:** Wrapping Dart callbacks `(DomEvent event) => ...` in a
     JS function `(JSAny jsEvent) { dartCallback(DomEvent(jsEvent)); }`,
-    converting the wrapper using `.toJS`, storing the `JSFunction` reference on
-    the `VNode` (`jsFunctionRefs`), and using these references in `_patch` to
-    add/remove listeners during updates. Listener update logic in `_patch`
-    simplified (always remove/add).
+    converting the wrapper using `.toJS`. Both the `JSFunction` reference
+    (`jsFunctionRefs`) and the original Dart callback (`dartCallbackRefs`) are
+    stored on the `VNode`.
+  - **Optimization:** During patching (`_patch`), the framework uses
+    `identical()` to compare the new Dart callback with the stored old one
+    (`dartCallbackRefs`). If they are identical, the listener update (removing
+    the old JSFunction and adding a new one) is skipped, improving performance
+    for stable callback references (e.g., class methods). If callbacks differ,
+    the old listener is removed (using `jsFunctionRefs`) and the new one is
+    added.
   - **Removal:** When a DOM node is removed during patching (`_patchChildren` ->
     `removeVNode`), the framework now **recursively** traverses the
     corresponding VNode and its children, using the stored `jsFunctionRefs` to
     explicitly call `removeEventListener` for all associated listeners before
     the DOM node is detached. This ensures proper cleanup.
-- **Atomic CSS Generation Pattern (Two-Phase Build-Time):**
+- **Atomic CSS Generation Pattern (Two-Phase Build-Time, Refactored):**
+  - **Core Idea:** Generate CSS rules only for the atomic classes actually used
+    in the Dart code, inspired by Tailwind CSS, providing utility-first styling
+    at build time.
+  - **Rule Definition:**
+    - Rules are defined as a
+      `Map<RegExp, String? Function(List<String> matches)>`.
+    - **Refactored Structure:** Rules are now split by category into separate
+      files within `packages/atomic_styles/lib/src/rules/` (e.g.,
+      `spacing.dart`, `layout.dart`, `typography.dart`, `borders.dart`,
+      `effects.dart`, etc.) for better maintainability.
+    - **Shared Constants:** Common values like spacing scales (`spacingScale`)
+      and color palettes (`colors`) are defined in
+      `packages/atomic_styles/lib/src/constants.dart` and imported by rule
+      files.
+    - **Main Rules File:** `packages/atomic_styles/lib/src/rules.dart` imports
+      all category rule files and uses the spread operator (`...`) to merge them
+      into the final `atomicRules` map. It also contains the `generateAtomicCss`
+      function which takes a set of class names and returns a map of class names
+      to CSS rules.
+    - **Extensive Rule Set:** Covers a wide range of CSS properties including
+      spacing, layout, flexbox, grid, sizing, typography, backgrounds, borders,
+      effects (shadows, opacity), filters, interactivity (cursor, user-select),
+      transforms, transitions, animations, SVG styling, and accessibility
+      utilities.
   - **Phase 1: Scanning (`AtomicStyleBuilder` / `atomicScanner`)**
     - Runs on specified Dart files (`lib/**`, `web/**`).
-    - Uses `analyzer` to parse AST and find HTML helper function calls.
-    - Extracts class names from the `class` attribute string literal.
+    - Uses `analyzer` to parse the Dart AST.
+    - Finds calls to HTML helper functions (from
+      `package:dust_component/html.dart`).
+    - Extracts class names from the `class_` attribute string literal within
+      these calls.
     - Writes the found class names (one per line) to a corresponding `.classes`
       file in the build cache (`build_to: cache`).
-  - **Phase 2: Aggregation & Writing (`CssWriterBuilder` / `cssWriter`)**
-    - Triggered by a specific file (`web/atomic_styles.trigger`).
-    - Uses `buildStep.findAssets` to find all `.classes` files generated in
-      Phase 1.
-    - Reads all `.classes` files, aggregates unique class names into a single
-      set.
-    - Uses predefined rules (`atomicRules` and `generateAtomicCss`) to generate
-      CSS rules for the aggregated set.
-    - Writes the final, sorted CSS rules to the source tree
-      (`build_to: source`), typically `web/atomic_styles.css`.
-  - The final CSS file is linked in `web/index.html`.
+  - **Phase 2: Aggregation & Writing (`AtomicCssAggregator` / `cssAggregator`)**
+    - **Type:** Implemented as a `Builder` (`AtomicCssAggregator`).
+    - **Input:** Reads all `.classes` files generated by Phase 1 (the scanner)
+      from the build cache using `buildStep.findAssets(Glob('**/*.classes'))`.
+      The `required_inputs` configuration in `build.yaml` ensures this runs
+      after the scanner.
+    - **Functionality:** Aggregates unique class names found across _all_ input
+      `.classes` files. Generates the final CSS using `generateAtomicCss` (which
+      uses the combined `atomicRules`). Writes a single, sorted CSS file to the
+      source tree (`build_to: source`), typically `web/atomic_styles.css`.
+    - **Output:** Defined via `buildExtensions` within the `AtomicCssAggregator`
+      class and configuration in `build.yaml`.
+  - **Usage:** The final CSS file (`web/atomic_styles.css`) is linked in
+    `web/index.html`.

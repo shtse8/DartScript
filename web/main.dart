@@ -2,13 +2,19 @@
 // User-facing entry point for the Dust application.
 
 // Import the application's root component
-import 'package:dust_app/todo_list.dart';
+// Import the application's root component
+// import 'package:dust_app/todo_list.dart'; // Comment out TodoList
+// import 'package:dust_app/hello_world.dart'; // Import HelloWorld
+import 'package:dust_app/prop_tester.dart'; // Import PropTester
 // Import the Dust framework's runApp function
 import 'package:dust_renderer/renderer.dart';
 
 void main() {
   // Create the root component instance
-  final app = TodoListComponent();
+  // Create the root component instance with a name prop
+  // Create the root component instance, passing name via props map
+  // Create the PropTester instance
+  final app = PropTester();
 
   // Run the application by mounting the root component to the 'app' element
   runApp(app, 'app');

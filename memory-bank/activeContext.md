@@ -2,24 +2,72 @@
 
 ## Current Focus
 
-- **Refining Atomic CSS Builder:** Improve rule set, potentially enhance builder
-  performance/robustness (e.g., better aggregation strategy than current
-  `.classes` file approach if needed).
+# (Focus shifted to renderer/lifecycle/events for now)
+
 - **Refining Renderer & Component Lifecycle:** Further optimize patching logic,
   handle edge cases, address TODOs in component mount/update/unmount.
-- **Refining Event Handling:** (Partially addressed)
-  - Implemented `DomEvent` wrapper (`packages/renderer/lib/dom_event.dart`) for
-    type-safe event object access in Dart callbacks.
-  - Simplified and improved the listener update logic in the renderer's `_patch`
-    function to be more robust, especially for inline function definitions.
-  - Updated `VNode`, renderer, and `TodoListComponent` demo to use `DomEvent`.
-- **(Previous) Basic Event Handling Implemented & Tested.**
-- **(Previous) Debugging JS Interop for Events Resolved.**
-- **(Previous) Keyed Child Diffing Implemented & Tested.**
+- **Refining Event Handling:** Test recursive listener removal reliability.
+  Consider performance of `DomEvent` wrapper.
 
 ## Recent Changes
 
-- **Implemented Basic Component Lifecycle Management in Renderer
+- **Setup Props Testing:**
+  - Converted `HelloWorld` to `StatefulWidget` to manage listener state
+    internally.
+  - Modified `HelloWorld` to conditionally add/remove a `mouseover` listener
+    based on the length of the `name` prop (accessed via
+    `widget.props['name']`).
+  - Created `PropTester` stateful component (`lib/prop_tester.dart`) which
+    cycles through a list of names and passes the current name as a prop to
+    `HelloWorld`.
+  - Updated `web/main.dart` to use `PropTester` as the root component. This
+    setup allows testing the dynamic addition/removal of event listeners when
+    props change.
+- **(Previous) Implemented Basic Props:**
+  - Added `props` map (`Map<String, dynamic>`) to `Component` base class and
+    updated constructors for `Component`, `StatelessWidget`, and
+    `StatefulWidget` to accept and pass props.
+  - Removed `const` from `HelloWorld` constructor as props map is not
+    compile-time constant.
+  - Updated `HelloWorld` example to accept a `name` parameter via constructor
+    and access it through `props['name']` in the `build` method.
+  - Updated `web/main.dart` to pass the `name` parameter when creating
+    `HelloWorld`.
+  - Confirmed that `State.didUpdateWidget` implicitly receives props updates via
+    the `widget` property update handled by `frameworkUpdateWidget`.
+- **(Previous) Updated StatelessWidget API:**
+  - Modified `StatelessWidget.build` method signature in
+    `packages/component/lib/stateless_component.dart` to accept a `BuildContext`
+    parameter (`VNode? build(BuildContext context)`).
+  - Updated `renderer.dart` (`_mountComponent`, `_updateComponent`,
+    `_renderInternal`) to pass the `BuildContext` when calling
+    `StatelessWidget.build`.
+  - Handled the potentially null `VNode?` return type from `build` in the
+    renderer.
+  - Updated `HelloWorld` example component (`lib/hello_world.dart`) to match the
+    new signature and use HTML helpers.
+- **Optimized Event Listener Updates:**
+  - Added `dartCallbackRefs` map to `VNode` to store original Dart callbacks.
+  - Updated `_patch` in `renderer.dart` to use `identical()` to compare old and
+    new Dart callbacks. If identical, listener removal/addition is skipped,
+    improving performance for stable callback references.
+- **Improved Renderer Robustness:**
+  - Added stricter type checks and null checks in `_unmountComponent` before
+    accessing `domNode.parentNode` to prevent errors if the `domNode` reference
+    is invalid.
+  - Removed obsolete TODO comment about `createTextNode` in `_createDomElement`.
+- **(Previous) Refactored Atomic CSS Aggregation:**
+  - Refactored `AtomicCssAggregator` to `Builder`, using `findAssets` for
+    correct aggregation.
+  - Updated related build configurations and removed unused files.
+- **(Previous) Refactored Atomic CSS Rules:**
+  - Split the large `atomicRules` map in
+    `packages/atomic_styles/lib/src/rules.dart` into multiple category-specific
+    files within a new `packages/atomic_styles/lib/src/rules/` directory.
+  - Created `packages/atomic_styles/lib/src/constants.dart` for shared values.
+  - Updated `packages/atomic_styles/lib/src/rules.dart` to import and merge
+    rules.
+- **(Previous) Implemented Basic Component Lifecycle Management in Renderer
   (`renderer.dart`):**
   - **Updated `VNode`:** Added `state` and `renderedVNode` properties to store
     associated state object and rendered subtree for component VNodes.
@@ -53,17 +101,18 @@
   - Implemented `AtomicStyleBuilder` (`lib/src/builder.dart`) to scan Dart files
     using `analyzer`, extract class names from HTML helpers, and output per-file
     `.classes` files to cache.
-  - Implemented `CssWriterBuilder` (`lib/src/css_writer.dart`) triggered by
-    `web/atomic_styles.trigger` to find all `.classes` assets, aggregate unique
-    class names, generate final CSS using `generateAtomicCss`, and write to
+  - Implemented `AtomicStyleBuilder` (`atomicScanner`) to scan Dart files,
+    extract class names, and output per-file `.classes` files to cache.
+  - Implemented `AtomicCssAggregator` (`cssAggregatorBuilder`) as a `Builder` to
+    read all `.classes` files using `findAssets`, aggregate unique class names,
+    generate final CSS using `generateAtomicCss`, and write to
     `web/atomic_styles.css`.
-  - Created builder factories in `lib/builder.dart`.
-  - Configured both builders (`atomicScanner`, `cssWriter`) in
-    `packages/atomic_styles/build.yaml` and applied them in the root
-    `build.yaml`.
+  - Created builder factories in `lib/builder.dart` (updated for aggregator).
+  - Configured both builders (`atomicScanner`, `cssAggregatorBuilder`) in
+    `packages/atomic_styles/build.yaml` (updated for aggregator) and applied
+    them in the root `build.yaml`.
   - Updated `web/index.html` to link `atomic_styles.css`.
-  - Tested with basic classes in `TodoListComponent`, confirmed CSS generation
-    and application.
+  - Tested with basic classes in `TodoListComponent`, confirmed CSS generation.
 
 - **Introduced Basic BuildContext:**
   - Created `packages/component/lib/context.dart` defining a simple
@@ -211,8 +260,8 @@
     every event.
 - **Refine Diffing/Patching:** (Keyed diffing implemented) Further optimize
   patching logic, handle edge cases more robustly.
-- **Refine Component API:** (Partially done by introducing VNode and HTML
-  helpers) Continue refining props, context handling.
+- **Refine Component API:** (Props basics implemented) Consider typed props or
+  more structured prop handling mechanisms.
 - **Improve Renderer:**
   - **(Partially Done)** Manage component lifecycle (`mount`, `update`,
     `dispose`) via `_patch`, `_mountComponent`, `_updateComponent`,
@@ -242,9 +291,8 @@
   `ProviderContainer` access and potentially enable a `ConsumerWidget` pattern
   closer to Flutter's `build(context, ref)`.
   - (Partially done) Continue refining handling of edge cases in patching.
-- **Setup Atomic CSS Builder:** Basic infrastructure created (package, builder,
-  rules, build config). Needs refinement for robust aggregation and final output
-  generation.
+- **(Done) Setup Atomic CSS Builder:** Infrastructure created and aggregation
+  logic refactored to correctly use `Builder` and `findAssets`.
 - **Integrate Riverpod Properly:** (Context passing implemented)
   - Replaced global `ProviderContainer` access with `BuildContext` passing.
   - `Consumer` now uses `context.container`.
@@ -287,8 +335,12 @@
   `frameworkUpdateWidget`. `setState` now triggers updates via the
   `updateRequester` callback which calls `build` and `_patch`.
 - **JS Interop for Events:** Using `.toJS` on wrapper.
-- **Atomic CSS Strategy:** Using a build-time generator (`AtomicStyleBuilder`)
-  to scan Dart code and produce a CSS file based on used utility classes.
+- **Atomic CSS Strategy:** Using a two-phase build-time approach:
+  1. `AtomicStyleBuilder` (`atomicScanner`) scans Dart code, extracts classes,
+     outputs `.classes` files to cache.
+  2. `AtomicCssAggregator` (`cssAggregatorBuilder`) reads all `.classes` files
+     using `findAssets`, aggregates classes, generates final CSS
+     (`web/atomic_styles.css`).
 - **Listener Reference Storage:** Using `jsFunctionRefs` on `VNode` (used for
   removal).
 - **(Previous) VNode as Build Output:** Confirmed.

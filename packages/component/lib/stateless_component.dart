@@ -1,5 +1,7 @@
 // packages/component/lib/stateless_component.dart
 import 'component.dart';
+import 'context.dart'; // Import BuildContext
+import 'vnode.dart'; // Import VNode for return type
 
 /// A component that does not have mutable state.
 ///
@@ -12,8 +14,8 @@ import 'component.dart';
 /// clock-driven state, or depending on some system state, consider using
 /// a stateful component.
 abstract class StatelessWidget extends Component {
-  /// Initializes properties for subclasses.
-  const StatelessWidget(); // Consider adding Key later
+  /// Initializes [key] and [props] for subclasses.
+  const StatelessWidget({super.key, super.props});
 
   /// Describes the part of the user interface represented by this component.
   ///
@@ -22,5 +24,7 @@ abstract class StatelessWidget extends Component {
   ///
   /// This method should not have any side effects beyond building its UI representation.
   @override
-  dynamic build(); // The implementation will be provided by subclasses.
+  VNode? build(
+      BuildContext
+          context); // The implementation will be provided by subclasses.
 }

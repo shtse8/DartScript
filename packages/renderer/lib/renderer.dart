@@ -40,7 +40,7 @@ dom.DomNode _createDomElement(VNode vnode) {
   // 1. Handle Text Nodes
   if (vnode.tag == null) {
     // Assume it's a text node if tag is null
-    // TODO: Add createTextNode to dom.dart
+    // createTextNode is available in dust_dom
     final dom.DomNode domNode = dom.document
         .createTextNode(vnode.text ?? ''); // Pass Dart String directly
     vnode.domNode = domNode; // Store reference (now DomNode)
@@ -69,6 +69,8 @@ dom.DomNode _createDomElement(VNode vnode) {
       print('Added listener for "$eventName" on <${vnode.tag}>');
       // Store the JSFunction reference on the VNode for later removal
       (vnode.jsFunctionRefs ??= {})[eventName] = jsFunction;
+      // Store the original Dart callback as well
+      (vnode.dartCallbackRefs ??= {})[eventName] = callback;
     });
   }
 
@@ -198,9 +200,8 @@ void _mountComponent(
   } else if (component is StatelessWidget) {
     print('  -> StatelessWidget detected');
     // Build VNode tree
-    // TODO: How should context be passed/used by StatelessWidget.build?
-    // For now, build doesn't take context.
-    renderedVNode = component.build();
+    // Pass context to StatelessWidget build method
+    renderedVNode = component.build(context);
     print(
         '  -> Build returned VNode: ${renderedVNode?.tag ?? renderedVNode?.component?.runtimeType ?? 'text'}');
   } else {
@@ -287,8 +288,8 @@ void _updateComponent(dom.DomElement parentElement, VNode newComponentVNode,
   } else if (newComponent is StatelessWidget) {
     print('  -> StatelessWidget update');
     // Build the new VNode tree
-    // TODO: Pass context if needed by build?
-    newRenderedVNode = newComponent.build();
+    // Pass context to StatelessWidget build method
+    newRenderedVNode = newComponent.build(context);
     print(
         '  -> Build returned VNode: ${newRenderedVNode?.tag ?? newRenderedVNode?.component?.runtimeType ?? 'text'}');
   } else {
@@ -348,18 +349,36 @@ void _unmountComponent(VNode componentVNode) {
   final renderedVNode = componentVNode.renderedVNode;
   if (renderedVNode != null) {
     print('  -> Recursively unmounting rendered VNode tree...');
-    // We need the parent DOM element to remove the actual DOM node.
-    // The componentVNode.domNode should point to the root DOM node rendered by the component.
-    final domNode = componentVNode.domNode;
-    if (domNode is dom.DomNode && domNode.parentNode is dom.DomElement) {
-      final parentDomElement = domNode.parentNode as dom.DomElement;
-      // Use removeVNode which handles recursive listener cleanup and DOM removal
-      removeVNode(parentDomElement, renderedVNode);
+    // The componentVNode.domNode *should* point to the root DOM node rendered by the component.
+    // However, due to simplification (line 225), this might be inaccurate if the
+    // rendered root changed type or structure. Add checks.
+    final domNode = componentVNode.domNode; // This is Object?
+
+    // Check if domNode is a valid DomNode first
+    if (domNode is dom.DomNode) {
+      final parentNode = domNode.parentNode; // Now safe to access parentNode
+
+      // Check if parentNode is a valid DomElement
+      if (parentNode is dom.DomElement) {
+        // Check if the node is still attached to the expected parent
+        // This is not foolproof but adds a layer of safety.
+        print('  -> Found valid DOM node and parent for removal.');
+        final parentDomElement = parentNode; // Already checked type
+        // Use removeVNode which handles recursive listener cleanup and DOM removal
+        // Pass the verified parentDomElement.
+        removeVNode(parentDomElement, renderedVNode);
+      } else {
+        // domNode exists but parent is not a DomElement (or null)
+        print(
+            'Warning: Could not find valid parent DOM element to remove rendered tree during unmount (domNode: ${domNode.hashCode}, parentNode: ${parentNode?.hashCode}).');
+        print('  -> Attempting listener cleanup only.');
+        _removeListenersRecursively(renderedVNode);
+      }
     } else {
+      // domNode itself is null or not a DomNode
       print(
-          'Warning: Could not find valid parent DOM element to remove rendered tree during unmount.');
-      // If we can't find the parent, at least try to clean up listeners recursively
-      // directly from the renderedVNode, although the DOM node might leak.
+          'Warning: domNode reference on componentVNode is invalid or null during unmount (domNode: ${domNode?.hashCode}).');
+      print('  -> Attempting listener cleanup only.');
       _removeListenersRecursively(renderedVNode);
     }
     componentVNode.renderedVNode = null; // Clear the rendered VNode reference
@@ -541,10 +560,13 @@ void _patch(dom.DomElement parentElement, VNode? newVNode, VNode? oldVNode,
   final dom.DomNode domNode = oldVNode.domNode as dom.DomNode;
   newVNode.domNode = domNode; // Carry over the DOM node reference (DomNode)
 
-  // Carry over the JSFunction references from the old VNode to the new one
-  // so we can potentially remove old listeners later.
+  // Carry over the JSFunction and Dart callback references from the old VNode
+  // to the new one initially. We'll update them during listener patching.
   if (oldVNode.jsFunctionRefs != null) {
     newVNode.jsFunctionRefs = Map.from(oldVNode.jsFunctionRefs!);
+  }
+  if (oldVNode.dartCallbackRefs != null) {
+    newVNode.dartCallbackRefs = Map.from(oldVNode.dartCallbackRefs!);
   }
 
   // 4a: Patch Text Nodes
@@ -595,8 +617,9 @@ void _patch(dom.DomElement parentElement, VNode? newVNode, VNode? oldVNode,
         // Use the removeEventListener from DomElementExtension
         (domNode as dom.DomElement)
             .removeEventListener(eventName, oldJsFunction);
-        newVNode.jsFunctionRefs
-            ?.remove(eventName); // Remove from new VNode's refs too
+        // Remove references from the newVNode as well, since it initially copied them
+        newVNode.jsFunctionRefs?.remove(eventName);
+        newVNode.dartCallbackRefs?.remove(eventName); // Also remove Dart ref
       } else {
         print(
             'Warning: Could not remove listener for "$eventName" on <${newVNode.tag}> - JSFunction reference not found.');
@@ -606,43 +629,44 @@ void _patch(dom.DomElement parentElement, VNode? newVNode, VNode? oldVNode,
 
   // Add or update listeners that are in new
   newListeners.forEach((eventName, newCallback) {
-    final oldCallback = oldListeners[eventName];
-    // If the listener exists in the new VNode, ensure it's correctly attached.
-    // Always remove the old one (if found) and add the new one to handle
-    // cases where callback instances change (e.g., inline functions).
-    if (newListeners.containsKey(eventName)) {
-      print('Ensuring listener for "$eventName" on <${newVNode.tag}>');
+    final oldDartCallback = oldVNode.dartCallbackRefs?[eventName];
 
-      // Remove the old listener if it exists and we have its reference
-      final oldJsFunction = oldVNode.jsFunctionRefs?[eventName];
-      if (oldJsFunction != null) {
-        // Only remove if the callback function itself has actually changed,
-        // otherwise, we might remove a listener we intend to keep if the
-        // instance is the same (e.g., a method reference).
-        // However, always removing/adding is safer for inline functions.
-        // Let's stick to always removing/adding for simplicity and robustness.
-        print('  -> Removing old listener first (if found)');
-        // Use the removeEventListener from DomElementExtension
-        (domNode as dom.DomElement)
-            .removeEventListener(eventName, oldJsFunction);
-      } else if (oldListeners.containsKey(eventName)) {
-        // Log if old listener existed but we didn't have its JS ref
-        print(
-            '  -> Warning: Old listener for "$eventName" existed but no JSFunction reference was found for removal.');
-      }
-
-      // Add the new listener
-      // Create a JS function that wraps the new Dart callback
-      final newJsFunction = ((JSAny jsEvent) {
-        newCallback(DomEvent(jsEvent));
-      }).toJS;
-      // Use the addEventListener from DomElementExtension
-      (domNode as dom.DomElement).addEventListener(eventName, newJsFunction);
-      print('  -> Added new listener');
-
-      // Store the new reference, overwriting any old one
-      (newVNode.jsFunctionRefs ??= {})[eventName] = newJsFunction;
+    // --- Optimization: Check if callback is identical ---
+    if (identical(newCallback, oldDartCallback)) {
+      print(
+          '  -> Skipping listener update for "$eventName" on <${newVNode.tag}> (callback identical)');
+      // No need to remove/add, references were already carried over.
+      return; // Move to the next listener
     }
+
+    // --- Callback has changed or is new ---
+    print('Updating listener for "$eventName" on <${newVNode.tag}>');
+
+    // Remove the old listener if it exists and we have its reference
+    final oldJsFunction = oldVNode.jsFunctionRefs?[eventName];
+    if (oldJsFunction != null) {
+      print('  -> Removing old listener first');
+      // Use the removeEventListener from DomElementExtension
+      (domNode as dom.DomElement).removeEventListener(eventName, oldJsFunction);
+    } else if (oldListeners.containsKey(eventName)) {
+      // Log if old listener existed but we didn't have its JS ref
+      print(
+          '  -> Warning: Old listener for "$eventName" existed but no JSFunction reference was found for removal.');
+    }
+
+    // Add the new listener
+    // Create a JS function that wraps the new Dart callback
+    final newJsFunction = ((JSAny jsEvent) {
+      newCallback(DomEvent(jsEvent));
+    }).toJS;
+    // Use the addEventListener from DomElementExtension
+    (domNode as dom.DomElement).addEventListener(eventName, newJsFunction);
+    print('  -> Added new listener');
+
+    // Store the new references, overwriting any old ones
+    (newVNode.jsFunctionRefs ??= {})[eventName] = newJsFunction;
+    (newVNode.dartCallbackRefs ??= {})[eventName] =
+        newCallback; // Store Dart callback
   });
 
   // 4d: Patch Children (Keyed Reconciliation)
@@ -881,14 +905,25 @@ void _renderInternal(
     // For stateless, we just build once and render (no updates handled yet)
     try {
       // Build the VNode tree
-      final VNode newRootVNode = component.build();
-      print('Stateless build returned VNode: [${newRootVNode.tag ?? 'text'}]');
+      // Build returns VNode?, handle potential null
+      final VNode? newRootVNode = component.build(context);
+      print(
+          'Stateless build returned VNode: [${newRootVNode?.tag ?? 'null or text'}]'); // Add null check
 
       // Patch the DOM (initial render, so oldVNode is null)
       // TODO: How should context be handled for StatelessWidget?
       // For now, pass the parent context. A dedicated context might be needed if
       // stateless widgets need to access context directly (e.g., for theme).
-      _patch(_targetElement!, newRootVNode, null, context); // Pass context
+      // Only patch if build returned a non-null VNode
+      if (newRootVNode != null) {
+        _patch(_targetElement!, newRootVNode, null, context); // Pass context
+        // Store the initially rendered VNode tree
+        // _lastRenderedVNode is now set inside the if/else block above
+      } else {
+        // Handle case where stateless build returns null (e.g., clear content)
+        _targetElement!.textContent = ''; // Clear target element
+        _lastRenderedVNode = null;
+      }
 
       // Store the initially rendered VNode tree
       _lastRenderedVNode = newRootVNode;
