@@ -138,6 +138,12 @@
 - **Updated `index.html`:**
   - Changed the target div ID from `'output'` to `'app'`.
 - **(Previous) Updated Clock Demo:** Modified `build` to return `VNode`.
+- **Updated Renderer (`packages/renderer/lib/renderer.dart`):**
+  - Modified `_patchChildren` -> `removeVNode` helper function to
+    **recursively** remove event listeners from the node and its children (using
+    stored `jsFunctionRefs` and new helpers `_removeListenersRecursively`,
+    `_removeListenersFromNode`) _before_ removing the DOM node itself, ensuring
+    proper cleanup.
 - **Previous Changes (Still Relevant):**
   - Added Riverpod Dependency & Clock Demo.
   - Improved WASM Loading (`js/app_bootstrap.js`).
@@ -148,9 +154,12 @@
 
 - **(Done) Integrating DOM Abstraction:** All identified direct JS interop calls
   in `renderer.dart` have been replaced with `dust_dom` abstractions.
-- **Refine Event Handling:** (Partially addressed) Further testing on listener
-  removal reliability might be needed. Consider performance implications of the
-  `DomEvent` wrapper creation on every event.
+- **Refine Event Handling:** (Partially addressed)
+  - **Recursive listener removal logic added** to `removeVNode` (via
+    `_removeListenersRecursively`) in `_patchChildren`. Further testing on
+    reliability might be needed.
+  - Consider performance implications of the `DomEvent` wrapper creation on
+    every event.
 - **Refine Diffing/Patching:** (Keyed diffing implemented) Further optimize
   patching logic, handle edge cases more robustly.
 - **Refine Component API:** (Partially done by introducing VNode and HTML
@@ -213,9 +222,13 @@
 - **Renderer Refactoring:** Completed replacement of direct JS calls with
   `dust_dom` methods in `renderer.dart`.
 - **Event Object Wrapping:** Using `DomEvent` wrapper.
-- **Listener Update Strategy:** Always remove/add in `_patch`.
+- **Listener Update Strategy:** Always remove/add in `_patch`. Listeners are now
+  **recursively and explicitly removed** in `removeVNode` (within
+  `_patchChildren`, using `_removeListenersRecursively`) before DOM node
+  removal.
 - **JS Interop for Events:** Using `.toJS` on wrapper.
-- **Listener Reference Storage:** Using `jsFunctionRefs` on `VNode`.
+- **Listener Reference Storage:** Using `jsFunctionRefs` on `VNode` (used for
+  removal).
 - **(Previous) VNode as Build Output:** Confirmed.
 - **(Previous) Renderer Update Strategy:** Keyed diffing implemented.
 - **(Previous) VNode Location:** Confirmed.

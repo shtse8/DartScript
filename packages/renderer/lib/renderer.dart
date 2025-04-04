@@ -336,18 +336,59 @@ void _patchChildren(dom.DomElement parentDomNode, List<VNode>? oldChOriginal,
     return vnode1?.key == vnode2?.key && vnode1?.tag == vnode2?.tag;
   }
 
-  void removeVNode(VNode vnode) {
-    if (vnode.domNode != null) {
-      print('Removing DOM node (key: ${vnode.key}): ${vnode.domNode.hashCode}');
-      if (vnode.domNode is JSAny) {
-        // FIX: Use parentDomNode
-        // Use the removeChild from DomNodeExtension
-        parentDomNode.removeChild(vnode.domNode as dom.DomNode);
-      } else {
-        print('Error: Cannot remove, vnode.domNode is not JSAny');
+  // Helper to remove listeners from a single node
+  void _removeListenersFromNode(VNode vnode) {
+    if (vnode.domNode is dom.DomElement && vnode.jsFunctionRefs != null) {
+      final domElement = vnode.domNode as dom.DomElement;
+      if (vnode.jsFunctionRefs!.isNotEmpty) {
+        print(
+            '  -> Removing ${vnode.jsFunctionRefs!.length} listeners for node key ${vnode.key}');
+        vnode.jsFunctionRefs!.forEach((eventName, jsFunction) {
+          print('     - Removing listener for "$eventName"');
+          domElement.removeEventListener(eventName, jsFunction);
+        });
+        // Clear the refs after removing
+        vnode.jsFunctionRefs!.clear();
       }
-      // TODO: Call component lifecycle hooks (dispose) if applicable
     }
+  }
+
+  // Helper to recursively remove listeners from a node and its children
+  void _removeListenersRecursively(VNode vnode) {
+    // Remove listeners from the current node first
+    _removeListenersFromNode(vnode);
+
+    // Then, recursively remove from children
+    if (vnode.children != null) {
+      for (final childVNode in vnode.children!) {
+        _removeListenersRecursively(childVNode);
+      }
+    }
+  }
+
+  void removeVNode(VNode vnode) {
+    if (vnode.domNode == null) {
+      print(
+          'Warning: removeVNode called but vnode.domNode is null for key ${vnode.key}');
+      return;
+    }
+
+    print('Removing DOM node (key: ${vnode.key}): ${vnode.domNode.hashCode}');
+
+    // --- Recursively Remove Listeners BEFORE removing the node ---
+    _removeListenersRecursively(vnode);
+    // --- End Recursive Listener Removal ---
+
+    // Now remove the DOM node itself
+    if (vnode.domNode is dom.DomNode) {
+      // Check if it's a valid DomNode
+      // Use the removeChild from DomNodeExtension
+      parentDomNode.removeChild(vnode.domNode as dom.DomNode);
+    } else {
+      // This case should ideally not happen if domNode was set correctly
+      print('Error: Cannot remove, vnode.domNode is not a valid DomNode type.');
+    }
+    // TODO: Call component lifecycle hooks (dispose) if applicable
   }
 
   dom.DomNode? getDomNodeBefore(int index) {
