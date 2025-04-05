@@ -635,23 +635,31 @@ void _patch(dom.DomElement parentElement, VNode? newVNode, VNode? oldVNode,
   final oldAttributes = oldVNode.attributes ?? const {};
   final newAttributes = newVNode.attributes ?? const {};
 
-  // Remove attributes that are in old but not in new
-  oldAttributes.forEach((name, _) {
-    if (!newAttributes.containsKey(name)) {
-      print('Removing attribute $name from <${newVNode.tag}>');
-      // Assume domNode is DomElement here since we are patching attributes
-      (domNode as dom.DomElement).removeAttribute(name);
-    }
-  });
+  // --- Optimization: Check for identical attribute maps ---
+  if (identical(oldAttributes, newAttributes)) {
+    // print('  -> Skipping attribute update (identical maps)'); // Optional: Keep for debugging
+  } else {
+    // --- Maps are different, proceed with detailed patching ---
+    // print('  -> Updating attributes...'); // Optional: Keep for debugging
 
-  // Add or update attributes that are in new
-  newAttributes.forEach((name, value) {
-    final oldValue = oldAttributes[name];
-    if (oldValue != value) {
-      print('Setting attribute $name="$value" on <${newVNode.tag}>');
-      (domNode as dom.DomElement).setAttribute(name, value);
-    }
-  });
+    // Remove attributes that are in old but not in new
+    oldAttributes.forEach((name, _) {
+      if (!newAttributes.containsKey(name)) {
+        // print('Removing attribute $name from <${newVNode.tag}>'); // Optional: Keep for debugging
+        (domNode as dom.DomElement).removeAttribute(name);
+      }
+    });
+
+    // Add or update attributes that are in new
+    newAttributes.forEach((name, value) {
+      final oldValue = oldAttributes[name];
+      if (oldValue != value) {
+        // print('Setting attribute $name="$value" on <${newVNode.tag}>'); // Optional: Keep for debugging
+        (domNode as dom.DomElement).setAttribute(name, value);
+      }
+    });
+    // print('  -> Finished updating attributes.'); // Optional: Keep for debugging
+  } // End of attribute patching block
 
   // 4c: Patch Event Listeners
   final oldListeners = oldVNode.listeners ?? const {};

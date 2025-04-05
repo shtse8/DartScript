@@ -16,6 +16,11 @@
 
 ## Recent Changes
 
+- **Optimized Renderer Attribute Patching:** Added an `identical` check in the
+  `_patch` function to skip attribute updates if the old and new attribute maps
+  are the same instance, potentially improving performance when attributes
+  haven't changed.
+
 - **Improved ProviderScope Override Handling:** Implemented `didUpdateWidget` in
   `_ProviderScopeState` to detect changes in `overrides`. If overrides differ,
   the old `ProviderContainer` is disposed, and a new one is created with the

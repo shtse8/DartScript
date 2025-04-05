@@ -16,7 +16,8 @@
   - `VNode` structure updated. HTML helpers available (`html.text`, `html.a`
     added).
 - **Renderer (Component Lifecycle + Keyed Diffing + Event Handling +
-  Anchoring):** (Largely functional, see previous state)
+  Anchoring):** (Largely functional, basic attribute patching optimization
+  added).
 - **State Update (Keyed Diffing & setState):** `setState` correctly triggers
   component updates.
 - **Demo Application (Props Tester - Conditional Listener):** Successfully
@@ -83,7 +84,7 @@
 - **WASM Build Successful:** Core framework and demo app compile to WASM without
   critical errors. (Recent JS interop warnings in `web_interop.dart` resolved).
 - **Renderer Core Stable:** Anchoring, lifecycle, keyed diffing, event handling
-  basics are functional.
+  basics are functional. Basic attribute patching optimization implemented.
 - **Atomic CSS Builder Functional:** Generates CSS based on code analysis.
 - **Basic Riverpod Integration & Scoping Functional:** Works with the new typed
   props system.
@@ -95,7 +96,8 @@
 - **Router Implementation:** Basic nested routing implemented. Further
   refinement (e.g., relative links, more complex scenarios) might be needed.
   History API support (client-side) is implemented.
-- **Renderer Optimization:** Patching logic can likely be further optimized.
+- **Renderer Optimization:** Basic attribute patching optimization added.
+  Further optimization (e.g., listener patching, child diffing) is possible.
 - **Renderer Edge Cases:** Handling fragments, SVG, specific attribute/property
   types needs more testing.
 - **State Management Integration:** Dynamic override changes in
