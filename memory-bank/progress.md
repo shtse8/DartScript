@@ -36,12 +36,17 @@
   - Added `dust_router` dependency to main project.
 - **Successful WASM Compilation:** Application now compiles successfully with JS
   interop based routing.
+- **Router Parameter Parsing (Basic):**
+  - Router can match paths with parameters (e.g., `/users/:id`).
+  - Parameters are extracted using RegExp and passed to the route builder.
+  - `ComponentBuilder` signature updated to accept
+    `Map<String, String>? params`.
+  - `UserPage` demo component created to display parameters.
 
 ## What's Left to Build (High Level - Framework Focus)
 
 - **Core Framework Implementation:**
-  - **Routing System:** Refine `Router` (parameter parsing, nested routes,
-    History API support).
+  - **Routing System:** Refine `Router` (nested routes, History API support).
   - **Rendering Engine (Diffing):** Further optimize patching logic, handle edge
     cases (fragments, SVG nuances).
   - **Component Model Refinement:** Review typed props implementation.
@@ -58,9 +63,10 @@
 
 ## Current Status
 
-- **Basic Routing Functional:** Hash-based routing works using JS interop.
-  `Link` component updates URL hash, `Router` listens and renders corresponding
-  component.
+- **Basic Routing Functional (with Parameter Parsing):** Hash-based routing
+  works using JS interop. `Link` component updates URL hash, `Router` listens,
+  parses parameters (e.g., `/users/:id`), and renders corresponding component,
+  passing extracted parameters.
 - **Typed Props System Implemented:** Core component classes refactored for
   type-safe props. Demos updated.
 - **WASM Build Successful:** Core framework and demo app compile to WASM without
@@ -75,8 +81,7 @@
 
 ## Known Issues / Challenges
 
-- **Router Implementation:** Needs parameter parsing, nested routes, History API
-  support.
+- **Router Implementation:** Needs nested routes, History API support.
 - **Renderer Optimization:** Patching logic can likely be further optimized.
 - **Renderer Edge Cases:** Handling fragments, SVG, specific attribute/property
   types needs more testing.

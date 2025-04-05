@@ -2,8 +2,8 @@
 
 ## Current Focus
 
-- **Refine `Router` Component:** Add parameter parsing, nested routes,
-  potentially History API support (using JS interop).
+- **Refine `Router` Component:** Implement nested routes and History API support
+  (using JS interop). Basic parameter parsing is now implemented.
 - **Refining Renderer & Component Lifecycle:** Continue optimizing patching
   logic, handling edge cases (e.g., fragments, complex nesting), and ensuring
   lifecycle methods are consistently called.
@@ -13,6 +13,17 @@
 
 ## Recent Changes
 
+- **Implemented Basic Router Parameter Parsing:**
+  - Updated `ComponentBuilder` typedef in `router.dart` to accept
+    `Map<String, String>? params`.
+  - Implemented `_matchRoute` method in `_RouterState` using `RegExp` to extract
+    parameters from the path (e.g., `/users/:id`).
+  - Updated route builders in `web/main.dart` to match the new
+    `ComponentBuilder` signature.
+  - Created `UserPage` component (`lib/user_page.dart`) to display extracted
+    parameters.
+  - Added a parameterized route (`/users/:id`) and a test link (`/users/123`) in
+    `web/main.dart`.
 - **Enabled Router JS Interop using `.toJS`:**
   - Identified that `allowInterop` is deprecated/incorrect for current JS
     interop usage.
@@ -57,8 +68,8 @@
 
 ## Next Steps
 
-- **Refine `Router` Component:** Add parameter parsing, nested routes,
-  potentially History API support (using JS interop).
+- **Refine `Router` Component:** Implement nested routes and History API support
+  (using JS interop).
 - **Refine ProviderScope:** Handle dynamic override changes in
   `didUpdateWidget`.
 - **Expand Atomic CSS Rules & Features.**
@@ -77,8 +88,8 @@
   uses `Props?`.
 - **BuildContext:** Defined in `build_context.dart`, contains
   `ProviderContainer`. Old `context.dart` removed.
-- **Router Implementation Strategy:** Basic hash-based routing implemented using
-  JS interop.
+- **Router Implementation Strategy:** Hash-based routing with basic parameter
+  parsing (e.g., `/path/:param`) implemented using JS interop and RegExp.
 - **HTML Helpers:** `a` tag helper added. Text nodes created via `html.text()`.
 - **(Previous decisions still apply regarding Component Syntax, `runApp`,
   `build_runner`, `dust_dom`, `DomEvent`, Provider Scoping, Anchoring, etc.)**

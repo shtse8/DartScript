@@ -12,8 +12,8 @@ class Route {
   Route({required this.path, required this.builder});
 }
 
-typedef ComponentBuilder = VNode? Function(
-    BuildContext context); // Return VNode?
+typedef ComponentBuilder = VNode? Function(BuildContext context,
+    Map<String, String>? params); // Return VNode?, Add params
 
 // Props for the Router component
 class RouterProps implements Props {
@@ -81,25 +81,59 @@ class _RouterState extends State<Router> {
     super.dispose();
   }
 
+  Map<String, String>? _matchRoute(String routePattern, String currentPath) {
+    final paramNames = <String>[];
+    // Convert route pattern to regex, extracting param names
+    // Example: /users/:id -> ^/users/([^/]+)$
+    final regexPattern =
+        routePattern.replaceAllMapped(RegExp(r':([^/]+)'), (match) {
+      paramNames.add(match.group(1)!); // Store param name
+      return '([^/]+)'; // Regex for capturing segment
+    });
+
+    final regExp = RegExp('^$regexPattern\$'); // Anchor the regex
+    final match = regExp.firstMatch(currentPath);
+
+    if (match == null) {
+      // Handle exact match case separately if no params were defined
+      if (paramNames.isEmpty && routePattern == currentPath) {
+        return {}; // Exact match, no params
+      }
+      return null; // No match
+    }
+
+    // Extract parameters if match found
+    final params = <String, String>{};
+    for (var i = 0; i < match.groupCount; i++) {
+      if (i < paramNames.length) {
+        // Ensure we have a name for the group
+        final value = match.group(i + 1); // Groups are 1-indexed
+        if (value != null) {
+          params[paramNames[i]] = value;
+        }
+      }
+    }
+    return params;
+  }
+
   @override
   VNode build() {
     // Return VNode, remove context parameter
     // Find the matching route
+    // Find the matching route using pattern matching
     for (final route in widget.props.routes) {
-      // Basic exact path matching for now
-      if (route.path == _currentPath) {
-        final vnode =
-            route.builder(context); // Call builder with state's context
-        if (vnode != null) return vnode; // Return if not null
-        // Handle null case if necessary, maybe return an empty node or throw
+      final params = _matchRoute(route.path, _currentPath); // Use matching func
+      if (params != null) {
+        // Check if match found (params map is not null)
+        final vnode = route.builder(context, params); // Pass params
+        if (vnode != null) return vnode;
         return VNode.text(''); // Return empty text node if builder returns null
       }
     }
 
     // No match found, render notFoundBuilder or null
-    final notFoundVNode = widget.props.notFoundBuilder?.call(context);
-    return notFoundVNode ??
-        VNode.text(
-            ''); // Return empty text node if not found builder is null or returns null
+    // Pass null for params to notFoundBuilder
+    final notFoundVNode = widget.props.notFoundBuilder?.call(context, null);
+    return notFoundVNode ?? VNode.text('');
   }
 }
