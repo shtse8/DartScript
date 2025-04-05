@@ -32,8 +32,15 @@ class Router extends StatefulWidget<RouterProps> {
   State<Router> createState() => _RouterState();
 }
 
-// Top-level function to handle hash change, taking state as argument
-void _handleHashChange(_RouterState state, JSAny event) {
+// Top-level function to handle popstate event, taking state as argument
+void _handlePopState(_RouterState state, JSAny event) {
+  // Note: 'event' might contain state data if pushState was used with data
+  state._updatePath();
+}
+
+// Top-level function to handle custom dustnavigate event
+void _handleDustNavigate(_RouterState state, JSAny event) {
+  // The event itself might not have path info, so we read from location
   state._updatePath();
 }
 
@@ -41,42 +48,54 @@ class _RouterState extends State<Router> {
   String _currentPath = ''; // Store the current path
 
   // Need a field to store the JS function wrapper for removal
-  JSFunction? _hashChangeWrapper;
+  JSFunction? _popStateWrapper;
+  JSFunction? _dustNavigateWrapper; // Wrapper for custom event
 
   @override
   void initState() {
     super.initState();
-    // Initial path reading using JS interop
-    _updatePath();
+    // Set initial path directly without calling setState
+    final initialPath = location.pathname;
+    _currentPath = initialPath.isEmpty ? '/' : initialPath;
     // Listen for URL changes using JS interop with the top-level function
     // Pass 'this' (the state instance) to the handler
     // Convert the Dart callback to a JS function using .toJS
-    _hashChangeWrapper = ((JSAny event) => _handleHashChange(this, event)).toJS;
+    _popStateWrapper = ((JSAny event) => _handlePopState(this, event)).toJS;
+    _dustNavigateWrapper = ((JSAny event) => _handleDustNavigate(this, event))
+        .toJS; // Create wrapper
+
+    window.addEventListener('popstate', _popStateWrapper!);
     window.addEventListener(
-        'hashchange', _hashChangeWrapper!); // Use imported 'window'
-    // TODO: Add History API listener if not using hash routing
+        'dustnavigate', _dustNavigateWrapper!); // Listen for custom event
   }
 
   // Update path logic using JS interop
   void _updatePath() {
-    // Simple hash-based routing for now
-    final newPath = location.hash.isNotEmpty // Use imported 'location'
-        ? location.hash.substring(1) // Use imported 'location'
-        : '/'; // Default path if hash is empty
+    // Use pathname for History API routing
+    final newPath = location.pathname; // Use imported 'location' and pathname
+    // Default path is usually handled by the server or initial load,
+    // but ensure it's not empty if pathname somehow is.
+    final effectivePath = newPath.isEmpty ? '/' : newPath;
     if (newPath != _currentPath) {
       setState(() {
-        _currentPath = newPath;
+        _currentPath = effectivePath; // Use effectivePath
       });
+    } else {
+      // Path did not change, do nothing.
     }
   }
 
   @override
   void dispose() {
-    // Remove the event listener
-    if (_hashChangeWrapper != null) {
-      window.removeEventListener(
-          'hashchange', _hashChangeWrapper!); // Use imported 'window'
-      _hashChangeWrapper = null;
+    // Remove the popstate event listener
+    if (_popStateWrapper != null) {
+      window.removeEventListener('popstate', _popStateWrapper!);
+      _popStateWrapper = null;
+    }
+    // Remove the dustnavigate event listener
+    if (_dustNavigateWrapper != null) {
+      window.removeEventListener('dustnavigate', _dustNavigateWrapper!);
+      _dustNavigateWrapper = null;
     }
     super.dispose();
   }

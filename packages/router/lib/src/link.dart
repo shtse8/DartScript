@@ -20,9 +20,18 @@ class Link extends StatelessWidget {
 
   void _handleClick(DomEvent event) {
     event.preventDefault(); // Prevent default anchor tag navigation
-    // Update the URL hash to trigger the Router
-    // Use JS interop to set the hash
-    location.hash = props.to; // Use imported 'location' from web_interop
+    final targetPath = props.to;
+    try {
+      window.history.pushState(
+          null, '', targetPath); // Use imported 'window' and 'history'
+
+      // Dispatch a custom event to notify the Router about the navigation
+      final navEvent = Event('dustnavigate'); // Use basic Event for now
+      window.dispatchEvent(navEvent);
+    } catch (e) {
+      // Consider more robust error handling if needed
+      print('[Link] Error during navigation: $e');
+    }
   }
 
   @override
@@ -33,7 +42,7 @@ class Link extends StatelessWidget {
     return html.a(
       attributes: {
         // Use 'attributes' instead of 'props'
-        'href': '#${props.to}', // Set href for accessibility/semantics
+        'href': props.to, // Set href for History API routing
       },
       listeners: {
         'click': _handleClick,

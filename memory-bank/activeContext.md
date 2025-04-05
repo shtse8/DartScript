@@ -2,8 +2,11 @@
 
 ## Current Focus
 
-- **Refine `Router` Component:** Implement nested routes and History API support
-  (using JS interop). Basic parameter parsing is now implemented.
+- **Refine `Router` Component:** Implement nested routes. **History API support
+  is now fully functional**, replacing hash-based routing. Basic parameter
+  parsing remains functional. Client-side navigation via links and browser
+  back/forward buttons works correctly using a combination of `popstate` and a
+  custom `dustnavigate` event dispatched by the `Link` component.
 - **Refining Renderer & Component Lifecycle:** Continue optimizing patching
   logic, handling edge cases (e.g., fragments, complex nesting), and ensuring
   lifecycle methods are consistently called.
@@ -13,7 +16,17 @@
 
 ## Recent Changes
 
-- **Implemented Basic Router Parameter Parsing:**
+- **Implemented History API Routing:**
+  - Updated `web_interop.dart` with bindings for `history.pushState`,
+    `popstate`, `location.pathname`, `CustomEvent`, and `window.dispatchEvent`.
+  - Modified `Link` component (`link.dart`) to use `history.pushState` and
+    dispatch a custom `dustnavigate` event on click.
+  - Modified `Router` component (`router.dart`) to listen for both `popstate`
+    (for back/forward) and `dustnavigate` (for link clicks) events, triggering
+    path updates accordingly.
+  - Removed hash-based routing logic.
+  - Cleaned up debug print statements.
+- **Implemented Basic Router Parameter Parsing:** (Previous change)
   - Updated `ComponentBuilder` typedef in `router.dart` to accept
     `Map<String, String>? params`.
   - Implemented `_matchRoute` method in `_RouterState` using `RegExp` to extract
@@ -68,8 +81,7 @@
 
 ## Next Steps
 
-- **Refine `Router` Component:** Implement nested routes and History API support
-  (using JS interop).
+- **Refine `Router` Component:** Implement nested routes.
 - **Refine ProviderScope:** Handle dynamic override changes in
   `didUpdateWidget`.
 - **Expand Atomic CSS Rules & Features.**
@@ -88,8 +100,11 @@
   uses `Props?`.
 - **BuildContext:** Defined in `build_context.dart`, contains
   `ProviderContainer`. Old `context.dart` removed.
-- **Router Implementation Strategy:** Hash-based routing with basic parameter
-  parsing (e.g., `/path/:param`) implemented using JS interop and RegExp.
+- **Router Implementation Strategy:** History API routing is used via JS interop
+  (`pushState`, `popstate`, `pathname`, custom `dustnavigate` event). Basic
+  parameter parsing remains functional. Hash-based routing removed. **Note:**
+  Direct page refresh on non-root paths requires server-side configuration to
+  redirect to `index.html`.
 - **HTML Helpers:** `a` tag helper added. Text nodes created via `html.text()`.
 - **(Previous decisions still apply regarding Component Syntax, `runApp`,
   `build_runner`, `dust_dom`, `DomEvent`, Provider Scoping, Anchoring, etc.)**

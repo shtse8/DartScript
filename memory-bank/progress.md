@@ -28,9 +28,11 @@
 - **Router Package Setup & Basic Functionality:**
   - Created `dust_router` package.
   - Created `Router` and `Link` components (updated for typed props).
-  - Implemented basic hash-based routing using `dart:js_interop` (`.toJS`,
-    `window.addEventListener`, `location.hash`). Shared interop definitions in
-    `web_interop.dart`.
+  - Implemented **functional History API-based routing** using `dart:js_interop`
+    (`.toJS`, `popstate`, `pathname`, `pushState`, `CustomEvent`,
+    `dispatchEvent`). `Link` clicks trigger updates via a custom event, while
+    back/forward uses `popstate`. Hash-based routing removed. Shared interop
+    definitions updated.
   - Exported router components.
   - Integrated `Router` into `web/main.dart` with basic routes.
   - Added `dust_router` dependency to main project.
@@ -46,7 +48,8 @@
 ## What's Left to Build (High Level - Framework Focus)
 
 - **Core Framework Implementation:**
-  - **Routing System:** Refine `Router` (nested routes, History API support).
+  - **Routing System:** Refine `Router` (nested routes). History API support
+    (client-side) is now implemented.
   - **Rendering Engine (Diffing):** Further optimize patching logic, handle edge
     cases (fragments, SVG nuances).
   - **Component Model Refinement:** Review typed props implementation.
@@ -63,10 +66,11 @@
 
 ## Current Status
 
-- **Basic Routing Functional (with Parameter Parsing):** Hash-based routing
-  works using JS interop. `Link` component updates URL hash, `Router` listens,
-  parses parameters (e.g., `/users/:id`), and renders corresponding component,
-  passing extracted parameters.
+- **History API Routing Functional (Client-Side):** History API routing works
+  using JS interop. `Link` component uses `pushState` and dispatches a custom
+  event. `Router` listens for `popstate` and the custom event, reads `pathname`,
+  parses parameters (e.g., `/users/:id`), and renders the corresponding
+  component, passing extracted parameters.
 - **Typed Props System Implemented:** Core component classes refactored for
   type-safe props. Demos updated.
 - **WASM Build Successful:** Core framework and demo app compile to WASM without
@@ -81,7 +85,8 @@
 
 ## Known Issues / Challenges
 
-- **Router Implementation:** Needs nested routes, History API support.
+- **Router Implementation:** Needs nested routes. History API support
+  (client-side) is now implemented.
 - **Renderer Optimization:** Patching logic can likely be further optimized.
 - **Renderer Edge Cases:** Handling fragments, SVG, specific attribute/property
   types needs more testing.
@@ -91,3 +96,6 @@
 - **WASM Debugging:** Remains a factor.
 - **Bundle Size:** Needs monitoring.
 - **Hot Reload Implementation:** Significant challenge remains.
+- **Server-Side Routing Fallback:** Refreshing on non-root paths currently
+  results in a 404. Requires server configuration (e.g., in `build.yaml` for dev
+  server, or production server config) to redirect all paths to `index.html`.

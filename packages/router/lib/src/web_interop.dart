@@ -15,7 +15,10 @@ extension LocationExtension on Location {
   @JS('hash')
   external set hash(String value);
 
-  // Add other location properties/methods if needed (e.g., pathname, search)
+  @JS('pathname')
+  external String get pathname; // Add pathname getter
+
+  // Add other location properties/methods if needed (e.g., search)
 }
 
 // JS interop for window object (for event listeners)
@@ -31,4 +34,62 @@ extension WindowExtension on JSObject {
   @JS('removeEventListener')
   external void removeEventListener(String type, JSFunction listener,
       [JSAny? options]);
+
+  @JS('history')
+  external History get history; // Add history getter
+
+  @JS('dispatchEvent')
+  external bool dispatchEvent(Event event); // Add dispatchEvent
+}
+
+// JS interop for window.history
+@JS()
+@staticInterop
+class History {}
+
+extension HistoryExtension on History {
+  @JS('pushState')
+  external void pushState(JSAny? data, String title, String? url);
+}
+
+// --- Custom Event Interop ---
+
+@JS()
+@staticInterop
+class Event {
+  external factory Event(String type, [EventInit? eventInitDict]);
+}
+
+@JS()
+@anonymous
+@staticInterop
+class EventInit {
+  external factory EventInit({
+    bool bubbles = false,
+    bool cancelable = false,
+    bool composed = false,
+  });
+}
+
+// If you need CustomEvent specifically (e.g., to pass detail)
+@JS('CustomEvent')
+@staticInterop
+class CustomEvent extends Event {
+  external factory CustomEvent(String type, [CustomEventInit? eventInitDict]);
+}
+
+extension CustomEventExtension on CustomEvent {
+  external JSAny? get detail;
+}
+
+@JS()
+@anonymous
+@staticInterop
+class CustomEventInit extends EventInit {
+  external factory CustomEventInit({
+    JSAny? detail, // Add detail property
+    bool bubbles = false,
+    bool cancelable = false,
+    bool composed = false,
+  });
 }
