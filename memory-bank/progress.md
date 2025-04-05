@@ -49,8 +49,8 @@
   - **DOM Abstraction:** Review and potentially expand `dust_dom`.
   - **Event Handling:** Test edge cases for listener removal. Evaluate
     `DomEvent` performance.
-  - **State Management Integration:** Improve Riverpod integration or implement
-    custom context solution.
+  - **State Management Integration:** Basic provider scoping implemented via
+    `ProviderScope`. Needs refinement (e.g., dynamic override updates).
   - **Routing System:** Implement SPA routing.
 - **Developer Experience Tooling:**
   - **Build System:** Optimize production builds.
@@ -70,7 +70,8 @@
   `dispose`, and `setState`-triggered updates are functional.
 - **Keyed Diffing Working:** `_patchChildren` handles keyed lists.
 - **Atomic CSS Builder Functional:** Generates CSS based on code analysis.
-- **Basic Riverpod Integration Present:** Needs refinement.
+- **Basic Riverpod Integration & Scoping:** Container passed via `BuildContext`.
+  `ProviderScope` component allows overriding providers in subtrees.
 - **Development Workflow:** `build_runner serve` provides Hot Restart.
 
 ## Known Issues / Challenges
@@ -78,8 +79,9 @@
 - **Renderer Optimization:** Patching logic can likely be further optimized.
 - **Renderer Edge Cases:** Handling fragments, SVG, specific attribute/property
   types needs more testing and potentially specific logic.
-- **State Management Integration:** Current Riverpod usage is basic; needs a
-  more robust framework-level solution (e.g., improved context passing).
+- **State Management Integration:** Basic scoping works. Need to handle dynamic
+  override changes in `ProviderScope.didUpdateWidget`. Consider more advanced
+  Riverpod features or custom context solutions for complex scenarios.
 - **JS Interop Performance:** Ongoing consideration, though `dust_dom` helps.
 - **WASM Debugging:** Remains a factor.
 - **Bundle Size:** Needs monitoring.

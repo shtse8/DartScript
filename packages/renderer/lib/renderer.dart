@@ -11,6 +11,7 @@ import 'package:dust_dom/dom.dart' as dom; // Import the new DOM abstraction
 import 'package:riverpod/riverpod.dart'; // Import Riverpod
 import 'package:dust_component/context.dart'; // Import BuildContext
 import 'package:dust_component/key.dart'; // Import Key and ValueKey
+import 'package:dust_component/provider_scope.dart'; // Import ProviderScope
 // --- Old JS Interop (To be removed) ---
 // @JS('document.createElement') ... etc.
 // extension JSAnyExtension on JSAny { ... }
@@ -24,18 +25,7 @@ VNode?
     _lastRenderedVNode; // Store the last rendered VNode tree (should be the root component VNode)
 // --- End Simple Renderer State ---
 
-// --- Global Provider Container (Temporary) ---
-// This is a simplification for now. Ideally, this should be managed
-// without a global variable, perhaps via context passed down the tree.
-ProviderContainer? _appProviderContainer;
-ProviderContainer get appProviderContainer {
-  if (_appProviderContainer == null) {
-    throw StateError('ProviderContainer not initialized. Call runApp first.');
-  }
-  return _appProviderContainer!;
-}
-// --- End Global Provider Container ---
-
+// Global Provider Container removed. Container is created in runApp and passed via BuildContext.
 // _createDomElement function removed. Its logic is integrated into _mountNodeAndChildren.
 
 /// Performs the rendering or re-rendering by building the VNode and patching the DOM.
@@ -187,10 +177,34 @@ void _mountComponent(dom.DomElement parentElement, VNode componentVNode,
   // 6. Patch the DOM with the rendered VNode tree
   // The rendered content will be inserted *after* the startAnchor by _patch.
   if (renderedVNode != null) {
+    // --- ProviderScope Handling ---
+    // Determine the context to pass down. If this component is a ProviderScope,
+    // use the context created within its state. Otherwise, use the inherited context.
+    BuildContext contextForChild; // Removed final
+    // Check if the component is ProviderScope and its state object exists on the VNode
+    if (component is ProviderScope && componentVNode.state != null) {
+      try {
+        // Use the public getter 'childContext'
+        contextForChild = (componentVNode.state as dynamic).childContext;
+        print('  -> Using ProviderScope child context for patching child.');
+      } catch (e) {
+        print(
+            'Error accessing childContext from ProviderScope state: $e. Falling back to inherited context.');
+        contextForChild = context; // Fallback
+      }
+    } else {
+      contextForChild = context; // Use the context passed into _mountComponent
+    }
+    // --- End ProviderScope Handling ---
+
     print(
         '  -> Patching rendered VNode into parent DOM (after start anchor)...');
-    // Pass end anchor as reference node
-    _patch(parentElement, renderedVNode, null, context,
+    // Pass end anchor as reference node and the determined context
+    _patch(
+        parentElement,
+        renderedVNode,
+        null,
+        contextForChild, // Use contextForChild
         componentVNode.endNode as dom.DomNode?);
     print('  -> Finished patching rendered VNode.');
   } else {
@@ -283,6 +297,29 @@ void _updateComponent(dom.DomElement parentElement, VNode newComponentVNode,
 
   // 6. Patch the DOM by diffing the new rendered tree against the old one, inserting before the end anchor
   if (newRenderedVNode != null || oldRenderedVNode != null) {
+    // --- ProviderScope Handling ---
+    // Determine the context to pass down. If this component is a ProviderScope,
+    // use the context created within its state. Otherwise, use the inherited context.
+    BuildContext contextForChild; // Removed final
+    final state =
+        newComponentVNode.state; // Get the state associated with the NEW VNode
+    // Check if the component is ProviderScope and its state object exists
+    if (newComponent is ProviderScope && state != null) {
+      try {
+        // Use the public getter 'childContext'
+        contextForChild = (state as dynamic).childContext;
+        print(
+            '  -> Using ProviderScope child context for patching child update.');
+      } catch (e) {
+        print(
+            'Error accessing childContext from ProviderScope state during update: $e. Falling back to inherited context.');
+        contextForChild = context; // Fallback
+      }
+    } else {
+      contextForChild = context; // Use the context passed into _updateComponent
+    }
+    // --- End ProviderScope Handling ---
+
     print(
         '  -> Patching updated rendered VNode against old rendered VNode (before end anchor)...');
     // The parent element is the one containing the anchors
@@ -295,8 +332,11 @@ void _updateComponent(dom.DomElement parentElement, VNode newComponentVNode,
           'Error: End anchor not found during component update for key ${newComponent.key}. Cannot patch.');
       // Maybe attempt full unmount/remount?
     } else {
-      // TODO: Modify _patch signature to accept referenceNode
-      _patch(parentForRenderedTree, newRenderedVNode, oldRenderedVNode, context,
+      _patch(
+          parentForRenderedTree,
+          newRenderedVNode,
+          oldRenderedVNode,
+          contextForChild, // Use contextForChild
           endAnchor); // Pass endAnchor as reference node for insertions
 
       // The component's domNode (start anchor) and endNode (end anchor) remain the same.
@@ -991,11 +1031,9 @@ void runApp(Component rootComponent, String targetElementId) {
   print('Dust runApp starting...');
 
   // 1. Create the root ProviderContainer
-  // Dispose previous container if exists (e.g., during hot restart in dev)
-  _appProviderContainer?.dispose();
+  // Dispose previous container if exists (e.g., during hot restart in dev) - Handled by framework restart now.
   final ProviderContainer container = ProviderContainer();
-  _appProviderContainer =
-      container; // Still store globally for now (needed by Consumer)
+  // Removed global assignment: _appProviderContainer = container;
   print('Dust ProviderContainer created.');
 
   // 2. Create the root BuildContext
@@ -1009,8 +1047,8 @@ void runApp(Component rootComponent, String targetElementId) {
   } catch (e, s) {
     print('Error during initial render in runApp: $e\n$s');
     // Dispose container on error during initial render
-    _appProviderContainer?.dispose();
-    _appProviderContainer = null;
+    container.dispose(); // Dispose the locally created container
+    // Removed global assignment: _appProviderContainer = null;
     rethrow; // Rethrow the error after logging
   }
   // Note: Container disposal on app unmount is not handled yet.

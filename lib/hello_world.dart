@@ -6,6 +6,11 @@ import 'package:dust_component/context.dart'; // Import BuildContext
 import 'package:dust_component/vnode.dart'; // Import VNode
 import 'package:dust_component/html.dart' as html; // Import HTML helpers
 import 'package:dust_renderer/dom_event.dart'; // Import DomEvent
+import 'package:riverpod/riverpod.dart'; // Import Riverpod
+import 'package:dust_component/consumer.dart'; // Import Consumer
+
+// Define a simple provider
+final messageProvider = Provider<String>((ref) => 'Default Message');
 
 class HelloWorld extends StatefulWidget {
   // Constructor now just passes key and props to the base class.
@@ -76,13 +81,25 @@ class _HelloWorldState extends State<HelloWorld> {
       print(' -> NOT attaching mouseover listener.');
     }
 
-    // Return VNode, using the potentially null listeners map
-    return html.h1(
-      key: widget.key, // Pass the key down if needed
-      text: 'Hello $currentDisplayName!',
-      listeners: listeners,
-      // Pass class attribute via attributes map
-      attributes: {'class': 'hello-world-heading'},
+    // Wrap the h1 in a Consumer to read the messageProvider
+    // Return a VNode representing the Consumer component
+    return VNode.component(
+      Consumer(
+        builder: (ref) {
+          final message = ref.watch(messageProvider);
+          print('  -> Message from provider: "$message"');
+          // The Consumer's builder returns the actual VNode to render
+          return html.h1(
+            // Key should ideally be on the Consumer or handled differently if needed here
+            text: '$message Hello $currentDisplayName!', // Prepend message
+            listeners: listeners,
+            // Pass class attribute via attributes map
+            attributes: {'class': 'hello-world-heading'},
+          );
+        },
+      ),
+      // Optionally pass the key to the VNode if needed for the Consumer itself
+      // key: widget.key,
     );
   }
 }

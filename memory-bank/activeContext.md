@@ -13,53 +13,48 @@
 
 ## Recent Changes
 
-- **Implemented Anchor Nodes for Components:** Refactored the renderer
-  (`_mountComponent`, `_updateComponent`, `_unmountComponent`, `_patch`,
-  `_mountNodeAndChildren`) to use comment nodes as start and end anchors for
-  components. This provides a robust way to manage the DOM range occupied by a
-  component, correctly handling cases where components render null, fragments
-  (future), or other components.
-  - Added `endNode` property to `VNode`.
-  - Added `createComment` and `nextNode` to `dust_dom`.
-- **Fixed Anchor Insertion Order:** Corrected `_mountComponent` to insert both
-  start and end anchors _before_ patching the component's rendered content,
-  resolving an `insertBefore` error where the end anchor was used as a reference
-  node before it existed in the parent.
-- **Cleaned Up Renderer Mounting Logic:** Removed the redundant
-  `_createDomElement` function from `renderer.dart` as its functionality was
-  fully covered by `_mountNodeAndChildren`. Updated comments for clarity.
-- **Fixed Initial Component Mount Bug:** Corrected the `_patch` function's logic
-  for initial renders (`oldVNode == null`). It now correctly distinguishes
-  between component VNodes (calling `_mountComponent`) and element/text VNodes
-  (calling `_mountNodeAndChildren` which recursively uses `_patch` for
-  children). This resolved the issue where state objects were lost during the
-  first component update because the component wasn't properly mounted
-  initially.
-- **Verified Listener Update/Removal:** Confirmed (using a fixed key in
-  `PropTester`) that after fixing the initial mount bug, the component update
-  logic (`_updateComponent`) is correctly triggered, and event listeners are
-  properly added/removed based on VNode changes during updates.
-- **(Previous) Added Debug Logging for Listener Removal:** Inserted detailed
-  `print` statements in `renderer.dart` (`_patch` and
-  `_removeListenersFromNode`) to track listener removal (now removed).
-- **(Previous) Refined Component Update Logic:** Modified `_updateComponent` in
-  `renderer.dart` to reuse the existing `State` object when component type and
-  key match.
-- **(Previous) Setup Props Testing:** Created `PropTester` and modified
-  `HelloWorld` to test dynamic listener updates based on prop changes.
-- **(Previous) Implemented Basic Props:** Added `props` map to `Component` and
-  updated examples.
-- **(Previous) Updated StatelessWidget API:** Changed `build` signature to
-  accept `BuildContext`.
-- **(Previous) Optimized Event Listener Updates:** Added `dartCallbackRefs` and
-  `identical()` check in `_patch`.
-- **(Previous) Improved Renderer Robustness:** Added null checks.
+- **Implemented Basic Provider Scoping:**
+  - Created `ProviderScope` component
+    (`packages/component/lib/provider_scope.dart`) which creates a new
+    `ProviderContainer` with optional overrides, inheriting from the parent
+    container accessed via `BuildContext`.
+  - Added a public `childContext` getter to `_ProviderScopeState` for the
+    renderer.
+  - Modified renderer (`_mountComponent`, `_updateComponent`) to detect
+    `ProviderScope` components and use their `childContext` when patching their
+    child VNode, effectively passing the scoped container down.
+  - Updated `HelloWorld` demo to use a `Consumer` and define a
+    `messageProvider`.
+  - Updated `web/main.dart` to wrap the root app in a `ProviderScope` that
+    overrides `messageProvider`, successfully demonstrating the scoping
+    mechanism.
+- **(Previous) Removed Global ProviderContainer:** Modified `renderer.dart` to
+  remove the global `_appProviderContainer`. The container is now created
+  locally within `runApp` and passed down solely via `BuildContext`. Verified
+  that `Consumer` widget correctly accesses the container via
+  `context.container`.
+- **(Previous) Implemented Anchor Nodes for Components:** Refactored the
+  renderer (`_mountComponent`, `_updateComponent`, `_unmountComponent`,
+  `_patch`, `_mountNodeAndChildren`) to use comment nodes as start and end
+  anchors for components.
+- **(Previous) Fixed Anchor Insertion Order:** Corrected `_mountComponent`.
+- **(Previous) Cleaned Up Renderer Mounting Logic:** Removed redundant
+  `_createDomElement`.
+- **(Previous) Fixed Initial Component Mount Bug:** Corrected `_patch` logic for
+  initial renders.
+- **(Previous) Verified Listener Update/Removal:** Confirmed listener
+  management.
+- **(Previous) Refined Component Update Logic:** Reuses `State` object.
+- **(Previous) Setup Props Testing & Implemented Basic Props.**
+- **(Previous) Updated StatelessWidget API.**
+- **(Previous) Optimized Event Listener Updates.**
+- **(Previous) Improved Renderer Robustness.**
 - **(Previous) Refactored Atomic CSS Aggregation & Rules.**
-- **(Previous) Implemented Basic Component Lifecycle Management in Renderer.**
-- **(Previous) Implemented Atomic CSS Generation (Build-Time).**
+- **(Previous) Implemented Basic Component Lifecycle Management.**
+- **(Previous) Implemented Atomic CSS Generation.**
 - **(Previous) Introduced Basic BuildContext.**
 - **(Previous) Completed Renderer DOM Abstraction.**
-- **(Previous) Integrated Riverpod (Basic).**
+- **(Previous) Integrated Riverpod (Basic - now improved with scoping).**
 - **(Previous) Introduced HTML Helper Functions.**
 - **(Previous) Refined Application Entry Point (`runApp`).**
 - **(Previous) Setup `build_runner` Dev Server.**
@@ -71,24 +66,26 @@
 
 ## Next Steps
 
-- **Improve State Management:** Refactor Riverpod integration or implement a
-  custom context solution.
 - **Start Routing Implementation.**
+- **Refine ProviderScope:** Handle dynamic override changes in
+  `didUpdateWidget`.
 - **Expand Atomic CSS Rules & Features.**
+- **Further Renderer Optimizations & Edge Case Handling.**
 
 ## Active Decisions & Considerations
 
-- **Initial Render Logic:** `_patch` now correctly uses `_mountComponent` for
-  components and `_mountNodeAndChildren` (which internally uses `_patch`) for
-  elements/text when `oldVNode` is null.
-- **Component Update Logic:** `_updateComponent` reuses `State` when keys match.
-  State is correctly passed between VNodes during updates.
-- **Listener Management:** `identical()` check optimizes updates. Recursive
-  removal in `removeVNode` ensures cleanup.
-- **Component DOM Anchoring:** Components are now anchored in the DOM using
-  start and end comment nodes (`<!-- component-start -->`,
-  `<!-- component-end -->`). The component's VNode `domNode` refers to the start
-  anchor, and `endNode` refers to the end anchor. Patching and unmounting
-  operations use these anchors to manage the component's rendered content range.
-- **(Previous decisions still apply regarding Riverpod, Component Syntax,
-  `runApp`, `build_runner`, `dust_dom`, `DomEvent`, etc.)**
+- **Provider Scoping:** Implemented via `ProviderScope` component and renderer
+  modification. Renderer checks for `ProviderScope` and passes its internally
+  created `BuildContext` (with the scoped/overridden container) to its child
+  during mount/update. Access to the child context from the state uses a public
+  getter (`childContext`) due to dynamic access limitations on private members.
+- **Initial Render Logic:** `_patch` correctly uses `_mountComponent` or
+  `_mountNodeAndChildren`.
+- **Component Update Logic:** `_updateComponent` reuses `State`.
+- **Listener Management:** `identical()` check optimizes updates; recursive
+  removal.
+- **Component DOM Anchoring:** Uses comment nodes.
+- **ProviderContainer Scope:** Root container created in `runApp`, passed via
+  root `BuildContext`. No global container.
+- **(Previous decisions still apply regarding Component Syntax, `runApp`,
+  `build_runner`, `dust_dom`, `DomEvent`, etc.)**
