@@ -36,54 +36,7 @@ ProviderContainer get appProviderContainer {
 }
 // --- End Global Provider Container ---
 
-/// Recursively creates a DOM element (or text node) from a VNode.
-/// NOTE: This function ONLY creates the immediate node and its attributes/listeners.
-/// It does NOT handle children recursively in a way that mounts components correctly.
-/// Use _mountNodeAndChildren for initial mounting.
-dom.DomNode _createDomElement(VNode vnode) {
-  // Return DomNode (base for Element/Text)
-  // 1. Handle Text Nodes
-  if (vnode.tag == null) {
-    // Assume it's a text node if tag is null
-    // createTextNode is available in dust_dom
-    final dom.DomNode domNode = dom.document
-        .createTextNode(vnode.text ?? ''); // Pass Dart String directly
-    vnode.domNode = domNode; // Store reference (now DomNode)
-    return domNode;
-  }
-
-  // 2. Handle Element Nodes
-  final dom.DomElement element = dom.createElement(vnode.tag!);
-
-  // 3. Set Attributes
-  if (vnode.attributes != null) {
-    vnode.attributes!.forEach((name, value) {
-      element.setAttribute(name, value); // Use DomElement extension
-      // print('Set attribute $name="$value" on <${vnode.tag}>'); // Keep logs less verbose
-    });
-  }
-// 4. Attach Event Listeners
-  if (vnode.listeners != null) {
-    vnode.listeners!.forEach((eventName, callback) {
-      // Create a JS function that wraps the Dart callback and passes a DomEvent
-      final jsFunction = ((JSAny jsEvent) {
-        callback(DomEvent(jsEvent));
-      }).toJS;
-      // Use the addEventListener from DomElementExtension
-      element.addEventListener(eventName, jsFunction);
-      print('Added listener for "$eventName" on <${vnode.tag}>');
-      // Store the JSFunction reference on the VNode for later removal
-      (vnode.jsFunctionRefs ??= {})[eventName] = jsFunction;
-      // Store the original Dart callback as well
-      (vnode.dartCallbackRefs ??= {})[eventName] = callback;
-    });
-  }
-
-  // 5. Children are NOT handled here for initial mount. _mountNodeAndChildren does that.
-
-  vnode.domNode = element; // Store reference (now DomElement)
-  return element;
-}
+// _createDomElement function removed. Its logic is integrated into _mountNodeAndChildren.
 
 /// Performs the rendering or re-rendering by building the VNode and patching the DOM.
 /// This function is primarily used for stateful component updates triggered by setState.
@@ -416,10 +369,13 @@ void _unmountComponent(VNode componentVNode) {
   print('Finished unmounting component: ${component.runtimeType}');
 }
 
-// New helper function specifically for initial mounting of elements/text and their children
+/// Mounts a new element or text VNode and its children into the DOM.
+/// This is called by _patch during initial render (`oldVNode == null`) for non-component nodes.
+/// It creates the immediate DOM node, sets attributes/listeners, recursively mounts children
+/// using _patch, and appends the result to the parent element.
 void _mountNodeAndChildren(
     dom.DomElement parentElement, VNode vnode, BuildContext context) {
-  // 1. Create the current node (element or text)
+  // 1. Create the current DOM node (element or text)
   final dom.DomNode currentNode;
   if (vnode.tag == null) {
     // Text node

@@ -13,12 +13,15 @@
 
 ## Recent Changes
 
+- **Cleaned Up Renderer Mounting Logic:** Removed the redundant
+  `_createDomElement` function from `renderer.dart` as its functionality was
+  fully covered by `_mountNodeAndChildren`. Updated comments for clarity.
 - **Fixed Initial Component Mount Bug:** Corrected the `_patch` function's logic
   for initial renders (`oldVNode == null`). It now correctly distinguishes
   between component VNodes (calling `_mountComponent`) and element/text VNodes
-  (calling a new `_mountNodeAndChildren` helper which recursively uses `_patch`
-  for children). This resolved the issue where state objects were lost during
-  the first component update because the component wasn't properly mounted
+  (calling `_mountNodeAndChildren` which recursively uses `_patch` for
+  children). This resolved the issue where state objects were lost during the
+  first component update because the component wasn't properly mounted
   initially.
 - **Verified Listener Update/Removal:** Confirmed (using a fixed key in
   `PropTester`) that after fixing the initial mount bug, the component update
@@ -56,12 +59,11 @@
 
 ## Next Steps
 
-- **Refine `_mountNodeAndChildren` / `_createDomElement`:** Ensure
-  `_createDomElement` is only used for creating the immediate node and
-  `_mountNodeAndChildren` correctly handles recursive mounting via `_patch`.
-- **Address Renderer Simplifications:** Review areas marked `// Simplification!`
-  (like `componentVNode.domNode = renderedVNode.domNode;` in `_mountComponent`)
-  and implement more robust handling (e.g., for fragments).
+- **Address Renderer `domNode` Simplification:** Review the assignment
+  `componentVNode.domNode = renderedVNode.domNode;` (marked as
+  `// Simplification!`) in `_mountComponent` and `_updateComponent`. Implement
+  more robust handling for cases where components render null, fragments, or
+  other components directly.
 - **Improve State Management:** Refactor Riverpod integration or implement a
   custom context solution.
 - **Start Routing Implementation.**
@@ -76,5 +78,10 @@
   State is correctly passed between VNodes during updates.
 - **Listener Management:** `identical()` check optimizes updates. Recursive
   removal in `removeVNode` ensures cleanup.
+- **Renderer `domNode` Association:** Acknowledged that the current method of
+  associating a component's VNode `domNode` with its rendered output's `domNode`
+  (`componentVNode.domNode = renderedVNode.domNode;`) is a simplification and
+  doesn't handle fragments or null renders correctly. This needs future
+  refinement.
 - **(Previous decisions still apply regarding Riverpod, Component Syntax,
   `runApp`, `build_runner`, `dust_dom`, `DomEvent`, etc.)**

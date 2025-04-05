@@ -11,6 +11,8 @@
   `StatefulWidget`. `VNode` structure updated. HTML helpers available.
 - **Renderer (Component Lifecycle + Keyed Diffing + Event Handling):**
   - `runApp` entry point.
+  - **Cleaned Up Mounting Logic:** Removed redundant `_createDomElement`
+    function.
   - **Corrected Initial Component Mount:** `_patch` now correctly uses
     `_mountComponent` or `_mountNodeAndChildren` during initial render
     (`oldVNode == null`), ensuring components are properly mounted and state is
@@ -77,5 +79,7 @@
 - **WASM Debugging:** Remains a factor.
 - **Bundle Size:** Needs monitoring.
 - **Hot Reload Implementation:** Significant challenge remains.
-- **Renderer Simplifications:** Areas marked `// Simplification!` need review
-  (e.g., `componentVNode.domNode` association).
+- **Renderer `domNode` Association Simplification:** The current method
+  (`componentVNode.domNode = renderedVNode.domNode;`) doesn't correctly handle
+  fragments or components rendering null/other components. Needs future
+  refinement.
