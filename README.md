@@ -67,8 +67,56 @@ Dust aims to provide a comprehensive feature set for modern web development:
     the `packages/atomic_styles/lib/src/rules/` directory.
   - **(Resolved):** Aggregation logic now correctly processes classes from all
     source files using a standard `Builder`.
-- _Upcoming:_ Routing, Advanced State Management, Build Tools, Hot Reload, and
-  more!
+- **Routing:** Basic client-side routing using the History API (parameter
+  parsing and basic nesting supported).
+- _Upcoming:_ Advanced State Management, Build Tools, Hot Reload, and more!
+
+## Framework Comparison
+
+This table provides a high-level comparison between Dust and other popular
+web/UI frameworks.
+
+| Feature          | Flutter                     | Vue                         | React                         | Angular                         | Dust (Current)                           |
+| :--------------- | :-------------------------- | :-------------------------- | :---------------------------- | :------------------------------ | :--------------------------------------- |
+| **Language**     | Dart                        | JS/TS                       | JS/TS                         | TS                              | Dart                                     |
+| **Paradigm**     | Component-based             | Component-based (MVVM-like) | Component-based               | Component-based (Opinionated)   | Component-based                          |
+| **Rendering**    | Skia Canvas / HTML Renderer | Virtual DOM                 | Virtual DOM                   | Incremental DOM (?)             | Virtual DOM (Keyed Diffing)              |
+| **Build Target** | Mobile, Web, Desktop        | Web                         | Web (Native via RN)           | Web                             | Web (WASM)                               |
+| **State Mgmt**   | Built-in + Libraries        | Built-in (Pinia) + Libs     | Libraries (Context API)       | Built-in (Services/RxJS) + Libs | Built-in (`setState`) + Riverpod (Basic) |
+| **Routing**      | Built-in                    | Built-in                    | Libraries (React Router)      | Built-in                        | Basic History API (Built-in)             |
+| **Styling**      | Widget Styling              | Scoped CSS, Modules, Util   | CSS, CSS-in-JS, Modules, Util | Scoped CSS, Modules             | CSS + Atomic CSS (Build)                 |
+| **JS Interop**   | Good (Web)                  | Excellent                   | Excellent                     | Excellent                       | Good (`dart:js_interop`)                 |
+| **Tooling**      | Excellent (Hot Reload)      | Excellent (Hot Reload)      | Excellent (Hot Reload)        | Excellent (Hot Reload)          | Basic (`build_runner`, Hot Restart)      |
+| **Ecosystem**    | Mature                      | Mature                      | Very Mature                   | Mature                          | Nascent                                  |
+
+### Current Gaps (Compared to Mature Frameworks)
+
+While Dust is progressing rapidly, it currently lacks several features common in
+mature frameworks:
+
+- **Advanced Routing:** Route guards, lazy loading, complex nested layouts,
+  advanced programmatic navigation APIs.
+- **Mature State Management:** Deeper framework integration, dedicated DevTools
+  support.
+- **Forms Handling:** Robust libraries/utilities for validation, complex data
+  binding, and submission management.
+- **Animation System:** Dedicated tools or libraries for creating complex UI
+  animations and transitions.
+- **Server-Side Rendering (SSR) / Static Site Generation (SSG):** Capabilities
+  for improved initial load performance and SEO.
+- **Testing Utilities:** Comprehensive framework-specific libraries for unit,
+  integration, and end-to-end testing.
+- **Internationalization (i18n):** Standardized libraries or patterns for
+  supporting multiple languages.
+- **Accessibility (a11y):** Built-in helpers, components, or strong patterns to
+  ensure accessible applications.
+- **True Hot Reload:** Currently offers Hot Restart via `build_runner`.
+- **Dedicated DevTools:** Browser extensions for inspecting the component tree,
+  state, and performance profiling specific to the framework.
+- **Ecosystem & Community:** Extensive third-party libraries, established best
+  practices, tutorials, and a large community for support.
+- **Comprehensive Documentation:** Needs significant expansion covering all
+  features, APIs, and best practices with more examples.
 
 ## Getting Started
 

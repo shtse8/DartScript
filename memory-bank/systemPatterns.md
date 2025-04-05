@@ -1,3 +1,5 @@
+<!-- Version: 1.0 | Last Updated: 2025-05-04 | Updated By: Cline -->
+
 # Dust System Patterns
 
 ## Core Framework Architecture

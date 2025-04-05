@@ -1,3 +1,5 @@
+<!-- Version: 1.0 | Last Updated: 2025-05-04 | Updated By: Cline -->
+
 # Dust Active Context
 
 ## Current Focus
@@ -15,6 +17,9 @@
   access.
 
 ## Recent Changes
+
+- **Updated README:** Added a framework comparison table (Flutter, Vue, React,
+  Angular, Dust) and a list of current gaps compared to mature frameworks.
 
 - **Optimized Renderer Attribute Patching:** Added an `identical` check in the
   `_patch` function to skip attribute updates if the old and new attribute maps

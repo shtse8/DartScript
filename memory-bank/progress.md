@@ -1,8 +1,11 @@
+<!-- Version: 1.0 | Last Updated: 2025-05-04 | Updated By: Cline -->
+
 # Dust Progress
 
 ## What Works (Foundational Elements & Basic Update PoC)
 
 - **Memory Bank Established:** Core documentation structure created and updated.
+- **README Documentation:** Added framework comparison and gap analysis.
 - **Core WASM Capabilities Proven (PoC).**
 - **DOM Abstraction Layer (`dust_dom`).**
 - **WASM Loading Mechanism (`build_runner` generated).**
@@ -70,7 +73,8 @@
   - **Build System:** Optimize production builds.
   - **Development Server:** Implement hot reload (currently Hot Restart).
   - **Atomic CSS:** Add features like theming, responsive prefixes.
-- **Documentation & Examples:** Expand significantly.
+- **Documentation & Examples:** Expand significantly (README updated, but more
+  needed).
 
 ## Current Status
 
