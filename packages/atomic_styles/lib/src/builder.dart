@@ -1,11 +1,8 @@
 import 'dart:async';
 import 'package:build/build.dart';
-import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
-
-import 'rules.dart'; // Import the rules and generator
 
 class AtomicStyleBuilder implements Builder {
   // No static state needed anymore

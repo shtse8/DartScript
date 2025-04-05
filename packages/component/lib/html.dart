@@ -2,7 +2,6 @@
 // Provides helper functions for creating VNodes with an HTML-like syntax.
 
 import 'component.dart'; // Import Component
-import 'vnode.dart';
 import 'package:dust_renderer/dom_event.dart'; // For listener type
 
 // Common type alias for attributes and listeners

@@ -4,8 +4,6 @@
 // Import components and providers
 import 'package:dust_app/hello_world.dart'; // Import HelloWorld and messageProvider
 import 'package:dust_app/prop_tester.dart'; // Import PropTester
-import 'package:dust_component/provider_scope.dart'; // Import ProviderScope
-import 'package:riverpod/riverpod.dart'; // Import riverpod for Override
 import 'package:dust_component/component.dart'; // Correct import path for core components
 import 'package:dust_component/html.dart' as html; // Import html helpers
 import 'package:dust_router/dust_router.dart'; // Import the router

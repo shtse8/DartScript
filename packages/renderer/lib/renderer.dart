@@ -1,17 +1,11 @@
 // packages/renderer/lib/renderer.dart
 
 import 'package:dust_component/component.dart';
-import 'package:dust_component/stateful_component.dart';
-import 'package:dust_component/state.dart';
 import 'dart:js_interop'; // Still needed for JSFunction, JSAny etc. in callbacks for now
-import 'package:dust_component/stateless_component.dart'; // Import StatelessWidget
-import 'package:dust_component/vnode.dart'; // Import VNode
 import 'dom_event.dart'; // Import DomEvent wrapper
 import 'package:dust_dom/dom.dart' as dom; // Import the new DOM abstraction
 import 'package:riverpod/riverpod.dart'; // Import Riverpod
 // import 'package:dust_component/context.dart'; // Removed, BuildContext is now exported by component.dart
-import 'package:dust_component/key.dart'; // Import Key and ValueKey
-import 'package:dust_component/provider_scope.dart'; // Import ProviderScope
 // --- Old JS Interop (To be removed) ---
 // @JS('document.createElement') ... etc.
 // extension JSAnyExtension on JSAny { ... }
@@ -21,8 +15,6 @@ import 'package:dust_component/provider_scope.dart'; // Import ProviderScope
 // Store the state and target element for updates (very basic)
 // State? _mountedState; // This seems unused now with _renderInternal handling root component VNode
 dom.DomElement? _targetElement; // Use DomElement from dust_dom
-VNode?
-    _lastRenderedVNode; // Store the last rendered VNode tree (should be the root component VNode)
 // --- End Simple Renderer State ---
 
 // Global Provider Container removed. Container is created in runApp and passed via BuildContext.
@@ -31,44 +23,6 @@ VNode?
 /// Performs the rendering or re-rendering by building the VNode and patching the DOM.
 /// This function is primarily used for stateful component updates triggered by setState.
 /// The initial render is handled by runApp -> _renderInternal -> _patch.
-void _performRender(
-    State componentState, dom.DomElement targetElement, BuildContext context) {
-  // This function seems less relevant now that _patch handles updates triggered by setState via the requester.
-  // Keeping it for now, but its role might need re-evaluation.
-  // It assumes the targetElement is the direct parent, which might not be true if the stateful component
-  // isn't the root. The updateRequester callback in _mountComponent is likely the correct path now.
-  print(
-      'Performing render/update (via _performRender - check if still needed)...');
-  try {
-    // 1. Build the new VNode tree
-    final VNode newRootVNode = componentState.build();
-    print('State build returned VNode: [${newRootVNode.tag ?? 'text'}]');
-
-    // 2. Patch the DOM based on the new and old VNode trees
-    // We need the *actual* parent of the component's rendered output, not necessarily the root targetElement.
-    // And we need the *component's* last rendered VNode, not the global _lastRenderedVNode.
-    // This highlights that the update logic should likely live within the component's context (via the requester).
-    // For now, let's assume this is only called for the root stateful component for simplicity.
-    _patch(
-        targetElement,
-        newRootVNode,
-        _lastRenderedVNode, // Using global _lastRenderedVNode is likely wrong here
-        context); // Pass context
-
-    // 3. Store the newly rendered VNode tree for the next comparison
-    _lastRenderedVNode =
-        newRootVNode; // Storing globally is likely wrong here too
-  } catch (e, s) {
-    print('Error during _performRender: $e\n$s');
-    // Attempt to display error in the target element
-    try {
-      targetElement.textContent =
-          'Render Error: $e'; // Use DomElement extension
-    } catch (_) {
-      // Ignore if setting textContent also fails
-    }
-  }
-}
 
 /// Patches the DOM to reflect the difference between the new and old VNode trees.
 // Forward declaration for helper functions (implementation will be added later)
@@ -133,7 +87,7 @@ void _mountComponent(dom.DomElement parentElement, VNode componentVNode,
       componentVNode.renderedVNode = newRenderedVNode;
       // The component's own domNode reference should point to the root of its rendered output
       componentVNode.domNode =
-          newRenderedVNode?.domNode; // Update domNode reference
+          newRenderedVNode.domNode; // Update domNode reference
       print('  -> Update finished for ${component.runtimeType}.');
     });
 
@@ -144,7 +98,7 @@ void _mountComponent(dom.DomElement parentElement, VNode componentVNode,
     // 4. Build initial VNode tree
     renderedVNode = state.build();
     print(
-        '  -> Initial build returned VNode: ${renderedVNode?.tag ?? renderedVNode?.component?.runtimeType ?? 'text'}');
+        '  -> Initial build returned VNode: ${renderedVNode.tag ?? renderedVNode.component?.runtimeType ?? 'text'}');
   } else if (component is StatelessWidget) {
     print('  -> StatelessWidget detected');
     // Build VNode tree
@@ -278,7 +232,7 @@ void _updateComponent(dom.DomElement parentElement, VNode newComponentVNode,
     // 4. Build the new VNode tree
     newRenderedVNode = state.build();
     print(
-        '  -> Updated build returned VNode: ${newRenderedVNode?.tag ?? newRenderedVNode?.component?.runtimeType ?? 'text'}');
+        '  -> Updated build returned VNode: ${newRenderedVNode.tag ?? newRenderedVNode.component?.runtimeType ?? 'text'}');
   } else if (newComponent is StatelessWidget) {
     print('  -> StatelessWidget update');
     // Build the new VNode tree
@@ -858,7 +812,7 @@ void _patchChildren(dom.DomElement parentDomNode, List<VNode>? oldChOriginal,
     } else if (isSameVNode(oldStartVNode, newStartVNode)) {
       // Same start nodes
       print(
-          '>>> _patchChildren [Case 1: Same Start]: Patching key ${newStartVNode?.key}');
+          '>>> _patchChildren [Case 1: Same Start]: Patching key ${newStartVNode.key}');
       // --- DEBUG REMOVED ---
       // Patch existing node, no reference node needed for the patch itself
       _patch(parentDomNode, newStartVNode, oldStartVNode, context, null);
@@ -867,7 +821,7 @@ void _patchChildren(dom.DomElement parentDomNode, List<VNode>? oldChOriginal,
     } else if (isSameVNode(oldEndVNode, newEndVNode)) {
       // Same end nodes
       print(
-          '>>> _patchChildren [Case 2: Same End]: Patching key ${newEndVNode?.key}');
+          '>>> _patchChildren [Case 2: Same End]: Patching key ${newEndVNode.key}');
       // Patch existing node, no reference node needed
       _patch(parentDomNode, newEndVNode, oldEndVNode, context, null);
       oldEndVNode = --oldEndIdx >= oldStartIdx ? oldCh[oldEndIdx] : null;
@@ -875,7 +829,7 @@ void _patchChildren(dom.DomElement parentDomNode, List<VNode>? oldChOriginal,
     } else if (isSameVNode(oldStartVNode, newEndVNode)) {
       // Node moved right
       print(
-          '>>> _patchChildren [Case 3: Moved Right]: Patching key ${newEndVNode?.key}, moving DOM node');
+          '>>> _patchChildren [Case 3: Moved Right]: Patching key ${newEndVNode.key}, moving DOM node');
       // Patch existing node before move, no reference node needed
       _patch(parentDomNode, newEndVNode, oldStartVNode, context, null);
       _domInsertBefore(
@@ -887,7 +841,7 @@ void _patchChildren(dom.DomElement parentDomNode, List<VNode>? oldChOriginal,
     } else if (isSameVNode(oldEndVNode, newStartVNode)) {
       // Node moved left
       print(
-          '>>> _patchChildren [Case 4: Moved Left]: Patching key ${newStartVNode?.key}, moving DOM node');
+          '>>> _patchChildren [Case 4: Moved Left]: Patching key ${newStartVNode.key}, moving DOM node');
       // Patch existing node before move, no reference node needed
       _patch(parentDomNode, newStartVNode, oldEndVNode, context, null);
       _domInsertBefore(
@@ -904,19 +858,19 @@ void _patchChildren(dom.DomElement parentDomNode, List<VNode>? oldChOriginal,
       };
 
       final idxInOld =
-          newStartVNode?.key == null ? null : oldKeyToIdx[newStartVNode!.key!];
+          newStartVNode.key == null ? null : oldKeyToIdx[newStartVNode.key!];
 
       if (idxInOld == null) {
         // New node, create and insert
         // New node, patch it into the DOM (oldVNode is null)
         print(
-            '>>> _patchChildren [Case 5a: New Node]: Patching new node with key ${newStartVNode?.key}');
+            '>>> _patchChildren [Case 5a: New Node]: Patching new node with key ${newStartVNode.key}');
         // Call _patch recursively, which will handle mounting components or creating elements
         // Mount new node, pass the calculated reference node
         _patch(parentDomNode, newStartVNode, null, context,
             getDomNodeBefore(newStartIdx));
         // Get the newly created/mounted DOM node from the VNode after patching
-        final newDomNode = newStartVNode?.domNode;
+        final newDomNode = newStartVNode.domNode;
         if (newDomNode is dom.DomNode) {
           _domInsertBefore(newDomNode, getDomNodeBefore(newStartIdx));
         } else {
@@ -925,14 +879,14 @@ void _patchChildren(dom.DomElement parentDomNode, List<VNode>? oldChOriginal,
       } else {
         // Found old node with same key, patch and move
         print(
-            '>>> _patchChildren [Case 5b: Found Key]: Patching key ${newStartVNode?.key}, moving DOM node');
+            '>>> _patchChildren [Case 5b: Found Key]: Patching key ${newStartVNode.key}, moving DOM node');
         final vnodeToMove = oldCh[idxInOld];
         if (vnodeToMove == null) {
           print(
-              'Error: Found null VNode in oldChildren at index $idxInOld for key ${newStartVNode?.key}. This might indicate a duplicate key or logic error.');
+              'Error: Found null VNode in oldChildren at index $idxInOld for key ${newStartVNode.key}. This might indicate a duplicate key or logic error.');
         } else {
           // Patch existing node before move, no reference node needed
-          _patch(parentDomNode, newStartVNode!, vnodeToMove, context, null);
+          _patch(parentDomNode, newStartVNode, vnodeToMove, context, null);
           _domInsertBefore(
               vnodeToMove.domNode as dom.DomNode, // Pass DomNode
               getDomNodeBefore(newStartIdx)); // Returns DomNode?
@@ -1012,7 +966,7 @@ void _renderInternal(
   _patch(_targetElement!, rootComponentVNode, null, context, null);
 
   // 4. Store the root component VNode as the last rendered tree
-  _lastRenderedVNode = rootComponentVNode;
+  // _lastRenderedVNode = rootComponentVNode; // No longer needed
 
   // --- Old Logic (Removed) ---
   // if (component is StatefulWidget) { ... } else if (component is StatelessWidget) { ... }

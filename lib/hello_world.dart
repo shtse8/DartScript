@@ -1,14 +1,11 @@
 // lib/hello_world.dart
 
 import 'package:dust_component/component.dart'; // Import base Component, Props, etc.
-import 'package:dust_component/stateful_component.dart'; // Change to StatefulWidget
 import 'package:dust_component/state.dart'; // Import State
 // import 'package:dust_component/context.dart'; // Remove this, context comes from component.dart
-import 'package:dust_component/vnode.dart'; // Import VNode
 import 'package:dust_component/html.dart' as html; // Import HTML helpers
 import 'package:dust_renderer/dom_event.dart'; // Import DomEvent
 import 'package:riverpod/riverpod.dart'; // Import Riverpod
-import 'package:dust_component/consumer.dart'; // Import Consumer
 
 // Define a simple provider
 final messageProvider = Provider<String>((ref) => 'Default Message');

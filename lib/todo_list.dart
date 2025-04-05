@@ -1,8 +1,5 @@
 import 'package:dust_component/component.dart';
-import 'package:dust_component/stateful_component.dart';
 import 'package:dust_component/state.dart';
-import 'package:dust_component/vnode.dart';
-import 'package:dust_component/html.dart'; // Import HTML helpers
 import 'dart:math'; // For random keys initially
 import 'dart:async'; // For Future.delayed
 import 'package:dust_renderer/dom_event.dart'; // Import DomEvent
@@ -39,49 +36,6 @@ class _TodoListState extends State<TodoListComponent> {
   void dispose() {
     _testTimer?.cancel(); // Cancel timer when component is disposed
     super.dispose();
-  }
-
-  void _scheduleTestUpdates() {
-    int step = 0;
-    _testTimer = Timer.periodic(Duration(seconds: 4), (timer) {
-      step++;
-      print("--- Automatic Test Update: Step $step ---");
-      switch (step) {
-        case 1:
-          print("Triggering Shuffle...");
-          _shuffleItems();
-          break;
-        case 2:
-          print("Triggering Add...");
-          _addItem("New Item Added @ ${DateTime.now().second}s");
-          break;
-        case 3:
-          if (_items.isNotEmpty) {
-            final idToRemove = _items[_random.nextInt(_items.length)].id;
-            print("Triggering Remove (ID: $idToRemove)...");
-            _removeItem(idToRemove);
-          } else {
-            print("Skipping Remove (list empty)");
-          }
-          break;
-        case 4:
-          print("Triggering Shuffle again...");
-          _shuffleItems();
-          break;
-        case 5:
-          if (_items.isNotEmpty) {
-            final idToToggle = _items[_random.nextInt(_items.length)].id;
-            print("Triggering Toggle (ID: $idToToggle)...");
-            _toggleItem(idToToggle);
-          } else {
-            print("Skipping Toggle (list empty)");
-          }
-          break;
-        default:
-          print("Test sequence finished.");
-          timer.cancel();
-      }
-    });
   }
 
   void _addItem(String text) {

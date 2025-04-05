@@ -1,5 +1,4 @@
 // packages/atomic_styles/lib/src/rules.dart
-import 'constants.dart';
 // Import rule files
 import 'rules/spacing.dart';
 import 'rules/layout.dart';

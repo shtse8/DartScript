@@ -9,10 +9,8 @@ final Map<RegExp, String? Function(List<String> matches)>
       (matches) {
     final property = matches[0]; // Can be null for default 'transition'
     // Default timing and function, can be customized later
-    // Ensure property is 'all' if null or empty after match
-    final validProperty = (property == null ||
-            property.isEmpty ||
-            property == 'all')
+    // Ensure property is 'all' if empty after match
+    final validProperty = (property.isEmpty || property == 'all')
         ? 'color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter' // Tailwind's default 'all'
         : property == 'none'
             ? 'none'

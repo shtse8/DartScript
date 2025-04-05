@@ -25,9 +25,9 @@ final Map<RegExp, String? Function(List<String> matches)> borderRules = {
   // Sets width, default style (solid), and default color (currentColor)
   RegExp(r'^border(?:-([0-9]+))?$'): (matches) {
     final valueKey = matches[0]; // Can be null for just 'border'
-    final width = (valueKey == null || valueKey.isEmpty)
+    final width = valueKey.isEmpty
         ? '1px'
-        : '${valueKey}px'; // Default to 1px explicitly
+        : '${valueKey}px'; // Default to 1px if valueKey is empty
     // Apply default border style and color. Color can be overridden by border-{color}.
     return 'border-width: $width; border-style: solid; border-color: currentColor;';
   },

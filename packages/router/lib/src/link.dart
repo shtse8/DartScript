@@ -1,7 +1,6 @@
 import 'package:dust_component/component.dart'; // Correct import path
 import 'package:dust_component/html.dart' as html; // For html helpers like a()
 import 'package:dust_renderer/dom_event.dart'; // Correct import for DomEvent
-import 'dart:js_interop'; // Import for JS interop
 // import 'dart:html' as browser_html; // Avoid dart:html
 import 'web_interop.dart'; // Import shared interop definitions
 

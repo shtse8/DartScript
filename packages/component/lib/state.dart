@@ -1,7 +1,5 @@
 // packages/component/lib/state.dart
 import 'component.dart'; // Import BuildContext, StatefulWidget
-import 'stateful_component.dart';
-import 'vnode.dart'; // Import the VNode definition
 // import 'context.dart'; // Removed, BuildContext is now exported by component.dart
 
 /// Callback signature for requesting a component update.

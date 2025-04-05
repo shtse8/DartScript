@@ -3,8 +3,6 @@ import 'package:riverpod/riverpod.dart';
 
 import 'component.dart';
 import 'state.dart';
-import 'stateful_component.dart';
-import 'vnode.dart';
 
 // Type definition for the builder function
 typedef ConsumerBuilder = VNode Function(WidgetRef ref);
@@ -162,7 +160,6 @@ class WidgetRef implements Ref {
     return _container.refresh(provider);
   }
 
-  @override
   Future<T> future<T>(FutureProvider<T> provider) {
     if (_disposed) {
       throw StateError('WidgetRef accessed after dispose.');
@@ -173,7 +170,6 @@ class WidgetRef implements Ref {
   // --- Methods from Ref not typically used by WidgetRef ---
   // Implement them by throwing UnimplementedError for now.
 
-  @override
   T notifier<T extends dynamic>(
       // Use dynamic as base type if NotifierBase is unavailable
       ProviderBase<T> provider) {
@@ -204,11 +200,9 @@ class WidgetRef implements Ref {
     throw UnimplementedError('listenSelf cannot be called on a WidgetRef');
   }
 
-  @override
   bool get mounted => !_disposed;
 
   // Implement the missing 'container' getter
-  @override
   ProviderContainer get container => _container;
 
   @override

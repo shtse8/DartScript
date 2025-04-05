@@ -1,7 +1,6 @@
 // packages/component/lib/stateless_component.dart
 import 'component.dart';
 // import 'context.dart'; // Removed, BuildContext is now exported by component.dart
-import 'vnode.dart'; // Import VNode for return type
 
 /// A component that does not have mutable state.
 ///
@@ -26,7 +25,6 @@ abstract class StatelessWidget<P extends Props?> extends Component {
   /// in a given context and when the dependencies of this component change.
   ///
   /// This method should not have any side effects beyond building its UI representation.
-  @override
   VNode? build(
       BuildContext
           context); // The implementation will be provided by subclasses.

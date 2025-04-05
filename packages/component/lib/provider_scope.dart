@@ -4,8 +4,6 @@ import 'package:riverpod/riverpod.dart';
 import 'component.dart';
 // import 'context.dart'; // Removed, BuildContext is now exported by component.dart
 import 'state.dart';
-import 'stateful_component.dart';
-import 'vnode.dart';
 
 // Props for the ProviderScope component
 class ProviderScopeProps implements Props {

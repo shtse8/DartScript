@@ -2,9 +2,7 @@
 import 'dart:async';
 import 'package:riverpod/riverpod.dart';
 import 'package:dust_component/component.dart'; // Import base Component and Props
-import 'package:dust_component/stateful_component.dart'; // Use StatefulWidget
 import 'package:dust_component/state.dart'; // Use State
-import 'package:dust_component/vnode.dart'; // Import VNode
 
 // 1. Define the time provider using StreamProvider
 final clockProvider = StreamProvider<DateTime>((ref) {
@@ -25,7 +23,7 @@ class ClockComponent extends StatefulWidget<Props?> {
 class _ClockComponentState extends State<ClockComponent> {
   // Riverpod container and subscription management
   late final ProviderContainer _container;
-  StreamSubscription? _subscription;
+  ProviderSubscription? _subscription; // Changed type
   DateTime? _currentTime;
   Object? _error;
   bool _isLoading = true;
@@ -40,44 +38,40 @@ class _ClockComponentState extends State<ClockComponent> {
   }
 
   void _subscribeToClock() {
-    _subscription?.cancel(); // Cancel previous subscription if any
+    _subscription?.close(); // Close previous subscription if any
 
-    // Listen to the stream provided by Riverpod
-    _subscription = _container.read(clockProvider.stream).listen((time) {
-      // Use Dust's setState to trigger a rebuild
-      setState(() {
-        _currentTime = time;
-        _isLoading = false;
-        _error = null;
-      });
-    }, onError: (err, stack) {
-      setState(() {
-        _error = err;
-        _isLoading = false;
-      });
-    }, onDone: () {
-      setState(() {
-        _isLoading = false; // Stream finished (unexpected for clock)
-      });
-    });
+    // Listen directly to the provider's AsyncValue state
+    _subscription = _container.listen<AsyncValue<DateTime>>(
+      clockProvider,
+      (previous, next) {
+        // Use Dust's setState to trigger a rebuild when AsyncValue changes
+        setState(() {
+          next.when(
+            data: (time) {
+              _currentTime = time;
+              _isLoading = false;
+              _error = null;
+            },
+            loading: () {
+              _isLoading = true;
+              _error = null; // Clear previous error on reload
+            },
+            error: (err, stack) {
+              _error = err;
+              _isLoading = false;
+            },
+          );
+        });
+      },
+      fireImmediately: true, // Handle initial state immediately
+    );
 
-    // Handle initial state synchronously if available
-    final initialValue = _container.read(clockProvider);
-    if (initialValue is AsyncData<DateTime>) {
-      // No need for setState here as initState hasn't finished
-      _currentTime = initialValue.value;
-      _isLoading = false;
-    } else if (initialValue is AsyncError) {
-      _error = initialValue.error;
-      _isLoading = false;
-    } else {
-      _isLoading = true; // Still loading initially
-    }
+    // Initial state is handled by fireImmediately: true in listen now.
   }
 
   @override
   void dispose() {
-    _subscription?.cancel();
+    _subscription?.close(); // Use close for ProviderSubscription
     _container.dispose(); // Dispose the container when the widget is removed
     super.dispose(); // Call super.dispose()
   }

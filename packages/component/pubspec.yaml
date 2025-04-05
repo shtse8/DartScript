@@ -2,6 +2,7 @@ name: dust_component
 description: Core component model for the Dust web framework.
 version: 0.0.1
 # repository: https://github.com/your_org/dust/tree/main/packages/component # TODO: Update repository URL
+publish_to: none # Prevent accidental publishing
 
 environment:
   sdk: ">=3.0.0 <4.0.0"

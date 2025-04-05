@@ -2,9 +2,10 @@ name: dust_renderer
 description: Basic DOM renderer for the Dust web framework.
 version: 0.0.1
 # repository: https://github.com/your_org/dust/tree/main/packages/renderer # TODO: Update repository URL
+publish_to: none # Prevent accidental publishing
 
 environment:
-  sdk: ">=3.0.0 <4.0.0"
+  sdk: ">=3.4.0 <4.0.0" # Updated to reflect usage of SDK 3.4.0 APIs
 
 dependencies:
   dust_component:

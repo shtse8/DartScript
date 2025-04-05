@@ -43,9 +43,9 @@ final Map<RegExp, String? Function(List<String> matches)> backgroundRules = {
 
   // Background Repeat
   RegExp(r'^bg-repeat(-x|-y|-round|-space)?$'): (matches) {
-    final suffix = matches[0]; // -x, -y, -round, -space, or null
-    if (suffix == null) return 'background-repeat: repeat;';
-    return 'background-repeat: repeat${suffix};';
+    final suffix = matches[0]; // -x, -y, -round, -space, or empty string ''
+    // If suffix is empty (matched 'bg-repeat'), return 'repeat'. Otherwise, append suffix.
+    return 'background-repeat: repeat${suffix.isEmpty ? '' : suffix};';
   },
   RegExp(r'^bg-no-repeat$'): (matches) => 'background-repeat: no-repeat;',
 

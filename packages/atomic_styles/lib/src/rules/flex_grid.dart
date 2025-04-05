@@ -13,9 +13,10 @@ final Map<RegExp, String? Function(List<String> matches)> flexGridRules = {
       'flex-wrap: ${matches[0]};',
 
   // Flex Grow / Shrink
-  RegExp(r'^grow(?:-(0))?$'): (matches) => 'flex-grow: ${matches[0] ?? '1'};',
+  RegExp(r'^grow(?:-(0))?$'): (matches) =>
+      'flex-grow: ${matches[0].isEmpty ? '1' : matches[0]};', // Use '1' if group is empty (matched 'grow'), else use the captured group ('0')
   RegExp(r'^shrink(?:-(0))?$'): (matches) =>
-      'flex-shrink: ${matches[0] ?? '1'};',
+      'flex-shrink: ${matches[0].isEmpty ? '1' : matches[0]};', // Use '1' if group is empty (matched 'shrink'), else use the captured group ('0')
 
   // Flex Basis (Simplified - using spacing scale)
   RegExp(r'^basis-(.+)$'): (matches) {
