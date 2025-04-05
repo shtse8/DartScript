@@ -26,44 +26,59 @@
 - **Declarative Rendering Engine (Keyed Diffing):**
   - Developers declare UI in `build()` methods, ideally using HTML helper
     functions (e.g., `div()`, `h1()`) which return a `VNode` tree.
-  - **Initial Render:** Handles `StatefulWidget` creation and initial `build`
-    via `_patch` (with `oldVNode` as null).
+  - **Initial Render (`_patch` with `oldVNode == null`):**
+    - If the root `newVNode` represents a component, calls `_mountComponent`.
+    - If the root `newVNode` represents an element/text, calls
+      `_mountNodeAndChildren`.
+    - `_mountComponent` creates `State` (if StatefulWidget), calls
+      `initState`/`build`, and recursively calls `_patch` (with
+      `oldVNode == null`) to mount the rendered tree.
+    - `_mountNodeAndChildren` creates the element/text node, sets
+      attributes/listeners, and recursively calls `_patch` (with
+      `oldVNode == null`) to mount children.
   - **Update Mechanism (Keyed Diffing & setState):**
-    - **Component Update (Parent Rebuild):** When a parent component rebuilds,
-      `_patch` might call `_updateComponent`. `_updateComponent` reuses the
-      existing `State` (if applicable), calls `frameworkUpdateWidget` (which
-      updates `state.widget` with the new component instance containing new
-      props and triggers `didUpdateWidget`), then calls `build` and recursively
-      patches the new rendered tree against the old one.
+    - **Component Update (Parent Rebuild or `setState`):**
+      - `_patch` compares the new component VNode with the old one.
+      - If type and key match, calls `_updateComponent`. `_updateComponent`
+        reuses the existing `State` (correctly passed via VNode), calls
+        `frameworkUpdateWidget` (updating `state.widget` and triggering
+        `didUpdateWidget`), then calls `build` and recursively patches the new
+        rendered tree against the old one (`oldRenderedVNode` stored on the
+        component's VNode).
+      - If type or key mismatch, calls `_unmountComponent` on the old and
+        `_mountComponent` on the new.
     - **Internal State Update (`setState`):** `State.setState` calls
-      `_markNeedsBuild`, which invokes the `_updateRequester` callback set
-      during `_mountComponent`. This callback now contains logic to get the
-      parent DOM node, call `build` on the state, and call `_patch` to diff the
-      new rendered tree against the previously rendered tree (`renderedVNode`
-      stored on the component's VNode).
+      `_markNeedsBuild`, invoking the `_updateRequester` callback set during
+      `_mountComponent`. This callback calls `build` on the state and then
+      `_patch` to diff the new rendered tree against the previously rendered
+      tree (`renderedVNode` stored on the component's VNode), using the
+      component's parent DOM node as the patching parent.
   - **Patching (`_patch`):**
-    - **Differentiates Node Types:** First checks if the new/old VNodes
-      represent Components (`VNode.component != null`).
-    - **Component Lifecycle:** If dealing with components, calls helper
-      functions (`_mountComponent`, `_updateComponent`, `_unmountComponent`) to
-      manage their lifecycle.
-    - **Element/Text Patching:** If dealing with element or text nodes, compares
+    - **Handles Initial Render/Removal:** Checks for `newVNode == null` (remove
+      old) or `oldVNode == null` (mount new using `_mountComponent` or
+      `_mountNodeAndChildren`).
+    - **Handles Component Updates:** Differentiates between component VNodes and
+      element/text VNodes. If both are components, calls `_updateComponent` (if
+      type/key match) or unmount/mount. If one is component and other isn't,
+      handles replacement via unmount/mount.
+    - **Element/Text Patching:** If both are non-components, compares
       types/tags. If same, updates attributes, listeners (using `jsFunctionRefs`
-      for removal), and text content. Delegates child patching to
-      `_patchChildren`. If different, unmounts the old node (calling
-      `removeVNode` which handles recursive listener cleanup) and mounts the new
-      node (`_createDomElement`).
+      for removal, `identical()` check for optimization), and text content.
+      Delegates child patching to `_patchChildren`. If different, removes old
+      node (calling `removeVNode`) and mounts new node
+      (`_mountNodeAndChildren`).
     - `VNode.domNode` links VNodes to their corresponding DOM nodes.
   - **Child Patching (`_patchChildren`):** Implements a keyed reconciliation
     algorithm. Recursively calls `_patch` for matching children. Calls
-    `removeVNode` (now a top-level helper) for removed children and
-    `_createDomElement` or `_mountComponent` (via `_patch`) for added children.
+    `removeVNode` (now a top-level helper) for removed children and `_patch`
+    (with `oldVNode = null`) for added children.
 - **State Management:**
   - Basic component state managed via `State` and `setState`.
   - **Riverpod Integration (Basic):**
     - `runApp` creates a root `ProviderContainer` and a root `BuildContext`
       containing it.
-    - The `BuildContext` is passed down the component tree by the renderer.
+    - The `BuildContext` is passed down the component tree by the renderer
+      during mount/update.
     - `Consumer` widget (`packages/component/lib/consumer.dart`) accesses the
       `ProviderContainer` via `context.container`.
     - `Consumer` uses a `WidgetRef` to interact with the container and trigger
@@ -78,11 +93,10 @@
   - **Dart <-> JS Communication:** Uses `dart:js_interop`. Dart calls JS
     functions (defined via `@JS`) for DOM manipulation and browser APIs (like
     `addEventListener`). JS calls exported Dart functions (e.g., `$invokeMain`).
-  - **DOM Access & Event Handling:** Renderer (`_createDomElement`, `_patch`)
-    now uses the `dust_dom` abstraction layer (`DomNode`, `DomElement`
+  - **DOM Access & Event Handling:** Renderer (`_mountNodeAndChildren`,
+    `_patch`) now uses the `dust_dom` abstraction layer (`DomNode`, `DomElement`
     extensions) for DOM manipulation (e.g., `appendChild`, `removeChild`,
-    `setAttribute`, `addEventListener`). Direct JS interop calls have been
-    removed from the renderer core logic. Dart event callbacks are still wrapped
+    `setAttribute`, `addEventListener`). Dart event callbacks are still wrapped
     in a JS function passing `DomEvent` and converted using `.toJS` before being
     passed to `dust_dom`'s `addEventListener`.
 - **Application Entry Point:**
@@ -92,134 +106,59 @@
     function.
   - `$invokeMain` executes the Dart `main()` function in `web/main.dart`.
   - User's Dart `main()` calls the framework's `runApp` function (defined in
-    `dust_renderer`) to mount the root component.
+    `dust_renderer`) which creates the root component VNode and calls `_patch`
+    for the initial render.
 - **Sandboxing:** Execution remains within the browser's WASM sandbox.
 
 ## Key Technical Decisions (Framework Context)
 
 - **Rendering Strategy:** Implemented a keyed Virtual DOM diffing/patching
-  strategy (`_patch` delegating to `_patchChildren`). Further optimization is
-  possible.
-- **Component API Design:** Current class-based approach is similar to Flutter.
-  `Component` base class now includes a `props` map (`Map<String, dynamic>`).
-  `State.build()` returns `VNode`. `StatelessWidget.build()` now accepts
-  `BuildContext` and returns `VNode?`. Developers are encouraged to use HTML
-  helper functions (`package:dust_component/html.dart`) for better readability.
-  `VNode` includes `key`, `listeners` (using `DomEvent`), `jsFunctionRefs`, and
-  `dartCallbackRefs`.
-- **State Management Approach:** Basic Riverpod integration implemented.
-  `ProviderContainer` is created at the root (`runApp`) and passed down via a
-  simple `BuildContext` object, which is accessible within `State` objects
-  (`state.context`). `Consumer` widget uses this context to get the container.
-  This avoids global variables but still relies on a custom `Consumer`
-  implementation. Aligning closer to Flutter's `ConsumerWidget` pattern
-  (requiring a more complex `BuildContext` and rendering integration) is a
-  future goal.
-- **JS/WASM Bridge Implementation:** Using `dart:js_interop`. Renderer now uses
-  the `dust_dom` abstraction layer instead of direct JS interop calls for DOM
-  manipulation. Event listener callbacks still use `.toJS` on a wrapper
-  function.
-- **Build Tooling Integration:** How to integrate for hot reload and production
-  builds?
+  strategy (`_patch` delegating to `_patchChildren`). Initial render logic
+  corrected to properly mount components.
+- **Component API Design:** Class-based approach similar to Flutter. `Component`
+  includes `props`. `State.build()` returns `VNode`. `StatelessWidget.build()`
+  accepts `BuildContext`. HTML helper functions
+  (`package:dust_component/html.dart`) encouraged. `VNode` includes `key`,
+  `listeners`, `jsFunctionRefs`, `dartCallbackRefs`.
+- **State Management Approach:** Basic Riverpod integration implemented via
+  `BuildContext` passing.
+- **JS/WASM Bridge Implementation:** Using `dart:js_interop` and `dust_dom`
+  abstraction layer. Event listener callbacks use `.toJS` on a wrapper.
+- **Build Tooling Integration:** `build_runner` used for dev server (Hot
+  Restart) and WASM compilation.
 
 ## Core Patterns
 
-- **Declarative UI Helpers Pattern:** Providing functions (`div`, `h1`, etc.)
-  that mirror HTML tags to simplify `VNode` creation in `build` methods.
-
-- **Component Pattern:** Core UI building block, now includes `props` map.
-- **State Management Pattern:** Using `State` for local state. Riverpod
-  integration provides `Provider`s for app state, accessed via `Consumer` widget
-  (which gets the `ProviderContainer` from its `BuildContext`) and `WidgetRef`.
-- **Context Pattern (Basic):** A simple `BuildContext` object is created by the
-  renderer and passed down to `State` objects, primarily carrying the
+- **Declarative UI Helpers Pattern:** Functions (`div`, `h1`, etc.) for `VNode`
+  creation.
+- **Component Pattern:** Core UI building block (`Component`, `StatefulWidget`,
+  `StatelessWidget`).
+- **State Management Pattern:** `State` for local state. Riverpod via `Consumer`
+  and `BuildContext`.
+- **Context Pattern (Basic):** Simple `BuildContext` carrying
   `ProviderContainer`.
-- **Observer Pattern:** Implicitly used via `StreamProvider` and `setState`
-  triggering updates.
-- **Callback Pattern:** Used for `State` (`_updateRequester`) to request updates
-  from the renderer when `setState` is called. The renderer provides this
-  callback during component mounting.
-- **Facade Pattern:** Implemented via `dust_dom` package, providing a Dart API
-  over JS DOM objects using `@staticInterop`.
-- **Bootstrap Pattern:** `build_runner` generates the necessary JS bootstrap
-  code (`web/main.dart.js`) to load and initialize the WASM application.
-- **Application Runner Pattern:** Framework provides a simple `runApp` function
-  as the public entry point for users.
-- **Virtual DOM Node Pattern:** Using `VNode` objects to represent the desired
-  structure.
-  - `VNode.element`: Represents HTML elements (tag, attributes, children,
-    listeners, key, domNode, jsFunctionRefs, dartCallbackRefs).
-  - `VNode.text`: Represents text content (text, domNode).
-  - `VNode.component`: Represents a `Component` instance (component, key, state,
-    renderedVNode, domNode - linking to the root DOM node of the rendered
-    output).
-- **Diffing/Patching Pattern:** Comparing VNode trees (`_patch`). Differentiates
-  between component nodes and element/text nodes. Uses helper functions
-  (`_mountComponent`, `_updateComponent`, `_unmountComponent`) for component
-  lifecycle. Uses keyed reconciliation (`_patchChildren`) for child lists.
+- **Observer Pattern:** Implicit via `StreamProvider` and `setState`.
+- **Callback Pattern:** Used for `State` (`_updateRequester`) to trigger
+  updates.
+- **Facade Pattern:** `dust_dom` package over JS DOM APIs.
+- **Bootstrap Pattern:** `build_runner` generated JS loader.
+- **Application Runner Pattern:** `runApp` function.
+- **Virtual DOM Node Pattern:** `VNode` objects (`element`, `text`,
+  `component`).
+- **Diffing/Patching Pattern:** `_patch` function orchestrates updates.
+  - Differentiates initial render (`oldVNode == null`), removal
+    (`newVNode == null`), component updates, and element/text updates.
+  - Uses helper functions (`_mountComponent`, `_updateComponent`,
+    `_unmountComponent`, `_mountNodeAndChildren`) for specific scenarios.
+  - Uses keyed reconciliation (`_patchChildren`) for child lists.
 - **Event Listener Management Pattern:**
-  - **Creation/Update:** Wrapping Dart callbacks `(DomEvent event) => ...` in a
-    JS function `(JSAny jsEvent) { dartCallback(DomEvent(jsEvent)); }`,
-    converting the wrapper using `.toJS`. Both the `JSFunction` reference
-    (`jsFunctionRefs`) and the original Dart callback (`dartCallbackRefs`) are
-    stored on the `VNode`.
-  - **Optimization:** During patching (`_patch`), the framework uses
-    `identical()` to compare the new Dart callback with the stored old one
-    (`dartCallbackRefs`). If they are identical, the listener update (removing
-    the old JSFunction and adding a new one) is skipped, improving performance
-    for stable callback references (e.g., class methods). If callbacks differ,
-    the old listener is removed (using `jsFunctionRefs`) and the new one is
-    added.
-  - **Removal:** When a DOM node is removed during patching (`_patchChildren` ->
-    `removeVNode`), the framework now **recursively** traverses the
-    corresponding VNode and its children, using the stored `jsFunctionRefs` to
-    explicitly call `removeEventListener` for all associated listeners before
-    the DOM node is detached. This ensures proper cleanup.
+  - **Creation/Update:** Wrapping Dart callbacks, using `.toJS`, storing refs
+    (`jsFunctionRefs`, `dartCallbackRefs`).
+  - **Optimization:** `identical()` check skips updates for stable callbacks.
+  - **Removal:** Explicit recursive removal via `removeVNode` ->
+    `_removeListenersRecursively` -> `_removeListenersFromNode` before DOM
+    detachment.
 - **Atomic CSS Generation Pattern (Two-Phase Build-Time, Refactored):**
-  - **Core Idea:** Generate CSS rules only for the atomic classes actually used
-    in the Dart code, inspired by Tailwind CSS, providing utility-first styling
-    at build time.
-  - **Rule Definition:**
-    - Rules are defined as a
-      `Map<RegExp, String? Function(List<String> matches)>`.
-    - **Refactored Structure:** Rules are now split by category into separate
-      files within `packages/atomic_styles/lib/src/rules/` (e.g.,
-      `spacing.dart`, `layout.dart`, `typography.dart`, `borders.dart`,
-      `effects.dart`, etc.) for better maintainability.
-    - **Shared Constants:** Common values like spacing scales (`spacingScale`)
-      and color palettes (`colors`) are defined in
-      `packages/atomic_styles/lib/src/constants.dart` and imported by rule
-      files.
-    - **Main Rules File:** `packages/atomic_styles/lib/src/rules.dart` imports
-      all category rule files and uses the spread operator (`...`) to merge them
-      into the final `atomicRules` map. It also contains the `generateAtomicCss`
-      function which takes a set of class names and returns a map of class names
-      to CSS rules.
-    - **Extensive Rule Set:** Covers a wide range of CSS properties including
-      spacing, layout, flexbox, grid, sizing, typography, backgrounds, borders,
-      effects (shadows, opacity), filters, interactivity (cursor, user-select),
-      transforms, transitions, animations, SVG styling, and accessibility
-      utilities.
-  - **Phase 1: Scanning (`AtomicStyleBuilder` / `atomicScanner`)**
-    - Runs on specified Dart files (`lib/**`, `web/**`).
-    - Uses `analyzer` to parse the Dart AST.
-    - Finds calls to HTML helper functions (from
-      `package:dust_component/html.dart`).
-    - Extracts class names from the `class_` attribute string literal within
-      these calls.
-    - Writes the found class names (one per line) to a corresponding `.classes`
-      file in the build cache (`build_to: cache`).
-  - **Phase 2: Aggregation & Writing (`AtomicCssAggregator` / `cssAggregator`)**
-    - **Type:** Implemented as a `Builder` (`AtomicCssAggregator`).
-    - **Input:** Reads all `.classes` files generated by Phase 1 (the scanner)
-      from the build cache using `buildStep.findAssets(Glob('**/*.classes'))`.
-      The `required_inputs` configuration in `build.yaml` ensures this runs
-      after the scanner.
-    - **Functionality:** Aggregates unique class names found across _all_ input
-      `.classes` files. Generates the final CSS using `generateAtomicCss` (which
-      uses the combined `atomicRules`). Writes a single, sorted CSS file to the
-      source tree (`build_to: source`), typically `web/atomic_styles.css`.
-    - **Output:** Defined via `buildExtensions` within the `AtomicCssAggregator`
-      class and configuration in `build.yaml`.
-  - **Usage:** The final CSS file (`web/atomic_styles.css`) is linked in
-    `web/index.html`.
+  - `AtomicStyleBuilder` scans Dart code for class usage.
+  - `AtomicCssAggregator` aggregates classes and generates final CSS.
+  - Extensive rule set defined and structured by category.
