@@ -38,6 +38,19 @@ class Home extends StatelessWidget<Props?> {
   }
 }
 
+// Simple User Profile Page Component (Placeholder)
+class UserProfilePage extends StatelessWidget<Props?> {
+  const UserProfilePage({super.key}) : super(props: null);
+
+  @override
+  VNode? build(BuildContext context) {
+    return html.div(children: [
+      html.h3(children: [html.text('User Profile')]),
+      html.p(children: [html.text('This is the user profile section.')]),
+    ]);
+  }
+}
+
 void main() {
   // Create the root component instance
   // Create the root component instance with a name prop
@@ -47,20 +60,34 @@ void main() {
   final routes = [
     Route(
         path: '/',
-        builder: (context, params) => // Add params argument
-            VNode.component(Home())), // Wrap in VNode.component
+        builder: (context, params, _) => // Add unused childVNode param
+            VNode.component(Home())),
     Route(
         path: '/tester',
-        builder: (context, params) => // Add params argument
-            VNode.component(PropTester())), // Wrap in VNode.component
+        builder: (context, params, _) => // Add unused childVNode param
+            VNode.component(PropTester())),
     // Add more routes here
     Route(
-      path: '/users/:id', // Parameterized route
-      builder: (context, params) {
-        final userId =
-            params?['id'] ?? 'unknown'; // Extract ID, provide default
-        return VNode.component(UserPage(props: UserPageProps(userId: userId)));
+      path: '/users/:id',
+      // The builder for UserPage now needs to accept and potentially use childVNode
+      builder: (context, params, childVNode) {
+        final userId = params?['id'] ?? 'unknown';
+        // Pass childVNode to UserPage (UserPage needs modification to render it)
+        return VNode.component(UserPage(
+            props: UserPageProps(userId: userId, childVNode: childVNode)));
       },
+      children: [
+        // Define nested routes
+        Route(
+          path: '/profile', // Path relative to parent: /users/:id/profile
+          builder: (context, params, _) {
+            // Child route builder
+            // Params will include parent params (like 'id')
+            return VNode.component(UserProfilePage());
+          },
+        ),
+        // Add other nested routes for users here if needed
+      ],
     ),
   ];
 
@@ -68,9 +95,8 @@ void main() {
   final routerApp = Router(
     props: RouterProps(
       routes: routes,
-      // Correctly use html.text and ensure VNode? return type for the builder
-      notFoundBuilder: (BuildContext context, Map<String, String>? params) {
-        // Add params argument
+      // Add unused childVNode param
+      notFoundBuilder: (BuildContext context, Map<String, String>? params, _) {
         return html.div(children: [html.text('404 - Not Found')]);
       },
     ),

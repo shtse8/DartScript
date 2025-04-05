@@ -204,4 +204,11 @@ VNode a({
         text: text,
         listeners: listeners);
 
+VNode hr({
+  Object? key,
+  Attributes? attributes,
+  Listeners? listeners,
+}) =>
+    _element('hr', key: key, attributes: attributes, listeners: listeners);
+
 // Add more tag functions as needed (e.g., img, a, form, label, etc.)

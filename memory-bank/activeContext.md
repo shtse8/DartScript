@@ -16,6 +16,19 @@
 
 ## Recent Changes
 
+- **Implemented Basic Nested Routing:**
+  - Modified `Route` class to include optional `children`.
+  - Updated `ComponentBuilder` typedef to accept an optional `childVNode`.
+  - Refactored router matching logic (`_findMatchingRouteRecursive`) to handle
+    nested paths and return a route chain.
+  - Updated router `build` method to recursively build the VNode tree based on
+    the matched chain, passing child VNodes to parent builders.
+  - Added `hr` helper to `html.dart`.
+  - Updated `web/main.dart` with a nested route example (`/users/:id/profile`)
+    and a placeholder `UserProfilePage` component.
+  - Modified `UserPage` component (`lib/user_page.dart`) to accept and render
+    `childVNode` and added a link to the nested profile route.
+
 - **Fixed JS Interop Warnings:** Removed default parameter values from
   `EventInit` and `CustomEventInit` external factory constructors in
   `web_interop.dart` to resolve build warnings.

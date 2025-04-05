@@ -44,6 +44,12 @@
   - `ComponentBuilder` signature updated to accept
     `Map<String, String>? params`.
   - `UserPage` demo component created to display parameters.
+- **Basic Nested Routing Implemented:**
+  - `Route` class supports `children`.
+  - `ComponentBuilder` accepts `childVNode`.
+  - Router matches and builds nested routes recursively.
+  - Parent components (`UserPage`) can render child route VNodes.
+  - Example nested route (`/users/:id/profile`) added.
 
 ## What's Left to Build (High Level - Framework Focus)
 
@@ -85,8 +91,9 @@
 
 ## Known Issues / Challenges
 
-- **Router Implementation:** Needs nested routes. History API support
-  (client-side) is now implemented.
+- **Router Implementation:** Basic nested routing implemented. Further
+  refinement (e.g., relative links, more complex scenarios) might be needed.
+  History API support (client-side) is implemented.
 - **Renderer Optimization:** Patching logic can likely be further optimized.
 - **Renderer Edge Cases:** Handling fragments, SVG, specific attribute/property
   types needs more testing.
