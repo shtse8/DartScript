@@ -136,7 +136,11 @@
 - **State Management Pattern:** `State` for local state. Riverpod via `Consumer`
   and `BuildContext`.
 - **Context Pattern (Basic):** Simple `BuildContext` carrying
-  `ProviderContainer`.
+  `ProviderContainer`. No global container.
+- **Provider Scope Pattern:** `ProviderScope` component creates a new nested
+  `ProviderContainer` (with optional overrides) for its subtree. Renderer
+  detects `ProviderScope` and passes its specific `BuildContext` (containing the
+  scoped container) to the child component during patching.
 - **Observer Pattern:** Implicit via `StreamProvider` and `setState`.
 - **Callback Pattern:** Used for `State` (`_updateRequester`) to trigger
   updates.
