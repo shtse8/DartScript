@@ -54,14 +54,42 @@ class _ProviderScopeState extends State<ProviderScope> {
   @override
   void didUpdateWidget(ProviderScope oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // If overrides change, we might need to recreate the container.
-    // This is complex and involves managing the lifecycle of the old container
-    // and potentially migrating state. For now, we'll assume overrides are static.
-    // If overrides *do* change, the current implementation won't update the container.
-    print(
-        'ProviderScope didUpdateWidget: Overrides changed? (Not handled yet)');
-    // We also need to update the child context if the container *was* updated.
-    // _childContext = BuildContext(_container);
+    // Check if overrides have changed.
+    // Note: This relies on List equality and Override equality/identity.
+    // A more robust check might be needed for complex overrides.
+    if (!_listEquals(widget.props.overrides, oldWidget.props.overrides)) {
+      print(
+          'ProviderScope didUpdateWidget: Overrides changed. Recreating container.');
+      // Dispose the old container
+      _container.dispose();
+      // Create a new container with new overrides, using the same parent context
+      final parentContainer =
+          context.container; // Assumes context.container is stable
+      _container = ProviderContainer(
+        parent: parentContainer,
+        overrides: widget.props.overrides,
+      );
+      // Update the child context
+      _childContext = BuildContext(_container);
+      // No need to call setState here, the renderer will handle propagating
+      // the new _childContext when patching the child during this update cycle.
+    } else {
+      // print('ProviderScope didUpdateWidget: Overrides unchanged.'); // Optional: Keep for debugging
+    }
+  }
+
+  // Helper function for list equality (consider moving to a utility)
+  // Note: This is a basic implementation. For production, consider package:collection's listEquals.
+  bool _listEquals<T>(List<T>? a, List<T>? b) {
+    if (a == null) return b == null;
+    if (b == null || a.length != b.length) return false;
+    if (identical(a, b)) return true;
+    for (int i = 0; i < a.length; i++) {
+      // This relies on the equality operator (==) for the elements (Override).
+      // Ensure Override implements == correctly or relies on identity if appropriate.
+      if (a[i] != b[i]) return false;
+    }
+    return true;
   }
 
   @override

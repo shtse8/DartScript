@@ -24,7 +24,8 @@
 - **Atomic CSS Generation (Build-Time, Refactored & Expanded):** Two-phase
   builder generates comprehensive atomic CSS.
 - **Basic Riverpod Integration & Scoping:** `ProviderScope` and `Consumer`
-  updated for typed props. Container passed via `BuildContext`.
+  updated for typed props. Container passed via `BuildContext`. `ProviderScope`
+  now handles dynamic override changes in `didUpdateWidget`.
 - **Router Package Setup & Basic Functionality:**
   - Created `dust_router` package.
   - Created `Router` and `Link` components (updated for typed props).
@@ -97,8 +98,10 @@
 - **Renderer Optimization:** Patching logic can likely be further optimized.
 - **Renderer Edge Cases:** Handling fragments, SVG, specific attribute/property
   types needs more testing.
-- **State Management Integration:** Need to handle dynamic override changes in
-  `ProviderScope.didUpdateWidget`.
+- **State Management Integration:** Dynamic override changes in
+  `ProviderScope.didUpdateWidget` are now handled (basic implementation).
+  Further testing or refinement might be needed for complex override scenarios
+  or state migration.
 - **JS Interop Performance:** Ongoing consideration.
 - **WASM Debugging:** Remains a factor.
 - **Bundle Size:** Needs monitoring.

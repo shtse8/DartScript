@@ -16,6 +16,12 @@
 
 ## Recent Changes
 
+- **Improved ProviderScope Override Handling:** Implemented `didUpdateWidget` in
+  `_ProviderScopeState` to detect changes in `overrides`. If overrides differ,
+  the old `ProviderContainer` is disposed, and a new one is created with the
+  updated overrides, ensuring dynamic changes propagate correctly. Added a basic
+  `_listEquals` helper for comparison.
+
 - **Implemented Basic Nested Routing:**
   - Modified `Route` class to include optional `children`.
   - Updated `ComponentBuilder` typedef to accept an optional `childVNode`.
