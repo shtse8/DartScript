@@ -44,9 +44,10 @@ class _PropTesterState extends State<PropTester> {
           text: 'Change Name (Current: $currentName)',
           listeners: {'click': (_) => _changeName()},
         ),
-        // Pass the current name via props map to HelloWorld
+        // Pass the current name via props map to HelloWorld, using a FIXED key
         HelloWorld(
-          key: ValueKey(currentName), // Use name as key for simplicity here
+          key: ValueKey(
+              'hello-world-instance'), // Use a fixed key to test updates
           props: {'name': currentName},
         ),
       ],
