@@ -9,13 +9,20 @@ import 'vnode.dart';
 // Type definition for the builder function
 typedef ConsumerBuilder = VNode Function(WidgetRef ref);
 
-/// A widget that obtains a [WidgetRef] from the nearest [ProviderScope]
-/// and rebuilds when subscribed providers change.
-class Consumer extends StatefulWidget {
+// Props for the Consumer component
+class ConsumerProps implements Props {
   final ConsumerBuilder builder;
 
-  // Removed key parameter as StatefulWidget base class doesn't have it yet.
-  const Consumer({required this.builder});
+  ConsumerProps({required this.builder});
+}
+
+/// A widget that obtains a [WidgetRef] from the nearest [ProviderScope]
+/// and rebuilds when subscribed providers change.
+class Consumer extends StatefulWidget<ConsumerProps> {
+  // Inherit with ConsumerProps
+  // Constructor now takes ConsumerProps and passes it to super
+  const Consumer({required ConsumerProps props, super.key})
+      : super(props: props);
 
   @override
   State<Consumer> createState() => _ConsumerState();
@@ -59,7 +66,8 @@ class _ConsumerState extends State<Consumer> {
     }
     _subscriptions.clear();
     // Execute the user's builder function with the ref
-    _cachedVNode = widget.builder(_ref);
+    // Access builder via props
+    _cachedVNode = widget.props.builder(_ref);
   }
 
   // This method will be called by WidgetRef when a listened provider changes

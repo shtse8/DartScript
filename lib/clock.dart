@@ -1,6 +1,7 @@
 // lib/clock.dart
 import 'dart:async';
 import 'package:riverpod/riverpod.dart';
+import 'package:dust_component/component.dart'; // Import base Component and Props
 import 'package:dust_component/stateful_component.dart'; // Use StatefulWidget
 import 'package:dust_component/state.dart'; // Use State
 import 'package:dust_component/vnode.dart'; // Import VNode
@@ -12,8 +13,10 @@ final clockProvider = StreamProvider<DateTime>((ref) {
 });
 
 // 2. Create the Clock Component using Dust's StatefulWidget
-class ClockComponent extends StatefulWidget {
-  const ClockComponent(); // Add const constructor
+class ClockComponent extends StatefulWidget<Props?> {
+  // Specify Props type argument
+  // Add const constructor and call super with null props
+  const ClockComponent({super.key}) : super(props: null);
 
   @override
   State<ClockComponent> createState() => _ClockComponentState();

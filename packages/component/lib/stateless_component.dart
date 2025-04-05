@@ -1,6 +1,6 @@
 // packages/component/lib/stateless_component.dart
 import 'component.dart';
-import 'context.dart'; // Import BuildContext
+// import 'context.dart'; // Removed, BuildContext is now exported by component.dart
 import 'vnode.dart'; // Import VNode for return type
 
 /// A component that does not have mutable state.
@@ -13,9 +13,12 @@ import 'vnode.dart'; // Import VNode for return type
 /// For compositions that can change dynamically, e.g. due to having an internal
 /// clock-driven state, or depending on some system state, consider using
 /// a stateful component.
-abstract class StatelessWidget extends Component {
+abstract class StatelessWidget<P extends Props?> extends Component {
+  /// The properties for this component.
+  final P props;
+
   /// Initializes [key] and [props] for subclasses.
-  const StatelessWidget({super.key, super.props});
+  const StatelessWidget({super.key, required this.props});
 
   /// Describes the part of the user interface represented by this component.
   ///

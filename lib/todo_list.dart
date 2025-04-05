@@ -223,7 +223,10 @@ class _TodoListState extends State<TodoListComponent> {
 }
 
 // TodoListComponent Widget
-class TodoListComponent extends StatefulWidget {
+class TodoListComponent extends StatefulWidget<Props?> {
+  // Specify Props type argument
+  // Add const constructor and call super with null props
+  const TodoListComponent({super.key}) : super(props: null);
   @override
   State<TodoListComponent> createState() => _TodoListState();
 }

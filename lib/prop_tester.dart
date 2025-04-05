@@ -1,7 +1,8 @@
 // lib/prop_tester.dart
+import 'package:dust_component/component.dart'; // Import base Component and Props
 import 'package:dust_component/stateful_component.dart';
 import 'package:dust_component/state.dart';
-import 'package:dust_component/context.dart';
+// import 'package:dust_component/context.dart'; // Removed as context comes from component.dart
 import 'package:dust_component/vnode.dart';
 import 'package:dust_component/html.dart' as html;
 import 'package:dust_component/key.dart'; // Import Key and ValueKey
@@ -9,8 +10,9 @@ import 'package:dust_component/key.dart'; // Import Key and ValueKey
 import 'package:dust_renderer/dom_event.dart';
 import 'hello_world.dart'; // Import the component to test
 
-class PropTester extends StatefulWidget {
-  const PropTester({super.key, super.props});
+// PropTester itself doesn't take props, so use Props?
+class PropTester extends StatefulWidget<Props?> {
+  const PropTester({super.key}) : super(props: null); // Pass null props
 
   @override
   State<PropTester> createState() => _PropTesterState();
@@ -48,7 +50,8 @@ class _PropTesterState extends State<PropTester> {
         HelloWorld(
           key: ValueKey(
               'hello-world-instance'), // Use a fixed key to test updates
-          props: {'name': currentName},
+          props: HelloWorldProps(
+              name: currentName), // Pass HelloWorldProps instance
         ),
       ],
     );

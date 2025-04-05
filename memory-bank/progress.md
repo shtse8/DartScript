@@ -6,52 +6,50 @@
 - **Core WASM Capabilities Proven (PoC).**
 - **DOM Abstraction Layer (`dust_dom`).**
 - **WASM Loading Mechanism (`build_runner` generated).**
-- **Component Model (VNode + Key + Component Lifecycle Support):** Includes
-  `props`, `key`, `State`, `StatelessWidget` (with `BuildContext`),
-  `StatefulWidget`. `VNode` structure updated. HTML helpers available.
+- **Component Model (VNode + Key + Component Lifecycle Support + Typed Props):**
+  - Base `Component` with `Key?` and `Props?`.
+  - `StatelessWidget<P extends Props?>` and `StatefulWidget<P extends Props?>`
+    with typed `props`.
+  - `State<T extends StatefulWidget>` with access to `widget.props`.
+  - `BuildContext` defined and passed down.
+  - `Key`, `ValueKey`, `Props` interfaces defined.
+  - `VNode` structure updated. HTML helpers available (`html.text`, `html.a`
+    added).
 - **Renderer (Component Lifecycle + Keyed Diffing + Event Handling +
-  Anchoring):**
-  - `runApp` entry point.
-  - **Component Anchoring:** Uses comment nodes as start/end anchors for robust
-    DOM management (`_mountComponent`, `_updateComponent`, `_unmountComponent`).
-    Anchor insertion order corrected in `_mountComponent`.
-  - **Cleaned Up Mounting Logic:** Removed redundant `_createDomElement`
-    function.
-  - **Corrected Initial Component Mount:** `_patch` now correctly uses
-    `_mountComponent` or `_mountNodeAndChildren` during initial render
-    (`oldVNode == null`), respecting anchors.
-  - **Component Lifecycle Management:** `_mountComponent`, `_updateComponent`,
-    `_unmountComponent` handle state creation/reuse, `initState`,
-    `didUpdateWidget`, `dispose`.
-  - **Event Handling:** `DomEvent` wrapper used. Listener updates optimized with
-    `identical()` check. Recursive listener removal implemented in `removeVNode`
-    and `_unmountComponent` for cleanup.
-  - **Keyed Diffing:** `_patchChildren` implements keyed reconciliation,
-    respecting insertion points (`referenceNode`).
-  - **DOM Interaction:** Uses `dust_dom` abstractions (including
-    `createComment`, `nextNode`).
+  Anchoring):** (Largely functional, see previous state)
 - **State Update (Keyed Diffing & setState):** `setState` correctly triggers
-  component updates via the renderer's patching mechanism, handling keyed
-  children efficiently.
+  component updates.
 - **Demo Application (Props Tester - Conditional Listener):** Successfully
-  demonstrates component updates (using fixed key) and dynamic listener
-  addition/removal based on prop changes.
+  demonstrates component updates with typed props.
 - **Atomic CSS Generation (Build-Time, Refactored & Expanded):** Two-phase
-  builder generates comprehensive atomic CSS based on usage in Dart code.
+  builder generates comprehensive atomic CSS.
+- **Basic Riverpod Integration & Scoping:** `ProviderScope` and `Consumer`
+  updated for typed props. Container passed via `BuildContext`.
+- **Router Package Setup & Basic Functionality:**
+  - Created `dust_router` package.
+  - Created `Router` and `Link` components (updated for typed props).
+  - Implemented basic hash-based routing using `dart:js_interop` (`.toJS`,
+    `window.addEventListener`, `location.hash`). Shared interop definitions in
+    `web_interop.dart`.
+  - Exported router components.
+  - Integrated `Router` into `web/main.dart` with basic routes.
+  - Added `dust_router` dependency to main project.
+- **Successful WASM Compilation:** Application now compiles successfully with JS
+  interop based routing.
 
 ## What's Left to Build (High Level - Framework Focus)
 
 - **Core Framework Implementation:**
+  - **Routing System:** Refine `Router` (parameter parsing, nested routes,
+    History API support).
   - **Rendering Engine (Diffing):** Further optimize patching logic, handle edge
     cases (fragments, SVG nuances).
-  - **Component Model Refinement:** Consider typed props, context API
-    improvements.
+  - **Component Model Refinement:** Review typed props implementation.
   - **DOM Abstraction:** Review and potentially expand `dust_dom`.
   - **Event Handling:** Test edge cases for listener removal. Evaluate
     `DomEvent` performance.
-  - **State Management Integration:** Basic provider scoping implemented via
-    `ProviderScope`. Needs refinement (e.g., dynamic override updates).
-  - **Routing System:** Implement SPA routing.
+  - **State Management Integration:** Refine `ProviderScope` (dynamic override
+    updates).
 - **Developer Experience Tooling:**
   - **Build System:** Optimize production builds.
   - **Development Server:** Implement hot reload (currently Hot Restart).
@@ -60,32 +58,31 @@
 
 ## Current Status
 
-- **Renderer Core Improved:** Implemented component anchoring using comment
-  nodes, resolving the previous `domNode` association simplification. Fixed
-  initial component mount bug and anchor insertion order. Component updates and
-  listener management are functioning correctly with the new anchoring system.
-- **DOM Abstraction Integrated:** `dust_dom` is used for core DOM operations in
-  the renderer.
-- **Component Lifecycle Basics Working:** `initState`, `didUpdateWidget`,
-  `dispose`, and `setState`-triggered updates are functional.
-- **Keyed Diffing Working:** `_patchChildren` handles keyed lists.
+- **Basic Routing Functional:** Hash-based routing works using JS interop.
+  `Link` component updates URL hash, `Router` listens and renders corresponding
+  component.
+- **Typed Props System Implemented:** Core component classes refactored for
+  type-safe props. Demos updated.
+- **WASM Build Successful:** Core framework and demo app compile to WASM without
+  critical errors.
+- **Renderer Core Stable:** Anchoring, lifecycle, keyed diffing, event handling
+  basics are functional.
 - **Atomic CSS Builder Functional:** Generates CSS based on code analysis.
-- **Basic Riverpod Integration & Scoping:** Container passed via `BuildContext`.
-  `ProviderScope` component allows overriding providers in subtrees.
-- **Development Workflow:** `build_runner serve` provides Hot Restart.
+- **Basic Riverpod Integration & Scoping Functional:** Works with the new typed
+  props system.
+- **Development Workflow:** `build_runner serve` provides Hot Restart and
+  successful builds.
 
 ## Known Issues / Challenges
 
+- **Router Implementation:** Needs parameter parsing, nested routes, History API
+  support.
 - **Renderer Optimization:** Patching logic can likely be further optimized.
 - **Renderer Edge Cases:** Handling fragments, SVG, specific attribute/property
-  types needs more testing and potentially specific logic.
-- **State Management Integration:** Basic scoping works. Need to handle dynamic
-  override changes in `ProviderScope.didUpdateWidget`. Consider more advanced
-  Riverpod features or custom context solutions for complex scenarios.
-- **JS Interop Performance:** Ongoing consideration, though `dust_dom` helps.
+  types needs more testing.
+- **State Management Integration:** Need to handle dynamic override changes in
+  `ProviderScope.didUpdateWidget`.
+- **JS Interop Performance:** Ongoing consideration.
 - **WASM Debugging:** Remains a factor.
 - **Bundle Size:** Needs monitoring.
 - **Hot Reload Implementation:** Significant challenge remains.
-- **Renderer Edge Cases:** Handling fragments (components returning lists) still
-  needs implementation, although the anchor system provides the foundation. SVG
-  nuances and specific attribute/property types need more testing.

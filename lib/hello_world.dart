@@ -1,8 +1,9 @@
 // lib/hello_world.dart
 
+import 'package:dust_component/component.dart'; // Import base Component, Props, etc.
 import 'package:dust_component/stateful_component.dart'; // Change to StatefulWidget
 import 'package:dust_component/state.dart'; // Import State
-import 'package:dust_component/context.dart'; // Import BuildContext
+// import 'package:dust_component/context.dart'; // Remove this, context comes from component.dart
 import 'package:dust_component/vnode.dart'; // Import VNode
 import 'package:dust_component/html.dart' as html; // Import HTML helpers
 import 'package:dust_renderer/dom_event.dart'; // Import DomEvent
@@ -12,10 +13,17 @@ import 'package:dust_component/consumer.dart'; // Import Consumer
 // Define a simple provider
 final messageProvider = Provider<String>((ref) => 'Default Message');
 
-class HelloWorld extends StatefulWidget {
-  // Constructor now just passes key and props to the base class.
-  // Specific props like 'name' will be accessed via widget.props in the State class.
-  const HelloWorld({super.key, super.props});
+// Define Props class for HelloWorld
+class HelloWorldProps implements Props {
+  final String? name;
+
+  HelloWorldProps({this.name});
+}
+
+class HelloWorld extends StatefulWidget<HelloWorldProps?> {
+  // Use HelloWorldProps?
+  // Constructor now takes HelloWorldProps? and passes it to super
+  const HelloWorld({super.key, HelloWorldProps? props}) : super(props: props);
 
   @override
   State<HelloWorld> createState() => _HelloWorldState();
@@ -25,7 +33,8 @@ class _HelloWorldState extends State<HelloWorld> {
   bool _hasMouseOverListener = false;
 
   // Helper to get the name prop safely
-  String get _displayName => widget.props['name'] as String? ?? 'World';
+  // Access name directly from the typed props object
+  String get _displayName => widget.props?.name ?? 'World';
 
   // Helper to determine if the listener should be active
   bool get _shouldHaveListener => _displayName.length > 5;
@@ -85,18 +94,22 @@ class _HelloWorldState extends State<HelloWorld> {
     // Return a VNode representing the Consumer component
     return VNode.component(
       Consumer(
-        builder: (ref) {
-          final message = ref.watch(messageProvider);
-          print('  -> Message from provider: "$message"');
-          // The Consumer's builder returns the actual VNode to render
-          return html.h1(
-            // Key should ideally be on the Consumer or handled differently if needed here
-            text: '$message Hello $currentDisplayName!', // Prepend message
-            listeners: listeners,
-            // Pass class attribute via attributes map
-            attributes: {'class': 'hello-world-heading'},
-          );
-        },
+        // Pass props argument
+        props: ConsumerProps(
+          // Create ConsumerProps
+          builder: (ref) {
+            final message = ref.watch(messageProvider);
+            print('  -> Message from provider: "$message"');
+            // The Consumer's builder returns the actual VNode to render
+            return html.h1(
+              // Key should ideally be on the Consumer or handled differently if needed here
+              text: '$message Hello $currentDisplayName!', // Prepend message
+              listeners: listeners,
+              // Pass class attribute via attributes map
+              attributes: {'class': 'hello-world-heading'},
+            );
+          },
+        ),
       ),
       // Optionally pass the key to the VNode if needed for the Consumer itself
       // key: widget.key,

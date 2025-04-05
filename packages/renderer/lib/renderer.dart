@@ -9,7 +9,7 @@ import 'package:dust_component/vnode.dart'; // Import VNode
 import 'dom_event.dart'; // Import DomEvent wrapper
 import 'package:dust_dom/dom.dart' as dom; // Import the new DOM abstraction
 import 'package:riverpod/riverpod.dart'; // Import Riverpod
-import 'package:dust_component/context.dart'; // Import BuildContext
+// import 'package:dust_component/context.dart'; // Removed, BuildContext is now exported by component.dart
 import 'package:dust_component/key.dart'; // Import Key and ValueKey
 import 'package:dust_component/provider_scope.dart'; // Import ProviderScope
 // --- Old JS Interop (To be removed) ---

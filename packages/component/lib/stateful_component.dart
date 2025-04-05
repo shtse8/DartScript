@@ -17,9 +17,14 @@ import 'state.dart'; // Will be created next
 /// Stateful components are useful when the part of the user interface described
 /// by the component can change dynamically, e.g. due to having an internal
 /// clock-driven state, or depending on some system state.
-abstract class StatefulWidget extends Component {
+// Add generic type P for Props, extending Props? to allow null
+abstract class StatefulWidget<P extends Props?> extends Component {
+  /// The properties for this component.
+  final P props;
+
   /// Initializes [key] and [props] for subclasses.
-  const StatefulWidget({super.key, super.props});
+  // Pass props to the Component superclass constructor
+  const StatefulWidget({super.key, required this.props}) : super(props: props);
 
   /// Creates the mutable state for this component at a given location in the tree.
   ///
@@ -38,7 +43,9 @@ abstract class StatefulWidget extends Component {
   /// later inserted into the tree again, the framework will call [createState]
   /// again to create a fresh [State] object, simplifying the lifecycle of
   /// [State] objects.
-  State createState();
+  // State should be generic over the StatefulWidget type itself
+  State<StatefulWidget<P>>
+      createState(); // Keep P here as StatefulWidget is generic
 
   // StatefulWidget itself doesn't build. The State object does.
   // The base Component class no longer defines an abstract build method.

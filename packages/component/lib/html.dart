@@ -191,4 +191,18 @@ VNode input({
 // Text Node Helper (optional, but can be explicit)
 VNode text(String value) => VNode.text(value);
 
+VNode a({
+  Object? key,
+  Attributes? attributes,
+  List<Object>? children,
+  String? text,
+  Listeners? listeners,
+}) =>
+    _element('a',
+        key: key,
+        attributes: attributes,
+        children: children,
+        text: text,
+        listeners: listeners);
+
 // Add more tag functions as needed (e.g., img, a, form, label, etc.)

@@ -2,24 +2,29 @@
 import 'package:riverpod/riverpod.dart';
 
 import 'component.dart';
-import 'context.dart';
+// import 'context.dart'; // Removed, BuildContext is now exported by component.dart
 import 'state.dart';
 import 'stateful_component.dart';
 import 'vnode.dart';
+
+// Props for the ProviderScope component
+class ProviderScopeProps implements Props {
+  final List<Override> overrides;
+  final Component child;
+
+  ProviderScopeProps({this.overrides = const [], required this.child});
+}
 
 /// A component that creates a new ProviderContainer scope for its descendants.
 ///
 /// Descendant widgets like [Consumer] will read providers from the container
 /// created by the nearest ancestor [ProviderScope].
-class ProviderScope extends StatefulWidget {
-  final List<Override> overrides;
-  final Component child;
+class ProviderScope extends StatefulWidget<ProviderScopeProps> {
+  // Inherit with ProviderScopeProps
 
-  const ProviderScope({
-    super.key, // Use super.key if Key support is added to StatefulWidget base
-    this.overrides = const [],
-    required this.child,
-  });
+  // Constructor now takes ProviderScopeProps and passes it to super
+  const ProviderScope({required ProviderScopeProps props, super.key})
+      : super(props: props);
 
   @override
   State<ProviderScope> createState() => _ProviderScopeState();
@@ -40,7 +45,7 @@ class _ProviderScopeState extends State<ProviderScope> {
     final parentContainer = context.container;
     _container = ProviderContainer(
       parent: parentContainer,
-      overrides: widget.overrides,
+      overrides: widget.props.overrides, // Access via props
     );
     // Create a new BuildContext for the child, containing the new container.
     _childContext = BuildContext(_container);
@@ -78,13 +83,14 @@ class _ProviderScopeState extends State<ProviderScope> {
     // The renderer modification is the next crucial step.
     // We might need to wrap the child in a special VNode type or
     // have the renderer check `widget.runtimeType == ProviderScope`.
-    print('ProviderScope build: Rendering child ${widget.child.runtimeType}');
+    print(
+        'ProviderScope build: Rendering child ${widget.props.child.runtimeType}'); // Access via props
     // Directly return the child component. The renderer needs to handle context.
     // We might need a way to signal the renderer to use _childContext for this child.
     // Option 1: Return a special VNode type (e.g., VNode.scopedContext)
     // Option 2: Renderer checks component type during mount/update.
     // Let's assume Option 2 for now. The renderer will check if the component
     // is a ProviderScope and use its state._childContext when patching its child.
-    return VNode.component(widget.child); // Render the child
+    return VNode.component(widget.props.child); // Access via props
   }
 }
