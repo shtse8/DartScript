@@ -14,6 +14,7 @@
   - `runApp` entry point.
   - **Component Anchoring:** Uses comment nodes as start/end anchors for robust
     DOM management (`_mountComponent`, `_updateComponent`, `_unmountComponent`).
+    Anchor insertion order corrected in `_mountComponent`.
   - **Cleaned Up Mounting Logic:** Removed redundant `_createDomElement`
     function.
   - **Corrected Initial Component Mount:** `_patch` now correctly uses
@@ -61,8 +62,8 @@
 
 - **Renderer Core Improved:** Implemented component anchoring using comment
   nodes, resolving the previous `domNode` association simplification. Fixed
-  initial component mount bug. Component updates and listener management are
-  functioning correctly with the new anchoring system.
+  initial component mount bug and anchor insertion order. Component updates and
+  listener management are functioning correctly with the new anchoring system.
 - **DOM Abstraction Integrated:** `dust_dom` is used for core DOM operations in
   the renderer.
 - **Component Lifecycle Basics Working:** `initState`, `didUpdateWidget`,

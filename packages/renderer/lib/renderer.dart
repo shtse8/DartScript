@@ -173,8 +173,11 @@ void _mountComponent(dom.DomElement parentElement, VNode componentVNode,
   final endAnchor = dom.document.createComment(
       ' component-end: ${component.runtimeType} key: ${component.key} ');
 
-  // --- Insert Start Anchor & Set VNode References ---
+  // --- Insert Anchors & Set VNode References ---
+  // Insert BOTH anchors first, so the end anchor exists as a reference point
   parentElement.appendChild(startAnchor);
+  parentElement
+      .appendChild(endAnchor); // Insert end anchor immediately after start
   componentVNode.domNode = startAnchor; // Start anchor is the primary reference
   componentVNode.endNode = endAnchor; // Store end anchor reference
 
@@ -194,9 +197,7 @@ void _mountComponent(dom.DomElement parentElement, VNode componentVNode,
     print('  -> Component returned null VNode, nothing to patch.');
   }
 
-  // --- Insert End Anchor ---
-  // Inserted after the rendered content (or start anchor if content was null)
-  parentElement.appendChild(endAnchor);
+  // End anchor is already inserted.
 
   print('Finished mounting component: ${component.runtimeType}');
 }

@@ -21,6 +21,10 @@
   (future), or other components.
   - Added `endNode` property to `VNode`.
   - Added `createComment` and `nextNode` to `dust_dom`.
+- **Fixed Anchor Insertion Order:** Corrected `_mountComponent` to insert both
+  start and end anchors _before_ patching the component's rendered content,
+  resolving an `insertBefore` error where the end anchor was used as a reference
+  node before it existed in the parent.
 - **Cleaned Up Renderer Mounting Logic:** Removed the redundant
   `_createDomElement` function from `renderer.dart` as its functionality was
   fully covered by `_mountNodeAndChildren`. Updated comments for clarity.
