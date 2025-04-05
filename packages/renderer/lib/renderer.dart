@@ -83,8 +83,9 @@ void _performRender(
 /// Patches the DOM to reflect the difference between the new and old VNode trees.
 // Forward declaration for helper functions (implementation will be added later)
 // Helper function to handle mounting a new component VNode
-void _mountComponent(
-    dom.DomElement parentElement, VNode componentVNode, BuildContext context) {
+void _mountComponent(dom.DomElement parentElement, VNode componentVNode,
+    BuildContext context, dom.DomNode? referenceNode) {
+  // Add referenceNode
   final component = componentVNode.component;
   if (component == null) {
     print('Error: _mountComponent called with a non-component VNode.');
@@ -134,8 +135,9 @@ void _mountComponent(
       print('  -> Re-building component...');
       final newRenderedVNode = state.build();
       print('  -> Patching new rendered tree against old...');
-      _patch(
-          parentForRenderedTree, newRenderedVNode, oldRenderedVNode, context);
+      // Pass end anchor as reference node
+      _patch(parentForRenderedTree, newRenderedVNode, oldRenderedVNode, context,
+          componentVNode.endNode as dom.DomNode?);
 
       // Update references on the component VNode
       componentVNode.renderedVNode = newRenderedVNode;
@@ -165,26 +167,36 @@ void _mountComponent(
     return;
   }
 
+  // --- Create Anchor Nodes ---
+  final startAnchor = dom.document.createComment(
+      ' component-start: ${component.runtimeType} key: ${component.key} ');
+  final endAnchor = dom.document.createComment(
+      ' component-end: ${component.runtimeType} key: ${component.key} ');
+
+  // --- Insert Start Anchor & Set VNode References ---
+  parentElement.appendChild(startAnchor);
+  componentVNode.domNode = startAnchor; // Start anchor is the primary reference
+  componentVNode.endNode = endAnchor; // Store end anchor reference
+
   // 5. Store rendered VNode on the component VNode
   componentVNode.renderedVNode = renderedVNode;
 
   // 6. Patch the DOM with the rendered VNode tree
-  // Note: The parentElement for the *rendered* tree is the same parentElement
-  // passed to _mountComponent. The component itself doesn't have a direct DOM node yet.
-  // We pass null as oldVNode because this is the initial mount.
+  // The rendered content will be inserted *after* the startAnchor by _patch.
   if (renderedVNode != null) {
-    print('  -> Patching rendered VNode into parent DOM...');
-    _patch(parentElement, renderedVNode, null, context);
-    // After patching, the renderedVNode will have its domNode set.
-    // We need to associate this DOM node (or nodes if it renders a fragment)
-    // with the componentVNode for future updates/unmounting.
-    componentVNode.domNode =
-        renderedVNode.domNode; // Associate the rendered DOM node
     print(
-        '  -> Associated DOM node ${componentVNode.domNode?.hashCode} with component VNode');
+        '  -> Patching rendered VNode into parent DOM (after start anchor)...');
+    // Pass end anchor as reference node
+    _patch(parentElement, renderedVNode, null, context,
+        componentVNode.endNode as dom.DomNode?);
+    print('  -> Finished patching rendered VNode.');
   } else {
     print('  -> Component returned null VNode, nothing to patch.');
   }
+
+  // --- Insert End Anchor ---
+  // Inserted after the rendered content (or start anchor if content was null)
+  parentElement.appendChild(endAnchor);
 
   print('Finished mounting component: ${component.runtimeType}');
 }
@@ -206,15 +218,18 @@ void _updateComponent(dom.DomElement parentElement, VNode newComponentVNode,
     print(
         'Component type or key mismatch during update. Unmounting old and mounting new.');
     _unmountComponent(oldComponentVNode);
-    _mountComponent(parentElement, newComponentVNode, context);
+    // Pass null as referenceNode, effectively appending where the old component was
+    _mountComponent(parentElement, newComponentVNode, context, null);
     return;
   }
 
   // --- Types and Keys Match: Reuse existing state and update ---
   // Carry over the state object from the old VNode to the new one
   newComponentVNode.state = oldComponentVNode.state;
-  // Carry over the DOM node reference as well (might be updated after patching rendered tree)
+  // Carry over the DOM node (start anchor) reference
   newComponentVNode.domNode = oldComponentVNode.domNode;
+  // Carry over the end anchor reference
+  newComponentVNode.endNode = oldComponentVNode.endNode;
   // Carry over the rendered VNode reference initially
   newComponentVNode.renderedVNode = oldComponentVNode.renderedVNode;
 
@@ -234,7 +249,8 @@ void _updateComponent(dom.DomElement parentElement, VNode newComponentVNode,
       print('Error: State object not found for StatefulWidget during update.');
       // Fallback: Treat as a new mount? This indicates a logic error.
       _unmountComponent(oldComponentVNode); // Clean up old if possible
-      _mountComponent(parentElement, newComponentVNode, context);
+      // Pass null as referenceNode
+      _mountComponent(parentElement, newComponentVNode, context, null);
       return;
     }
 
@@ -264,24 +280,27 @@ void _updateComponent(dom.DomElement parentElement, VNode newComponentVNode,
   // 5. Store the new rendered VNode
   newComponentVNode.renderedVNode = newRenderedVNode;
 
-  // 6. Patch the DOM by diffing the new rendered tree against the old one
+  // 6. Patch the DOM by diffing the new rendered tree against the old one, inserting before the end anchor
   if (newRenderedVNode != null || oldRenderedVNode != null) {
-    print('  -> Patching updated rendered VNode against old rendered VNode...');
-    // IMPORTANT: The parent for patching the *rendered* tree is the component's DOM node's parent.
-    final currentDomNode = oldComponentVNode.domNode as dom.DomNode?;
-    if (currentDomNode?.parentNode is dom.DomElement) {
-      final parentForRenderedTree =
-          currentDomNode!.parentNode as dom.DomElement;
-      _patch(
-          parentForRenderedTree, newRenderedVNode, oldRenderedVNode, context);
-      // Update the component's domNode reference to the potentially new root of the rendered tree
-      newComponentVNode.domNode = newRenderedVNode?.domNode;
+    print(
+        '  -> Patching updated rendered VNode against old rendered VNode (before end anchor)...');
+    // The parent element is the one containing the anchors
+    final parentForRenderedTree = parentElement; // Passed into _updateComponent
+    final endAnchor =
+        oldComponentVNode.endNode as dom.DomNode?; // Get the end anchor
+
+    if (endAnchor == null) {
       print(
-          '  -> Updated component VNode DOM node association: ${newComponentVNode.domNode?.hashCode}');
+          'Error: End anchor not found during component update for key ${newComponent.key}. Cannot patch.');
+      // Maybe attempt full unmount/remount?
     } else {
-      print(
-          'Error: Cannot find valid parent DOM element for patching rendered tree during component update.');
-      // Handle error case - maybe attempt to unmount/remount?
+      // TODO: Modify _patch signature to accept referenceNode
+      _patch(parentForRenderedTree, newRenderedVNode, oldRenderedVNode, context,
+          endAnchor); // Pass endAnchor as reference node for insertions
+
+      // The component's domNode (start anchor) and endNode (end anchor) remain the same.
+      // Do NOT update newComponentVNode.domNode based on renderedVNode.
+      print('  -> Finished patching rendered tree between anchors.');
     }
   } else {
     print('  -> Both old and new rendered VNodes are null, nothing to patch.');
@@ -314,57 +333,50 @@ void _unmountComponent(VNode componentVNode) {
     componentVNode.state = null; // Clear the state reference
   }
 
-  // 2. Recursively unmount the rendered VNode tree (if it exists)
-  // This ensures listeners are removed and child components are disposed.
-  final renderedVNode = componentVNode.renderedVNode;
-  if (renderedVNode != null) {
-    print('  -> Recursively unmounting rendered VNode tree...');
-    final domNode = componentVNode
-        .domNode; // This is the root DOM node of the rendered tree
+  // 2. Remove rendered DOM nodes between anchors
+  final startAnchor = componentVNode.domNode as dom.DomNode?;
+  final endAnchor = componentVNode.endNode as dom.DomNode?;
 
-    // Check if domNode is a valid DomNode first
-    if (domNode is dom.DomNode) {
-      final parentNode = domNode.parentNode; // Now safe to access parentNode
+  if (startAnchor != null &&
+      endAnchor != null &&
+      startAnchor.parentNode is dom.DomElement) {
+    final parentElement = startAnchor.parentNode as dom.DomElement;
+    print('  -> Removing DOM nodes between anchors...');
 
-      // Check if parentNode is a valid DomElement
-      if (parentNode is dom.DomElement) {
-        // Check if the node is still attached to the expected parent
-        print('  -> Found valid DOM node and parent for removal.');
-        final parentDomElement = parentNode; // Already checked type
-        // Use removeVNode which handles recursive listener cleanup and DOM removal
-        // Pass the verified parentDomElement.
-        removeVNode(parentDomElement, renderedVNode);
-      } else {
-        // domNode exists but parent is not a DomElement (or null)
-        print(
-            'Warning: Could not find valid parent DOM element to remove rendered tree during unmount (domNode: ${domNode.hashCode}, parentNode: ${parentNode?.hashCode}).');
-        print('  -> Attempting listener cleanup only.');
-        _removeListenersRecursively(renderedVNode);
-      }
-    } else {
-      // domNode itself is null or not a DomNode
-      print(
-          'Warning: domNode reference on componentVNode is invalid or null during unmount (domNode: ${domNode?.hashCode}).');
-      print('  -> Attempting listener cleanup only.');
-      _removeListenersRecursively(renderedVNode);
+    // Recursively clean up listeners in the rendered tree *before* removing DOM nodes
+    if (componentVNode.renderedVNode != null) {
+      _removeListenersRecursively(componentVNode.renderedVNode!);
     }
-    componentVNode.renderedVNode = null; // Clear the rendered VNode reference
-  } else if (componentVNode.domNode != null) {
-    // If renderedVNode is null but domNode exists (shouldn't happen often),
-    // try to remove the domNode directly. This might happen if the component rendered null initially.
+
+    // Remove nodes between startAnchor (exclusive) and endAnchor (exclusive)
+    var currentNode = startAnchor.nextNode; // Use JS interop for nextSibling
+    while (currentNode != null && currentNode != endAnchor) {
+      final nodeToRemove = currentNode;
+      currentNode = currentNode.nextNode; // Move to next before removing
+      print('     - Removing node: ${nodeToRemove.hashCode}');
+      parentElement.removeChild(nodeToRemove);
+    }
+    print('  -> Finished removing nodes between anchors.');
+
+    // 3. Remove the anchor nodes themselves
+    print('  -> Removing anchor nodes...');
+    parentElement.removeChild(startAnchor);
+    parentElement.removeChild(endAnchor);
+    print('  -> Anchor nodes removed.');
+  } else {
     print(
-        'Warning: renderedVNode is null but domNode exists during unmount. Attempting direct DOM removal.');
-    final domNode = componentVNode.domNode;
-    if (domNode is dom.DomNode && domNode.parentNode is dom.DomElement) {
-      final parentDomElement = domNode.parentNode as dom.DomElement;
-      // Also attempt listener cleanup on the component VNode itself if it had listeners (unlikely but possible)
-      _removeListenersFromNode(componentVNode);
-      parentDomElement.removeChild(domNode);
+        'Warning: Could not find valid anchors or parent element during unmount for component ${component.runtimeType}. Listener cleanup might be incomplete.');
+    // Attempt listener cleanup on the rendered tree even if anchors are missing
+    if (componentVNode.renderedVNode != null) {
+      print('  -> Attempting listener cleanup on rendered tree anyway...');
+      _removeListenersRecursively(componentVNode.renderedVNode!);
     }
   }
+  componentVNode.renderedVNode = null; // Clear the rendered VNode reference
 
-  // 3. Clear the domNode reference on the componentVNode
+  // 4. Clear the anchor references on the componentVNode
   componentVNode.domNode = null;
+  componentVNode.endNode = null;
 
   print('Finished unmounting component: ${component.runtimeType}');
 }
@@ -373,8 +385,9 @@ void _unmountComponent(VNode componentVNode) {
 /// This is called by _patch during initial render (`oldVNode == null`) for non-component nodes.
 /// It creates the immediate DOM node, sets attributes/listeners, recursively mounts children
 /// using _patch, and appends the result to the parent element.
-void _mountNodeAndChildren(
-    dom.DomElement parentElement, VNode vnode, BuildContext context) {
+void _mountNodeAndChildren(dom.DomElement parentElement, VNode vnode,
+    BuildContext context, dom.DomNode? referenceNode) {
+  // Add referenceNode
   // 1. Create the current DOM node (element or text)
   final dom.DomNode currentNode;
   if (vnode.tag == null) {
@@ -413,14 +426,14 @@ void _mountNodeAndChildren(
       // print('>>> _mountNodeAndChildren: Mounting children for <${vnode.tag}>');
       for (final childVNode in vnode.children!) {
         // Use _patch with oldVNode = null to handle mounting components or elements/text correctly
-        _patch(element, childVNode, null,
-            context); // Mount child into the current element
+        // Append child, no specific reference node needed here
+        _patch(element, childVNode, null, context, null);
       }
       // print('>>> _mountNodeAndChildren: Finished mounting children for <${vnode.tag}>');
     }
   }
-  // 3. Append the fully constructed node (with children) to the parent
-  parentElement.appendChild(currentNode);
+  // 3. Insert the fully constructed node (with children) into the parent before the reference node
+  parentElement.insertBefore(currentNode, referenceNode);
 }
 
 // --- Helper Functions ---
@@ -490,7 +503,9 @@ void removeVNode(dom.DomElement parentDomNode, VNode vnode) {
 // --- End Helper Functions ---
 
 void _patch(dom.DomElement parentElement, VNode? newVNode, VNode? oldVNode,
-    BuildContext context) {
+    BuildContext context,
+    [dom.DomNode? referenceNode]) {
+  // Add optional referenceNode
   // Helper functions moved outside _patch
   // --- DEBUG REMOVED ---
   print(
@@ -521,12 +536,13 @@ void _patch(dom.DomElement parentElement, VNode? newVNode, VNode? oldVNode,
     if (newVNode.component != null) {
       // Mount new component
       print('Mounting new component (oldVNode was null)...');
-      _mountComponent(parentElement, newVNode, context);
+      _mountComponent(parentElement, newVNode, context,
+          referenceNode); // Pass referenceNode
     } else {
       // Mount new element/text node and its children correctly
       print('Mounting new element/text node (oldVNode was null)...');
-      _mountNodeAndChildren(
-          parentElement, newVNode, context); // Use the new helper
+      _mountNodeAndChildren(parentElement, newVNode, context,
+          referenceNode); // Pass referenceNode
     }
     return; // Node mounted, exit patch for this level
   }
@@ -547,7 +563,9 @@ void _patch(dom.DomElement parentElement, VNode? newVNode, VNode? oldVNode,
       print('Mounting new component (replacing element/text)...');
       // Unmount old element/text node first
       removeVNode(parentElement, oldVNode); // Pass parentElement
-      _mountComponent(parentElement, newVNode, context);
+      // When replacing, the reference node is the one after the old node being removed.
+      // However, since we remove first, we can just pass the original referenceNode.
+      _mountComponent(parentElement, newVNode, context, referenceNode);
     }
     return; // Component logic handled, exit patch
   } else if (isOldComponent) {
@@ -556,7 +574,8 @@ void _patch(dom.DomElement parentElement, VNode? newVNode, VNode? oldVNode,
     _unmountComponent(oldVNode);
     // Mount new element/text node
     print('Mounting new element/text node after unmounting component...');
-    _mountNodeAndChildren(parentElement, newVNode, context); // Use helper
+    // Pass the original referenceNode
+    _mountNodeAndChildren(parentElement, newVNode, context, referenceNode);
     return; // Component logic handled, exit patch
   }
 
@@ -577,12 +596,14 @@ void _patch(dom.DomElement parentElement, VNode? newVNode, VNode? oldVNode,
       // We need a temporary parent or mount differently.
       // Simpler: remove old, then mount new.
       removeVNode(parentElement, oldVNode); // Remove old node and listeners
-      _mountNodeAndChildren(parentElement, newVNode, context); // Mount new node
+      // Pass the original referenceNode
+      _mountNodeAndChildren(parentElement, newVNode, context, referenceNode);
     } else {
       // Fallback: If the old reference is invalid, just mount the new node.
       print(
           'Warning/Error: Cannot replace node, old DOM node reference invalid. Mounting new node.');
-      _mountNodeAndChildren(parentElement, newVNode, context);
+      // Pass the original referenceNode
+      _mountNodeAndChildren(parentElement, newVNode, context, referenceNode);
     }
     return;
   }
@@ -798,23 +819,24 @@ void _patchChildren(dom.DomElement parentDomNode, List<VNode>? oldChOriginal,
       print(
           '>>> _patchChildren [Case 1: Same Start]: Patching key ${newStartVNode?.key}');
       // --- DEBUG REMOVED ---
-      _patch(
-          parentDomNode, newStartVNode, oldStartVNode, context); // Pass context
+      // Patch existing node, no reference node needed for the patch itself
+      _patch(parentDomNode, newStartVNode, oldStartVNode, context, null);
       oldStartVNode = ++oldStartIdx <= oldEndIdx ? oldCh[oldStartIdx] : null;
       newStartVNode = ++newStartIdx <= newEndIdx ? newCh[newStartIdx] : null;
     } else if (isSameVNode(oldEndVNode, newEndVNode)) {
       // Same end nodes
       print(
           '>>> _patchChildren [Case 2: Same End]: Patching key ${newEndVNode?.key}');
-      _patch(parentDomNode, newEndVNode, oldEndVNode, context); // Pass context
+      // Patch existing node, no reference node needed
+      _patch(parentDomNode, newEndVNode, oldEndVNode, context, null);
       oldEndVNode = --oldEndIdx >= oldStartIdx ? oldCh[oldEndIdx] : null;
       newEndVNode = --newEndIdx >= newStartIdx ? newCh[newEndIdx] : null;
     } else if (isSameVNode(oldStartVNode, newEndVNode)) {
       // Node moved right
       print(
           '>>> _patchChildren [Case 3: Moved Right]: Patching key ${newEndVNode?.key}, moving DOM node');
-      _patch(
-          parentDomNode, newEndVNode, oldStartVNode, context); // Pass context
+      // Patch existing node before move, no reference node needed
+      _patch(parentDomNode, newEndVNode, oldStartVNode, context, null);
       _domInsertBefore(
           // Use renamed helper
           oldStartVNode.domNode as dom.DomNode, // Pass DomNode
@@ -825,8 +847,8 @@ void _patchChildren(dom.DomElement parentDomNode, List<VNode>? oldChOriginal,
       // Node moved left
       print(
           '>>> _patchChildren [Case 4: Moved Left]: Patching key ${newStartVNode?.key}, moving DOM node');
-      _patch(
-          parentDomNode, newStartVNode, oldEndVNode, context); // Pass context
+      // Patch existing node before move, no reference node needed
+      _patch(parentDomNode, newStartVNode, oldEndVNode, context, null);
       _domInsertBefore(
           // Use renamed helper
           oldEndVNode.domNode as dom.DomNode, // Pass DomNode
@@ -849,7 +871,9 @@ void _patchChildren(dom.DomElement parentDomNode, List<VNode>? oldChOriginal,
         print(
             '>>> _patchChildren [Case 5a: New Node]: Patching new node with key ${newStartVNode?.key}');
         // Call _patch recursively, which will handle mounting components or creating elements
-        _patch(parentDomNode, newStartVNode, null, context);
+        // Mount new node, pass the calculated reference node
+        _patch(parentDomNode, newStartVNode, null, context,
+            getDomNodeBefore(newStartIdx));
         // Get the newly created/mounted DOM node from the VNode after patching
         final newDomNode = newStartVNode?.domNode;
         if (newDomNode is dom.DomNode) {
@@ -866,8 +890,8 @@ void _patchChildren(dom.DomElement parentDomNode, List<VNode>? oldChOriginal,
           print(
               'Error: Found null VNode in oldChildren at index $idxInOld for key ${newStartVNode?.key}. This might indicate a duplicate key or logic error.');
         } else {
-          _patch(parentDomNode, newStartVNode!, vnodeToMove,
-              context); // Pass context
+          // Patch existing node before move, no reference node needed
+          _patch(parentDomNode, newStartVNode!, vnodeToMove, context, null);
           _domInsertBefore(
               vnodeToMove.domNode as dom.DomNode, // Pass DomNode
               getDomNodeBefore(newStartIdx)); // Returns DomNode?
@@ -904,7 +928,8 @@ void _patchChildren(dom.DomElement parentDomNode, List<VNode>? oldChOriginal,
       // Only add nodes that aren't null (shouldn't happen with newCh, but safe)
       if (newCh[i] != null) {
         // Use _patch with oldVNode = null to correctly mount the new node
-        _patch(parentDomNode, newCh[i], null, context);
+        // Mount new node, pass the calculated reference node
+        _patch(parentDomNode, newCh[i], null, context, referenceNode);
         // Get the newly created/mounted DOM node from the VNode after patching
         final newDomNode = newCh[i]?.domNode;
         if (newDomNode is dom.DomNode) {
@@ -942,7 +967,8 @@ void _renderInternal(
 
   // 3. Patch the target element with the root component VNode
   //    Since this is the initial render, oldVNode is null.
-  _patch(_targetElement!, rootComponentVNode, null, context);
+  // Initial root render, append to target, no reference node needed
+  _patch(_targetElement!, rootComponentVNode, null, context, null);
 
   // 4. Store the root component VNode as the last rendered tree
   _lastRenderedVNode = rootComponentVNode;

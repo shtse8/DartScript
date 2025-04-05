@@ -13,6 +13,14 @@
 
 ## Recent Changes
 
+- **Implemented Anchor Nodes for Components:** Refactored the renderer
+  (`_mountComponent`, `_updateComponent`, `_unmountComponent`, `_patch`,
+  `_mountNodeAndChildren`) to use comment nodes as start and end anchors for
+  components. This provides a robust way to manage the DOM range occupied by a
+  component, correctly handling cases where components render null, fragments
+  (future), or other components.
+  - Added `endNode` property to `VNode`.
+  - Added `createComment` and `nextNode` to `dust_dom`.
 - **Cleaned Up Renderer Mounting Logic:** Removed the redundant
   `_createDomElement` function from `renderer.dart` as its functionality was
   fully covered by `_mountNodeAndChildren`. Updated comments for clarity.
@@ -59,11 +67,6 @@
 
 ## Next Steps
 
-- **Address Renderer `domNode` Simplification:** Review the assignment
-  `componentVNode.domNode = renderedVNode.domNode;` (marked as
-  `// Simplification!`) in `_mountComponent` and `_updateComponent`. Implement
-  more robust handling for cases where components render null, fragments, or
-  other components directly.
 - **Improve State Management:** Refactor Riverpod integration or implement a
   custom context solution.
 - **Start Routing Implementation.**
@@ -78,10 +81,10 @@
   State is correctly passed between VNodes during updates.
 - **Listener Management:** `identical()` check optimizes updates. Recursive
   removal in `removeVNode` ensures cleanup.
-- **Renderer `domNode` Association:** Acknowledged that the current method of
-  associating a component's VNode `domNode` with its rendered output's `domNode`
-  (`componentVNode.domNode = renderedVNode.domNode;`) is a simplification and
-  doesn't handle fragments or null renders correctly. This needs future
-  refinement.
+- **Component DOM Anchoring:** Components are now anchored in the DOM using
+  start and end comment nodes (`<!-- component-start -->`,
+  `<!-- component-end -->`). The component's VNode `domNode` refers to the start
+  anchor, and `endNode` refers to the end anchor. Patching and unmounting
+  operations use these anchors to manage the component's rendered content range.
 - **(Previous decisions still apply regarding Riverpod, Component Syntax,
   `runApp`, `build_runner`, `dust_dom`, `DomEvent`, etc.)**

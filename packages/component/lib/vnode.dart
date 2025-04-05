@@ -32,6 +32,8 @@ class VNode {
   /// This is populated by the renderer during the creation/patching process.
   /// Using JSAny? from dart:js_interop (implicitly, as it's used by the renderer).
   Object? domNode; // Use Object? for flexibility, renderer will handle JSAny?
+  /// For component VNodes using anchor nodes, this stores the end anchor.
+  Object? endNode; // Use Object? for flexibility, renderer will handle JSAny?
   Map<String, JSFunction>?
       jsFunctionRefs; // Stores JSFunction references for removal
   Map<String, Function>?
@@ -55,6 +57,7 @@ class VNode {
       : text = null,
         component = null, // Not a component node
         domNode = null,
+        endNode = null, // Initialize endNode
         jsFunctionRefs = null,
         dartCallbackRefs = null, // Initialize new field
         state = null, // Not a stateful component node
@@ -69,6 +72,7 @@ class VNode {
         children = null,
         component = null, // Not a component node
         domNode = null,
+        endNode = null, // Initialize endNode
         jsFunctionRefs = null,
         dartCallbackRefs = null, // Initialize new field
         state = null, // Not a stateful component node
@@ -83,7 +87,10 @@ class VNode {
         listeners = null,
         children = null,
         text = null,
-        domNode = null, // Will be managed by the component's rendered output
+        domNode =
+            null, // Will be managed by the component's rendered output (or start anchor)
+        endNode =
+            null, // Initialize endNode (will be end anchor for components)
         jsFunctionRefs = null,
         dartCallbackRefs = null, // Initialize new field
         state =

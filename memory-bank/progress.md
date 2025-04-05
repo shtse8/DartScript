@@ -9,22 +9,26 @@
 - **Component Model (VNode + Key + Component Lifecycle Support):** Includes
   `props`, `key`, `State`, `StatelessWidget` (with `BuildContext`),
   `StatefulWidget`. `VNode` structure updated. HTML helpers available.
-- **Renderer (Component Lifecycle + Keyed Diffing + Event Handling):**
+- **Renderer (Component Lifecycle + Keyed Diffing + Event Handling +
+  Anchoring):**
   - `runApp` entry point.
+  - **Component Anchoring:** Uses comment nodes as start/end anchors for robust
+    DOM management (`_mountComponent`, `_updateComponent`, `_unmountComponent`).
   - **Cleaned Up Mounting Logic:** Removed redundant `_createDomElement`
     function.
   - **Corrected Initial Component Mount:** `_patch` now correctly uses
     `_mountComponent` or `_mountNodeAndChildren` during initial render
-    (`oldVNode == null`), ensuring components are properly mounted and state is
-    preserved for the first update.
+    (`oldVNode == null`), respecting anchors.
   - **Component Lifecycle Management:** `_mountComponent`, `_updateComponent`,
     `_unmountComponent` handle state creation/reuse, `initState`,
     `didUpdateWidget`, `dispose`.
   - **Event Handling:** `DomEvent` wrapper used. Listener updates optimized with
     `identical()` check. Recursive listener removal implemented in `removeVNode`
-    for cleanup during unmount/removal.
-  - **Keyed Diffing:** `_patchChildren` implements keyed reconciliation.
-  - **DOM Interaction:** Uses `dust_dom` abstractions.
+    and `_unmountComponent` for cleanup.
+  - **Keyed Diffing:** `_patchChildren` implements keyed reconciliation,
+    respecting insertion points (`referenceNode`).
+  - **DOM Interaction:** Uses `dust_dom` abstractions (including
+    `createComment`, `nextNode`).
 - **State Update (Keyed Diffing & setState):** `setState` correctly triggers
   component updates via the renderer's patching mechanism, handling keyed
   children efficiently.
@@ -55,10 +59,10 @@
 
 ## Current Status
 
-- **Renderer Core Stabilized:** Fixed the critical initial component mount bug
-  in `_patch`. Component updates (`_updateComponent`) now work correctly from
-  the first update, preserving state. Event listener management
-  (add/update/remove) is functioning as expected during updates and unmounts.
+- **Renderer Core Improved:** Implemented component anchoring using comment
+  nodes, resolving the previous `domNode` association simplification. Fixed
+  initial component mount bug. Component updates and listener management are
+  functioning correctly with the new anchoring system.
 - **DOM Abstraction Integrated:** `dust_dom` is used for core DOM operations in
   the renderer.
 - **Component Lifecycle Basics Working:** `initState`, `didUpdateWidget`,
@@ -79,7 +83,6 @@
 - **WASM Debugging:** Remains a factor.
 - **Bundle Size:** Needs monitoring.
 - **Hot Reload Implementation:** Significant challenge remains.
-- **Renderer `domNode` Association Simplification:** The current method
-  (`componentVNode.domNode = renderedVNode.domNode;`) doesn't correctly handle
-  fragments or components rendering null/other components. Needs future
-  refinement.
+- **Renderer Edge Cases:** Handling fragments (components returning lists) still
+  needs implementation, although the anchor system provides the foundation. SVG
+  nuances and specific attribute/property types need more testing.

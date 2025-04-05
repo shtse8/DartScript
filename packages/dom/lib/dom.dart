@@ -42,6 +42,10 @@ extension DomNodeExtension on DomNode {
   /// Gets the parent node of this node. Returns null if there's no parent.
   @JS('parentNode')
   external DomNode? get parentNode;
+
+  /// Gets the next sibling node. Returns null if there is no next sibling.
+  @JS('nextSibling')
+  external DomNode? get nextNode; // Renamed to nextNode for clarity
 }
 
 //------------------------------------------------------------------------------
@@ -130,6 +134,18 @@ class DomTextNode extends DomNode {}
 // }
 
 //------------------------------------------------------------------------------
+// DomComment Abstraction
+//------------------------------------------------------------------------------
+
+/// Represents a Comment node in the DOM using static interop.
+/// Extends [DomNode].
+@JS('Comment')
+@staticInterop
+class DomComment extends DomNode {}
+
+// No specific extensions needed for Comment for now, inherits from DomNodeExtension.
+
+//------------------------------------------------------------------------------
 // DomStyle Abstraction (Example)
 //------------------------------------------------------------------------------
 
@@ -175,6 +191,10 @@ extension DomDocumentExtension on DomDocument {
   @JS('getElementById')
   external DomElement? getElementById(String id);
 
+  /// Creates a new Comment node with the specified data.
+  @JS('createComment')
+  external DomComment createComment(String data);
+
   // TODO: Add other document methods as needed (querySelector, etc.)
 }
 
@@ -197,4 +217,9 @@ DomTextNode createTextNode(String data) {
 /// Gets an element by its ID. Returns null if not found.
 DomElement? getElementById(String id) {
   return document.getElementById(id);
+}
+
+/// Creates a new Comment node with the specified data.
+DomComment createComment(String data) {
+  return document.createComment(data);
 }
