@@ -74,7 +74,7 @@
 - **Typed Props System Implemented:** Core component classes refactored for
   type-safe props. Demos updated.
 - **WASM Build Successful:** Core framework and demo app compile to WASM without
-  critical errors.
+  critical errors. (Recent JS interop warnings in `web_interop.dart` resolved).
 - **Renderer Core Stable:** Anchoring, lifecycle, keyed diffing, event handling
   basics are functional.
 - **Atomic CSS Builder Functional:** Generates CSS based on code analysis.

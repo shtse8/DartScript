@@ -65,9 +65,9 @@ class Event {
 @staticInterop
 class EventInit {
   external factory EventInit({
-    bool bubbles = false,
-    bool cancelable = false,
-    bool composed = false,
+    bool bubbles,
+    bool cancelable,
+    bool composed,
   });
 }
 
@@ -87,9 +87,9 @@ extension CustomEventExtension on CustomEvent {
 @staticInterop
 class CustomEventInit extends EventInit {
   external factory CustomEventInit({
-    JSAny? detail, // Add detail property
-    bool bubbles = false,
-    bool cancelable = false,
-    bool composed = false,
+    JSAny? detail,
+    bool bubbles,
+    bool cancelable,
+    bool composed,
   });
 }

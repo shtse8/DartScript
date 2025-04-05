@@ -16,6 +16,10 @@
 
 ## Recent Changes
 
+- **Fixed JS Interop Warnings:** Removed default parameter values from
+  `EventInit` and `CustomEventInit` external factory constructors in
+  `web_interop.dart` to resolve build warnings.
+
 - **Implemented History API Routing:**
   - Updated `web_interop.dart` with bindings for `history.pushState`,
     `popstate`, `location.pathname`, `CustomEvent`, and `window.dispatchEvent`.
